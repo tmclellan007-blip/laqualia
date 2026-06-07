@@ -1,0 +1,57 @@
+<svg width="900" height="720" viewBox="0 0 900 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Réseau IA humain et opérationnel</title>
+  <desc id="desc">Illustration abstraite de flux d'information, d'automatisation et d'accompagnement humain.</desc>
+  <defs>
+    <radialGradient id="sun" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(675 110) rotate(115) scale(480 410)">
+      <stop stop-color="#FCC66D" stop-opacity=".45"/>
+      <stop offset=".45" stop-color="#FF8C6D" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#201712" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="line" x1="100" y1="175" x2="780" y2="542" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F4B7C1" stop-opacity=".95"/>
+      <stop offset=".45" stop-color="#FF8C6D" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#FCC66D" stop-opacity=".95"/>
+    </linearGradient>
+    <linearGradient id="card" x1="146" y1="78" x2="773" y2="597" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F2E7" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#F2E5D6" stop-opacity=".035"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="24"/></filter>
+  </defs>
+  <rect x="38" y="46" width="824" height="628" rx="44" fill="url(#card)" stroke="#F2E5D6" stroke-opacity=".14"/>
+  <circle cx="680" cy="125" r="260" fill="url(#sun)"/>
+  <path d="M105 500 C220 380 260 450 350 328 C435 214 515 296 620 190 C690 120 746 132 794 102" stroke="url(#line)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M142 318 C246 256 340 502 457 430 C546 375 578 284 714 322" stroke="#F2E5D6" stroke-opacity=".25" stroke-width="2"/>
+  <path d="M168 555 C312 438 327 584 492 516 C585 478 634 422 774 456" stroke="#FCC66D" stroke-opacity=".45" stroke-width="2"/>
+  <g filter="url(#blur)">
+    <circle cx="225" cy="196" r="72" fill="#FF8C6D" fill-opacity=".15"/>
+    <circle cx="592" cy="516" r="110" fill="#F4B7C1" fill-opacity=".11"/>
+  </g>
+  <g>
+    <rect x="128" y="130" width="202" height="116" rx="24" fill="#201712" fill-opacity=".78" stroke="#FCC66D" stroke-opacity=".26"/>
+    <text x="158" y="171" fill="#FCC66D" font-family="Sora, Arial, sans-serif" font-size="16" font-weight="700">Diagnostic IA</text>
+    <text x="158" y="204" fill="#F7F2E7" font-family="Sora, Arial, sans-serif" font-size="13" opacity=".78">Irritants · priorités · faisabilité</text>
+  </g>
+  <g>
+    <rect x="490" y="230" width="234" height="122" rx="24" fill="#201712" fill-opacity=".78" stroke="#FF8C6D" stroke-opacity=".28"/>
+    <text x="520" y="272" fill="#FF8C6D" font-family="Sora, Arial, sans-serif" font-size="16" font-weight="700">Assistants & agents</text>
+    <text x="520" y="305" fill="#F7F2E7" font-family="Sora, Arial, sans-serif" font-size="13" opacity=".78">Connaissances · règles · adoption</text>
+  </g>
+  <g>
+    <rect x="250" y="446" width="247" height="126" rx="24" fill="#201712" fill-opacity=".78" stroke="#F4B7C1" stroke-opacity=".25"/>
+    <text x="280" y="489" fill="#F4B7C1" font-family="Sora, Arial, sans-serif" font-size="16" font-weight="700">Automatisation</text>
+    <text x="280" y="522" fill="#F7F2E7" font-family="Sora, Arial, sans-serif" font-size="13" opacity=".78">Moins de friction. Plus de fluidité.</text>
+  </g>
+  <g>
+    <circle cx="105" cy="500" r="10" fill="#F4B7C1"/>
+    <circle cx="350" cy="328" r="10" fill="#FF8C6D"/>
+    <circle cx="620" cy="190" r="10" fill="#FCC66D"/>
+    <circle cx="794" cy="102" r="10" fill="#F7F2E7"/>
+    <circle cx="714" cy="322" r="7" fill="#F2E5D6" opacity=".75"/>
+    <circle cx="774" cy="456" r="7" fill="#FCC66D" opacity=".75"/>
+  </g>
+  <g opacity=".72">
+    <path d="M118 618h664" stroke="#F2E5D6" stroke-opacity=".18"/>
+    <text x="235" y="646" fill="#FCC66D" font-family="Sora, Arial, sans-serif" font-size="14" letter-spacing="6">TECHNOLOGIE · CLARTÉ · TEMPS · SENS</text>
+  </g>
+</svg>

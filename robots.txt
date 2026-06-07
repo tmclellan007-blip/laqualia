@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://laqualia.com/sitemap.xml

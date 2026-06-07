@@ -1,0 +1,22 @@
+<svg width="440" height="120" viewBox="0 0 440 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Logo La Qualia</title>
+  <desc id="desc">Symbole Q doré et nom La Qualia.</desc>
+  <defs>
+    <linearGradient id="qg" x1="22" y1="22" x2="138" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FCC66D"/>
+      <stop offset="0.52" stop-color="#FF8C6D"/>
+      <stop offset="1" stop-color="#F4B7C1"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M78 18c-31.48 0-57 23.94-57 53.47 0 29.54 25.52 53.47 57 53.47 23.35 0 43.42-13.16 52.22-32.02" stroke="url(#qg)" stroke-width="10" stroke-linecap="round" transform="translate(0 -12) scale(.86)"/>
+    <path d="M48 70c12-8 29-10 45-3 12 5 22 15 33 21" stroke="url(#qg)" stroke-width="7" stroke-linecap="round" transform="translate(0 -12) scale(.86)"/>
+    <circle cx="62" cy="49" r="8" fill="url(#qg)"/>
+  </g>
+  <text x="118" y="62" fill="#F7F2E7" font-family="Lora, Georgia, serif" font-size="52" letter-spacing="-.5">La Qualia</text>
+  <text x="120" y="92" fill="#FCC66D" font-family="Sora, Arial, sans-serif" font-size="14" letter-spacing="2.5">TECHNOLOGIE · CLARTÉ · TEMPS · SENS</text>
+</svg>

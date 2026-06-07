@@ -1,0 +1,17 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#120F0E"/><stop offset=".55" stop-color="#201712"/><stop offset="1" stop-color="#3A231F"/>
+    </linearGradient>
+    <radialGradient id="r" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(916 112) rotate(122) scale(580 430)">
+      <stop stop-color="#FCC66D" stop-opacity=".5"/><stop offset=".5" stop-color="#FF8C6D" stop-opacity=".18"/><stop offset="1" stop-color="#201712" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="920" cy="110" r="350" fill="url(#r)"/>
+  <path d="M98 494C252 348 344 451 463 306C584 158 681 240 786 145C858 79 940 82 1028 132" stroke="#FCC66D" stroke-opacity=".55" stroke-width="4" stroke-linecap="round"/>
+  <text x="112" y="182" fill="#F7F2E7" font-family="Georgia, serif" font-size="88">La Qualia</text>
+  <text x="116" y="245" fill="#FCC66D" font-family="Arial, sans-serif" font-size="26" letter-spacing="2">TECHNOLOGIE · CLARTÉ · TEMPS · SENS · EXPÉRIENCE</text>
+  <text x="116" y="355" fill="#F7F2E7" font-family="Arial, sans-serif" font-size="46" font-weight="700">L’IA utile, humaine et mesurable.</text>
+  <text x="116" y="418" fill="#F2E5D6" font-family="Arial, sans-serif" font-size="26">Services IA, automatisation et accompagnement numérique au Saguenay et au Québec.</text>
+</svg>
