@@ -94,28 +94,31 @@ section{padding:96px 5%;}
 }
 .manifeste-tagline{
   font-family:'Cormorant Garamond',serif;
-  font-size:clamp(1.25rem,2.5vw,1.9rem);font-weight:300;font-style:italic;
-  color:var(--brown);opacity:.82;line-height:1.5;margin-bottom:56px;
+  font-size:clamp(1.4rem,3vw,2.2rem);font-weight:300;font-style:italic;
+  color:var(--brown);opacity:.85;line-height:1.4;margin-bottom:16px;
 }
-.manifeste-cards{
-  display:grid;grid-template-columns:1fr 1px 1fr;gap:0;
-  background:rgba(253,250,245,.2);backdrop-filter:blur(8px);
-  border:1px solid rgba(255,255,255,.35);border-radius:16px;padding:40px 52px;
-  text-align:left;
+.manifeste-sub{
+  font-family:'Jost',sans-serif;font-size:clamp(.88rem,1.5vw,1.05rem);
+  color:rgba(61,43,31,.7);line-height:1.6;margin-bottom:40px;
 }
-.manifeste-divider{background:rgba(61,43,31,.18);}
-.manifeste-block{padding:0 32px;}
-.manifeste-block:first-child{padding-left:0;}
-.manifeste-block:last-child{padding-right:0;}
-.manifeste-block h4{font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(61,43,31,.5);margin-bottom:14px;}
-.manifeste-block p{font-family:'Cormorant Garamond',serif;font-size:1.08rem;font-style:italic;color:var(--brown);line-height:1.72;}
-.manifeste-footer{margin-top:48px;font-size:.68rem;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:rgba(61,43,31,.45);}
-.manifeste-footer span{color:rgba(61,43,31,.25);margin:0 11px;}
-/* Note bas gauche comme slide 36 */
+/* Palette ribbon */
+.palette-ribbon-wrap{width:100%;overflow:hidden;margin:0 0 28px;}
+.palette-ribbon{width:100%;height:auto;display:block;}
+.palette-labels{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  margin-bottom:16px;text-align:center;
+}
+.palette-swatch{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.swatch-color{width:40px;height:40px;border-radius:8px;flex-shrink:0;}
+.swatch-hex{font-family:'Jost',sans-serif;font-size:.78rem;font-weight:600;color:var(--brown);letter-spacing:.01em;}
+.swatch-name{font-size:.74rem;color:var(--brown);font-weight:500;}
+.swatch-sub{font-size:.68rem;color:rgba(61,43,31,.55);font-style:italic;}
+.manifeste-footer{margin-top:36px;font-size:.65rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:rgba(61,43,31,.42);}
+.manifeste-footer span{color:rgba(61,43,31,.22);margin:0 10px;}
 .manifeste-bottom-label{
-  position:absolute;bottom:28px;left:5%;
-  font-size:.62rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
-  color:rgba(61,43,31,.4);
+  position:absolute;bottom:24px;left:5%;
+  font-size:.6rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(61,43,31,.38);
 }
 
 /* ─── ABOUT (valeurs PPT slide 4) ─── */
@@ -332,39 +335,97 @@ footer{background:var(--brown);color:var(--sand);padding:42px 5%;display:flex;al
 .fade-in{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
 .fade-in.visible{opacity:1;transform:none;}
 
-/* ─── RESPONSIVE ─── */
-@media(max-width:960px){
-  .about-grid,.irritant-grid{grid-template-columns:1fr;}
+/* ─── RESPONSIVE COMPLET ─── */
+
+/* Tablette large (≤1024px) */
+@media(max-width:1024px){
   .services-grid{grid-template-columns:1fr 1fr;}
   .service-card.wide{grid-column:span 2;}
-  .pression-grid{grid-template-columns:1fr;}
-  .traj-grid,.piliers-row{grid-template-columns:1fr 1fr;}
-  .methode-steps{grid-template-columns:repeat(3,1fr);gap:28px;}
+  .methode-steps{grid-template-columns:repeat(3,1fr);gap:24px;}
   .methode-path-line{display:none;}
-  .promise-grid{grid-template-columns:1fr;}
-  .manifeste-cards{grid-template-columns:1fr;}
-  .manifeste-divider{display:none;}
+  .piliers-row{grid-template-columns:1fr 1fr;gap:12px;}
+  .palette-labels{grid-template-columns:repeat(5,1fr);gap:4px;}
+  .swatch-color{width:32px;height:32px;}
+  .swatch-hex{font-size:.7rem;}
+  .swatch-name,.swatch-sub{font-size:.65rem;}
+}
+
+/* Tablette (≤900px) */
+@media(max-width:900px){
+  nav{padding:13px 4%;}
   .nav-links{display:none;}
-  footer{flex-direction:column;gap:20px;text-align:center;}
-  .footer-info{text-align:center;}
+  .about-grid,.irritant-grid,.approche-cols,.eco-grid{grid-template-columns:1fr;}
+  .irritant-grid > div:last-child{justify-content:flex-start;}
+  .traj-grid{grid-template-columns:1fr 1fr;}
+  .promise-grid{grid-template-columns:1fr 1fr;}
+  .pression-grid{grid-template-columns:1fr 1fr;}
+  .pression-col:nth-child(2){border-right:none;}
   .approche-vs-grid{grid-template-columns:1fr;}
   .impact-table{grid-template-columns:1fr;}
   .impact-col.avant{border-radius:16px 16px 0 0;}
   .impact-col.apres{border-radius:0 0 16px 16px;}
   .impact-mid{display:none;}
+  .cas-grid{grid-template-columns:1fr;}
+  footer{flex-direction:column;gap:18px;text-align:center;}
+  .footer-info{text-align:center;}
+  section{padding:72px 5%;}
+  #qualia-manifeste{padding:80px 5%;}
+  .manifeste-name{font-size:clamp(3rem,10vw,6rem);}
+  #qualia-manifeste::before{font-size:clamp(280px,50vw,500px);}
 }
-@media(max-width:620px){
-  .services-grid,.cas-grid{grid-template-columns:1fr;}
+
+/* Mobile (≤640px) */
+@media(max-width:640px){
+  nav{padding:12px 4%;}
+  .nav-logo .logo-wrap{width:38px;height:38px;}
+  .nav-logo .logo-wrap img{width:28px;}
+  .nav-brand{font-size:1.15rem;}
+  section{padding:56px 4%;}
+  #hero{padding:100px 4% 60px;}
+  .hero-logo-wrap{width:80px;height:80px;}
+  .hero-logo-wrap img{width:62px;}
+  .hero-title{font-size:clamp(2.4rem,8vw,3.4rem);}
+  .hero-sub{font-size:1rem;}
+  .hero-btns{flex-direction:column;align-items:center;}
+  .btn-primary,.btn-outline{width:100%;max-width:280px;justify-content:center;padding:14px 20px;}
+  #qualia-manifeste{padding:70px 4%;min-height:auto;}
+  .manifeste-name{font-size:clamp(2.8rem,11vw,4.5rem);}
+  .manifeste-tagline{font-size:1.2rem;}
+  .manifeste-sub{font-size:.88rem;}
+  #qualia-manifeste::before{font-size:220px;}
+  .palette-labels{grid-template-columns:repeat(5,1fr);gap:3px;}
+  .swatch-color{width:26px;height:26px;border-radius:5px;}
+  .swatch-hex{font-size:.6rem;}
+  .swatch-name,.swatch-sub{display:none;}
+  .services-grid{grid-template-columns:1fr;}
   .service-card.wide{grid-column:span 1;}
   .service-card.wide .service-bullets{columns:1;}
   .cas-body{grid-template-columns:1fr;}
-  .methode-steps{grid-template-columns:repeat(2,1fr);}
-  .piliers-row{grid-template-columns:1fr;}
+  .traj-grid{grid-template-columns:1fr;}
+  .methode-steps{grid-template-columns:repeat(2,1fr);gap:20px;}
+  .piliers-row{grid-template-columns:1fr 1fr;}
+  .promise-grid{grid-template-columns:1fr;}
   .pression-grid{grid-template-columns:1fr;}
-  .pression-col{border-right:none;border-bottom:1px solid rgba(255,140,109,.18);}
+  .pression-col{border-right:none;border-bottom:1px solid rgba(255,140,109,.18);padding:28px 20px;}
   .pression-col:last-child{border-bottom:none;}
-  section{padding:64px 6%;}
+  .about-grid,.irritant-grid{gap:40px;}
+  .stat-row{gap:20px;}
+  .stat-num{font-size:2rem;}
+  footer{padding:32px 4%;}
+  .section-inner{max-width:100%;}
+  .eco-banner p{font-size:1rem;}
 }
+
+/* Petit mobile (≤380px) */
+@media(max-width:380px){
+  .hero-title{font-size:2.2rem;}
+  .manifeste-name{font-size:2.6rem;}
+  .palette-labels{gap:2px;}
+  .swatch-color{width:22px;height:22px;}
+  .methode-steps{grid-template-columns:1fr 1fr;}
+  .piliers-row{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 <body>
@@ -407,18 +468,64 @@ footer{background:var(--brown);color:var(--sand);padding:42px 5%;display:flex;al
 <section id="qualia-manifeste">
   <div class="manifeste-inner fade-in">
     <h2 class="manifeste-name">La Qualia.</h2>
-    <p class="manifeste-tagline">Là où la technologie rencontre la beauté de l'expérience humaine.</p>
-    <div class="manifeste-cards">
-      <div class="manifeste-block">
-        <h4>Pourquoi ce nom ?</h4>
-        <p>« Qualia » désigne la qualité vécue et subjective de nos expériences : ce que nous ressentons, percevons, goûtons, voyons. La Qualia place l'humain au cœur de la technologie pour simplifier, soutenir et enrichir chaque moment de vie.</p>
+    <p class="manifeste-tagline">Une palette réchauffée par l'humanité.</p>
+    <p class="manifeste-sub">Loin des bleus froids et des gris de la tech traditionnelle,<br>nos couleurs reflètent la chaleur, l'aube et la vitalité.</p>
+
+    <!-- Ruban ondulé SVG fidèle à la slide 34 -->
+    <div class="palette-ribbon-wrap">
+      <svg class="palette-ribbon" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+        <!-- Ruban 1 : Crème (#F7F2E7) -->
+        <path d="M-20 80 C30 80 50 40 100 40 C150 40 170 120 220 120 C270 120 290 40 340 40 C390 40 390 40 390 80" fill="none" stroke="#D8CDB8" stroke-width="52" stroke-linecap="round"/>
+        <!-- Ruban 2 : Sable (#F2E5D6) -->
+        <path d="M170 80 C220 80 240 40 290 40 C340 40 360 120 410 120 C460 120 480 40 530 40 C560 40 560 80 560 80" fill="none" stroke="#C8B89A" stroke-width="52" stroke-linecap="round"/>
+        <!-- Ruban 3 : Rose (#F4B7C1) -->
+        <path d="M390 80 C440 80 460 40 510 40 C560 40 580 120 630 120 C680 120 700 40 750 40 C775 40 780 80 780 80" fill="none" stroke="#F4B7C1" stroke-width="52" stroke-linecap="round"/>
+        <!-- Ruban 4 : Corail (#FF8C6D) -->
+        <path d="M610 80 C660 80 680 40 730 40 C780 40 800 120 850 120 C900 120 920 40 970 40 C995 40 1000 80 1000 80" fill="none" stroke="#FF8C6D" stroke-width="52" stroke-linecap="round"/>
+        <!-- Ruban 5 : Or (#FFC66D) -->
+        <path d="M830 80 C880 80 900 40 950 40 C1000 40 1020 120 1070 120 C1100 120 1120 80 1120 80" fill="none" stroke="#FFC66D" stroke-width="52" stroke-linecap="round"/>
+        <!-- Lignes verticales séparatrices -->
+        <line x1="220" y1="135" x2="220" y2="175" stroke="#aaa" stroke-width="1" opacity=".5"/>
+        <line x1="440" y1="135" x2="440" y2="175" stroke="#aaa" stroke-width="1" opacity=".5"/>
+        <line x1="660" y1="135" x2="660" y2="175" stroke="#aaa" stroke-width="1" opacity=".5"/>
+        <line x1="880" y1="135" x2="880" y2="175" stroke="#aaa" stroke-width="1" opacity=".5"/>
+      </svg>
+    </div>
+
+    <!-- Étiquettes couleurs -->
+    <div class="palette-labels">
+      <div class="palette-swatch">
+        <div class="swatch-color" style="background:#F7F2E7;border:1px solid #d8cdb8;"></div>
+        <div class="swatch-hex">#F7F2E7</div>
+        <div class="swatch-name">Crème de base</div>
+        <div class="swatch-sub">La Toile</div>
       </div>
-      <div class="manifeste-divider"></div>
-      <div class="manifeste-block">
-        <h4>Notre vision</h4>
-        <p>Devenir plus humain avec et par la technologie. Nous créons des solutions qui libèrent du temps, apportent de la clarté et rendent chaque moment plus significatif.</p>
+      <div class="palette-swatch">
+        <div class="swatch-color" style="background:#F2E5D6;"></div>
+        <div class="swatch-hex">#F2E5D6</div>
+        <div class="swatch-name">Sable chaud</div>
+        <div class="swatch-sub">Le Sol</div>
+      </div>
+      <div class="palette-swatch">
+        <div class="swatch-color" style="background:#F4B7C1;"></div>
+        <div class="swatch-hex">#F4B7C1</div>
+        <div class="swatch-name">Rose tendre</div>
+        <div class="swatch-sub">L'Aube</div>
+      </div>
+      <div class="palette-swatch">
+        <div class="swatch-color" style="background:#FF8C6D;"></div>
+        <div class="swatch-hex">#FF8C6D</div>
+        <div class="swatch-name">Corail vibrant</div>
+        <div class="swatch-sub">L'Énergie</div>
+      </div>
+      <div class="palette-swatch">
+        <div class="swatch-color" style="background:#FFC66D;"></div>
+        <div class="swatch-hex">#FFC66D</div>
+        <div class="swatch-name">Lumière dorée</div>
+        <div class="swatch-sub">L'Illumination</div>
       </div>
     </div>
+
     <p class="manifeste-footer">TECHNOLOGIE<span>✦</span>CLARTÉ<span>✦</span>TEMPS<span>✦</span>SENS<span>✦</span>EXPÉRIENCE</p>
   </div>
   <span class="manifeste-bottom-label">IDENTITÉ &amp; SENS · LA QUALIA</span>
