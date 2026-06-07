@@ -1,401 +1,855 @@
-<!doctype html>
-<html lang="fr-CA">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>La Qualia | Intelligence artificielle Saguenay, services IA Québec et automatisation</title>
-  <meta name="description" content="La Qualia accompagne les PME, gestionnaires et organisations du Saguenay et du Québec avec des services IA, de l'automatisation, des assistants IA personnalisés, la formation IA, le ROI, les KPI et la gouvernance IA.">
-  <meta name="robots" content="index, follow">
-  <meta name="author" content="La Qualia">
-  <link rel="canonical" href="https://laqualia.com/">
-  <meta name="theme-color" content="#201712">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="La Qualia — Services IA, automatisation et transformation numérique à Saguenay, Québec.">
+<title>La Qualia | Intelligence artificielle · Saguenay, Québec</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F7F2E7; --sand:#F2E5D6; --coral:#FF8C6D;
+  --rose:#F4B7C1; --gold:#FFC66D; --brown:#3D2B1F;
+  --brown-lt:#6B4E3D; --white:#FDFAF5;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Jost',sans-serif;background:var(--white);color:var(--brown);overflow-x:hidden;}
 
-  <meta property="og:type" content="website">
-  <meta property="og:locale" content="fr_CA">
-  <meta property="og:site_name" content="La Qualia">
-  <meta property="og:title" content="La Qualia | IA utile, humaine et mesurable">
-  <meta property="og:description" content="Services IA au Saguenay et au Québec : diagnostic, automatisation, assistants IA, formation, ROI, KPI et adoption responsable.">
-  <meta property="og:url" content="https://laqualia.com/">
-  <meta property="og:image" content="https://laqualia.com/assets/og-cover.svg">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="La Qualia | Intelligence artificielle Saguenay">
-  <meta name="twitter:description" content="Transformez les irritants quotidiens en solutions IA simples, utiles et humaines.">
-  <meta name="twitter:image" content="https://laqualia.com/assets/og-cover.svg">
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:15px 5%;background:rgba(253,250,245,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,140,109,.13);transition:box-shadow .3s;}
+nav.scrolled{box-shadow:0 2px 28px rgba(61,43,31,.08);}
+.nav-logo{display:flex;align-items:center;gap:13px;text-decoration:none;}
+.nav-logo .logo-wrap{width:44px;height:44px;background:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 10px rgba(0,0,0,.22);overflow:hidden;}
+.nav-logo .logo-wrap img{width:34px;height:auto;display:block;}
+.nav-brand{font-family:'Cormorant Garamond',serif;font-size:1.38rem;font-weight:500;color:var(--brown);letter-spacing:.04em;}
+.nav-links{display:flex;gap:30px;list-style:none;}
+.nav-links a{font-size:.76rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--brown-lt);text-decoration:none;transition:color .2s;}
+.nav-links a:hover{color:var(--coral);}
+.nav-cta{background:var(--brown);color:var(--cream)!important;padding:8px 20px;border-radius:2px;transition:background .2s!important;}
+.nav-cta:hover{background:var(--coral)!important;}
 
-  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="preload" href="assets/logo-la-qualia.svg" as="image" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
+/* ─── BOUTONS ─── */
+.btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--brown);color:var(--cream);padding:13px 28px;border-radius:2px;font-size:.8rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:background .25s,transform .2s;}
+.btn-primary:hover{background:var(--coral);transform:translateY(-2px);}
+.btn-outline{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--brown);color:var(--brown);padding:12px 26px;border-radius:2px;font-size:.8rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:all .25s;}
+.btn-outline:hover{border-color:var(--coral);color:var(--coral);}
 
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "ProfessionalService",
-    "name": "La Qualia",
-    "description": "Services d'intelligence artificielle, d'automatisation, de formation IA, de consultation IA, de stratégie IA, de ROI, de KPI et d'accompagnement numérique pour les organisations au Saguenay et au Québec.",
-    "url": "https://laqualia.com/",
-    "email": "Amelie.brunelle@laqualia.com",
-    "founder": {
-      "@type": "Person",
-      "name": "Amélie Brunelle"
-    },
-    "areaServed": [
-      { "@type": "AdministrativeArea", "name": "Saguenay" },
-      { "@type": "AdministrativeArea", "name": "Québec" }
-    ],
-    "address": {
-      "@type": "PostalAddress",
-      "addressLocality": "Saguenay",
-      "addressRegion": "QC",
-      "addressCountry": "CA"
-    },
-    "serviceType": [
-      "Intelligence artificielle Saguenay",
-      "Services IA Québec",
-      "Accompagnement IA",
-      "Automatisation d'entreprise",
-      "Formation IA",
-      "Assistant IA personnalisé",
-      "Agent IA",
-      "Gouvernance IA"
-    ]
-  }
-  </script>
+/* ─── HERO (slide 1 : coucher de soleil, logo centré, grand) ─── */
+#hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  text-align:center;padding:130px 5% 80px;
+  background:linear-gradient(175deg,#f0e8da 0%,#f2d9c8 35%,#f5c8ae 65%,#f8dab5 100%);
+  position:relative;overflow:hidden;
+}
+#hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 80%,rgba(255,198,109,.28) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{position:relative;z-index:1;max-width:800px;margin:0 auto;}
+.hero-logo-wrap{
+  width:100px;height:100px;background:#000;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 32px;box-shadow:0 4px 24px rgba(0,0,0,.25);overflow:hidden;
+}
+.hero-logo-wrap img{width:78px;height:auto;display:block;}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(3.2rem,7vw,5.8rem);font-weight:300;color:var(--brown);line-height:1.08;margin-bottom:18px;letter-spacing:-.01em;}
+.hero-sub{font-family:'Cormorant Garamond',serif;font-size:clamp(1.1rem,2vw,1.45rem);font-weight:300;font-style:italic;color:var(--brown-lt);margin-bottom:48px;line-height:1.55;}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+
+/* TAGLINE */
+.tagline-strip{background:var(--brown);color:var(--cream);padding:15px 5%;text-align:center;font-size:.7rem;font-weight:500;letter-spacing:.26em;text-transform:uppercase;}
+.tagline-strip span{color:var(--gold);margin:0 13px;}
+
+/* ─── SECTIONS communes ─── */
+section{padding:96px 5%;}
+.section-inner{max-width:1160px;margin:0 auto;}
+.section-label{font-size:.68rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--coral);margin-bottom:13px;display:block;}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.85rem,3vw,2.7rem);font-weight:400;line-height:1.2;color:var(--brown);margin-bottom:20px;}
+.section-lead{font-size:.97rem;line-height:1.82;color:var(--brown-lt);max-width:580px;margin-bottom:52px;}
+
+/* ─── SLIDE 36 : La Qualia manifeste ─── */
+#qualia-manifeste{
+  position:relative;min-height:88vh;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  overflow:hidden;padding:100px 5%;
+  background:linear-gradient(150deg,#f5e8da 0%,#f4b7c1 18%,#ff8c6d 48%,#ffaa55 72%,#ffc66d 100%);
+}
+/* Grand Q filigrane exactement comme slide 36 */
+#qualia-manifeste::before{
+  content:'Q';font-family:'Cormorant Garamond',serif;
+  font-size:clamp(420px,60vw,720px);font-weight:300;
+  color:rgba(255,255,255,.16);line-height:1;
+  position:absolute;top:50%;left:50%;
+  transform:translate(-42%,-50%);
+  pointer-events:none;user-select:none;letter-spacing:-.05em;
+}
+.manifeste-inner{position:relative;z-index:1;max-width:860px;margin:0 auto;}
+.manifeste-name{
+  font-family:'Jost',sans-serif;
+  font-size:clamp(4rem,11vw,9.5rem);font-weight:400;
+  color:var(--brown);line-height:.95;margin-bottom:28px;letter-spacing:-.02em;
+}
+.manifeste-tagline{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(1.25rem,2.5vw,1.9rem);font-weight:300;font-style:italic;
+  color:var(--brown);opacity:.82;line-height:1.5;margin-bottom:56px;
+}
+.manifeste-cards{
+  display:grid;grid-template-columns:1fr 1px 1fr;gap:0;
+  background:rgba(253,250,245,.2);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.35);border-radius:16px;padding:40px 52px;
+  text-align:left;
+}
+.manifeste-divider{background:rgba(61,43,31,.18);}
+.manifeste-block{padding:0 32px;}
+.manifeste-block:first-child{padding-left:0;}
+.manifeste-block:last-child{padding-right:0;}
+.manifeste-block h4{font-size:.68rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(61,43,31,.5);margin-bottom:14px;}
+.manifeste-block p{font-family:'Cormorant Garamond',serif;font-size:1.08rem;font-style:italic;color:var(--brown);line-height:1.72;}
+.manifeste-footer{margin-top:48px;font-size:.68rem;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:rgba(61,43,31,.45);}
+.manifeste-footer span{color:rgba(61,43,31,.25);margin:0 11px;}
+/* Note bas gauche comme slide 36 */
+.manifeste-bottom-label{
+  position:absolute;bottom:28px;left:5%;
+  font-size:.62rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(61,43,31,.4);
+}
+
+/* ─── ABOUT (valeurs PPT slide 4) ─── */
+#about{background:var(--white);}
+.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.quote-block{border-left:3px solid var(--coral);padding:22px 0 22px 26px;margin:32px 0;}
+.quote-block p{font-family:'Cormorant Garamond',serif;font-size:1.25rem;font-style:italic;color:var(--brown);line-height:1.62;}
+.stat-row{display:flex;gap:32px;margin-top:32px;}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:300;color:var(--coral);line-height:1;}
+.stat-label{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--brown-lt);margin-top:5px;}
+/* Valeurs : 5 cartes horizontales comme slide 4 */
+.values-row{display:flex;flex-direction:column;gap:16px;}
+.value-item{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:8px;background:var(--cream);border:1px solid rgba(255,140,109,.12);}
+.value-dot{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.78rem;color:#fff;font-weight:600;}
+.value-text h4{font-size:.87rem;font-weight:600;color:var(--brown);margin-bottom:2px;}
+.value-text p{font-size:.82rem;color:var(--brown-lt);line-height:1.6;}
+
+/* ─── PROBLÈME (slide 6 — fond crème chaud, 3 colonnes icône) ─── */
+#probleme{background:linear-gradient(135deg,var(--cream) 0%,#f5dcc8 60%,#f8e8d0 100%);}
+.pression-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin:48px 0;}
+.pression-col{padding:40px 32px;text-align:center;border-right:1px solid rgba(255,140,109,.18);}
+.pression-col:last-child{border-right:none;}
+/* SVG illustrations fidèles slide 6 */
+.pression-svg{width:120px;height:120px;margin:0 auto 28px;display:flex;align-items:center;justify-content:center;}
+.pression-col h4{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--brown);line-height:1.3;}
+
+/* ─── APPROCHE (slide 10 — blanc, tableaux X vs ✓) ─── */
+#approche{background:#fff;}
+.approche-top{margin-bottom:48px;}
+.approche-vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:32px;}
+.vs-block{border-radius:10px;padding:28px 26px;}
+.vs-block.evite{background:#f3f4f5;}
+.vs-block.propose{background:linear-gradient(135deg,rgba(100,130,120,.15),rgba(80,115,105,.2));}
+.vs-block h4{font-size:.8rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:18px;}
+.vs-block.evite h4{color:#888;}
+.vs-block.propose h4{color:#4a7a6a;}
+.vs-row{display:flex;align-items:center;gap:14px;padding:10px 14px;border-radius:6px;margin-bottom:8px;}
+.vs-row.x{background:rgba(61,43,31,.04);}
+.vs-row.check{background:rgba(80,150,130,.12);}
+.vs-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;font-weight:700;}
+.vs-row.x .vs-icon{background:#e0e0e0;color:#888;}
+.vs-row.check .vs-icon{background:rgba(80,150,130,.25);color:#3a7a65;}
+.vs-row p{font-size:.87rem;color:var(--brown-lt);line-height:1.4;}
+.vs-row p strong{color:var(--brown);}
+.approche-banner{
+  background:linear-gradient(90deg,rgba(80,130,115,.18),rgba(70,120,105,.25));
+  border-radius:10px;padding:22px 32px;margin-top:24px;text-align:center;
+}
+.approche-banner p{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:500;color:var(--brown);font-style:italic;line-height:1.55;}
+
+/* ─── IRRITANT (slide 9 — pelote + flèche) ─── */
+#irritant{background:linear-gradient(135deg,var(--cream) 0%,#f5d5be 60%,#f8e0c5 100%);}
+.irritant-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+
+/* ─── SERVICES ─── */
+#services{background:var(--cream);}
+.services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.service-card{background:var(--white);border:1px solid rgba(255,140,109,.14);border-radius:10px;padding:32px 28px;transition:transform .3s,box-shadow .3s,border-color .3s;}
+.service-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(61,43,31,.1);border-color:rgba(255,140,109,.35);}
+.service-num{font-family:'Cormorant Garamond',serif;font-size:2.3rem;font-weight:300;color:var(--rose);line-height:1;margin-bottom:12px;}
+.service-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:500;color:var(--brown);margin-bottom:11px;line-height:1.3;}
+.service-desc{font-size:.85rem;color:var(--brown-lt);line-height:1.7;margin-bottom:13px;}
+.service-bullets{list-style:none;margin-bottom:14px;}
+.service-bullets li{font-size:.8rem;color:var(--brown-lt);padding:2px 0;display:flex;gap:7px;align-items:baseline;line-height:1.55;}
+.service-bullets li::before{content:'·';color:var(--coral);font-size:1rem;flex-shrink:0;}
+.service-result{font-size:.77rem;font-weight:500;color:var(--coral);letter-spacing:.05em;padding-top:13px;border-top:1px solid rgba(255,140,109,.2);}
+.service-result::before{content:'✦  ';}
+.service-card.wide{grid-column:span 2;}
+.service-card.wide .service-bullets{columns:2;column-gap:24px;}
+
+/* ─── CAS D'USAGE (slide 23 — 2 cartes arrondies gris/sable) ─── */
+#cas-usage{background:var(--white);}
+/* Tableau avant/après fidèle slide 23 */
+.impact-table{
+  display:grid;grid-template-columns:1fr 60px 1fr;
+  border-radius:16px;overflow:hidden;
+  margin-bottom:32px;
+  box-shadow:0 4px 24px rgba(61,43,31,.07);
+}
+.impact-col{padding:36px 32px;}
+.impact-col.avant{background:#ebebeb;border-radius:16px 0 0 16px;}
+.impact-col.apres{background:#f5ede0;border-radius:0 16px 16px 0;}
+.impact-mid{background:var(--sand);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;}
+.impact-col h3{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:400;margin-bottom:24px;}
+.impact-col.avant h3{color:var(--brown);}
+.impact-col.apres h3{color:var(--coral);}
+.impact-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(61,43,31,.08);}
+.impact-row:last-child{border-bottom:none;}
+.impact-row p{font-size:.92rem;color:var(--brown-lt);line-height:1.4;}
+.impact-col.apres .impact-row p{color:var(--brown);font-weight:500;}
+/* Cas détaillés */
+.cas-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.cas-card{border-radius:10px;overflow:hidden;border:1px solid rgba(255,140,109,.14);}
+.cas-header{background:var(--brown);padding:20px 26px;}
+.cas-header h3{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--cream);font-weight:400;}
+.cas-header p{font-size:.75rem;color:rgba(247,242,231,.5);margin-top:3px;}
+.cas-body{display:grid;grid-template-columns:1fr 1fr;}
+.cas-col{padding:20px 18px;}
+.cas-col.avant{background:rgba(61,43,31,.04);}
+.cas-col.apres{background:rgba(255,140,109,.07);}
+.cas-col-label{font-size:.65rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px;}
+.cas-col.avant .cas-col-label{color:var(--brown-lt);}
+.cas-col.apres .cas-col-label{color:var(--coral);}
+.cas-item{font-size:.8rem;color:var(--brown-lt);line-height:1.5;padding:4px 0;border-bottom:1px solid rgba(61,43,31,.06);}
+.cas-item:last-child{border-bottom:none;}
+.cas-result{padding:13px 18px;background:rgba(255,198,109,.1);font-size:.8rem;color:var(--brown);line-height:1.6;border-top:1px solid rgba(255,140,109,.12);}
+.cas-result strong{color:var(--coral);}
+
+/* ─── TRAJECTOIRES ─── */
+#trajectoires{background:var(--sand);}
+.traj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.traj-card{border-radius:10px;padding:38px 32px;transition:transform .3s;}
+.traj-card:hover{transform:translateY(-4px);}
+.traj-card.t1{background:var(--white);border:1.5px solid rgba(255,140,109,.2);}
+.traj-card.t2{background:linear-gradient(135deg,var(--brown),#5a3929);color:var(--cream);}
+.traj-card.t3{background:var(--cream);border:1.5px solid rgba(255,198,109,.4);}
+.traj-badge{display:inline-block;font-size:.63rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:20px;}
+.t1 .traj-badge{background:rgba(255,140,109,.15);color:var(--coral);}
+.t2 .traj-badge{background:rgba(255,198,109,.2);color:var(--gold);}
+.t3 .traj-badge{background:rgba(255,198,109,.2);color:var(--brown-lt);}
+.traj-name{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:400;margin-bottom:5px;}
+.t2 .traj-name{color:var(--cream);}
+.traj-sub{font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px;opacity:.6;}
+.traj-desc{font-size:.86rem;line-height:1.72;opacity:.85;}
+.t2 .traj-desc{color:var(--sand);opacity:.9;}
+
+/* ─── MÉTHODE (slide 15 : chemin sinueux, cercles alternés or/corail) ─── */
+#methode{background:var(--cream);}
+.methode-path{position:relative;padding:32px 0 16px;}
+.methode-path-line{
+  position:absolute;top:62px;left:5%;right:5%;height:3px;
+  background:linear-gradient(90deg,var(--gold) 0%,var(--gold) 48%,var(--coral) 52%,var(--coral) 100%);
+  border-radius:2px;opacity:.35;
+}
+.methode-steps{display:grid;grid-template-columns:repeat(6,1fr);gap:0;position:relative;z-index:1;}
+.step{text-align:center;padding:0 8px;}
+.step-circle{
+  width:56px;height:56px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-family:'Cormorant Garamond',serif;
+  font-size:1.2rem;font-weight:400;
+  transition:transform .25s;
+}
+.step:hover .step-circle{transform:scale(1.12);}
+/* Or pour étapes 1-3, corail pour 4-6, comme slide 15 */
+.step:nth-child(1) .step-circle,.step:nth-child(2) .step-circle,.step:nth-child(3) .step-circle{
+  background:#f5c96a;color:var(--brown);box-shadow:0 4px 14px rgba(245,201,106,.4);
+}
+.step:nth-child(4) .step-circle,.step:nth-child(5) .step-circle,.step:nth-child(6) .step-circle{
+  background:var(--coral);color:#fff;box-shadow:0 4px 14px rgba(255,140,109,.4);
+}
+.step-icon{font-size:.95rem;margin-bottom:10px;}
+.step h4{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:500;color:var(--brown);margin-bottom:7px;}
+.step p{font-size:.77rem;color:var(--brown-lt);line-height:1.6;}
+
+/* ─── POURQUOI QUALIA (slide 28 : 4 puzzles, dégradé rose/corail) ─── */
+#ecosysteme{
+  background:linear-gradient(135deg,#f7e8d6 0%,#f4b7c1 40%,#ff9a75 80%,#ffb870 100%);
+}
+.eco-header{text-align:center;margin-bottom:48px;}
+.eco-header .section-title{color:var(--brown);}
+.eco-header .section-lead{color:var(--brown-lt);margin:0 auto;}
+/* 4 cartes puzzle horizontales comme slide 28 */
+.piliers-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:28px;}
+.pilier{
+  background:rgba(253,250,245,.55);
+  backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.4);
+  border-radius:10px;padding:28px 22px;text-align:center;
+  transition:transform .25s;
+}
+.pilier:hover{transform:translateY(-4px);}
+.pilier h4{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:500;color:var(--brown);margin-bottom:12px;}
+.pilier p{font-size:.82rem;color:var(--brown-lt);line-height:1.65;}
+/* Bannière bas comme slide 28 */
+.eco-banner{
+  background:rgba(253,250,245,.35);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.4);
+  border-radius:10px;padding:22px 32px;text-align:center;
+}
+.eco-banner p{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-style:italic;color:var(--brown);line-height:1.6;}
+
+/* ─── PROMESSE ─── */
+#positionnement{background:linear-gradient(135deg,var(--brown),#4a3020);color:var(--cream);text-align:center;padding:96px 5%;}
+#positionnement .section-label{color:var(--gold);}
+#positionnement .section-title{color:var(--cream);max-width:740px;margin:0 auto 20px;}
+#positionnement .section-lead{color:rgba(247,242,231,.72);max-width:640px;margin:0 auto 44px;}
+.promise-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:860px;margin:0 auto;}
+.promise-card{background:rgba(253,250,245,.07);border:1px solid rgba(255,198,109,.2);border-radius:8px;padding:28px 24px;text-align:left;}
+.promise-icon{font-size:1.3rem;margin-bottom:11px;}
+.promise-card h4{font-family:'Cormorant Garamond',serif;font-size:1.08rem;color:var(--gold);margin-bottom:8px;}
+.promise-card p{font-size:.83rem;color:rgba(247,242,231,.72);line-height:1.65;}
+
+/* ─── CONTACT ─── */
+#contact{background:var(--cream);text-align:center;padding:110px 5%;}
+.contact-inner{max-width:640px;margin:0 auto;}
+.contact-inner .section-title{margin-bottom:16px;}
+.contact-inner > p{font-size:.97rem;color:var(--brown-lt);line-height:1.78;margin-bottom:42px;}
+.contact-email{display:inline-flex;align-items:center;gap:8px;font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--coral);text-decoration:none;border-bottom:1px solid rgba(255,140,109,.3);padding-bottom:3px;transition:border-color .2s;margin-bottom:34px;}
+.contact-email:hover{border-color:var(--coral);}
+
+/* ─── FOOTER ─── */
+footer{background:var(--brown);color:var(--sand);padding:42px 5%;display:flex;align-items:center;justify-content:space-between;}
+.footer-brand{display:flex;align-items:center;gap:13px;}
+.footer-brand .logo-wrap{width:40px;height:40px;background:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.footer-brand .logo-wrap img{width:30px;height:auto;display:block;}
+.footer-name{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--cream);font-weight:400;}
+.footer-tagline{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;opacity:.48;margin-top:3px;}
+.footer-info{text-align:right;font-size:.78rem;line-height:1.8;opacity:.58;}
+.footer-info a{color:var(--sand);text-decoration:none;}
+.footer-info a:hover{color:var(--gold);}
+
+/* ─── ANIMATIONS ─── */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
+.fade-in.visible{opacity:1;transform:none;}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:960px){
+  .about-grid,.irritant-grid{grid-template-columns:1fr;}
+  .services-grid{grid-template-columns:1fr 1fr;}
+  .service-card.wide{grid-column:span 2;}
+  .pression-grid{grid-template-columns:1fr;}
+  .traj-grid,.piliers-row{grid-template-columns:1fr 1fr;}
+  .methode-steps{grid-template-columns:repeat(3,1fr);gap:28px;}
+  .methode-path-line{display:none;}
+  .promise-grid{grid-template-columns:1fr;}
+  .manifeste-cards{grid-template-columns:1fr;}
+  .manifeste-divider{display:none;}
+  .nav-links{display:none;}
+  footer{flex-direction:column;gap:20px;text-align:center;}
+  .footer-info{text-align:center;}
+  .approche-vs-grid{grid-template-columns:1fr;}
+  .impact-table{grid-template-columns:1fr;}
+  .impact-col.avant{border-radius:16px 16px 0 0;}
+  .impact-col.apres{border-radius:0 0 16px 16px;}
+  .impact-mid{display:none;}
+}
+@media(max-width:620px){
+  .services-grid,.cas-grid{grid-template-columns:1fr;}
+  .service-card.wide{grid-column:span 1;}
+  .service-card.wide .service-bullets{columns:1;}
+  .cas-body{grid-template-columns:1fr;}
+  .methode-steps{grid-template-columns:repeat(2,1fr);}
+  .piliers-row{grid-template-columns:1fr;}
+  .pression-grid{grid-template-columns:1fr;}
+  .pression-col{border-right:none;border-bottom:1px solid rgba(255,140,109,.18);}
+  .pression-col:last-child{border-bottom:none;}
+  section{padding:64px 6%;}
+}
+</style>
 </head>
 <body>
-  <a class="skip-link" href="#contenu">Aller au contenu</a>
 
-  <header class="site-header" data-header>
-    <div class="container nav-shell">
-      <a class="brand" href="#accueil" aria-label="Retour à l'accueil La Qualia">
-        <img src="assets/logo-la-qualia.svg" alt="La Qualia" width="220" height="60">
-      </a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="navigation" data-nav-toggle>
-        <span></span><span></span><span></span>
-        <span class="sr-only">Ouvrir le menu</span>
-      </button>
-      <nav class="main-nav" id="navigation" aria-label="Navigation principale" data-nav>
-        <a href="#services">Services</a>
-        <a href="#trajectoires">Trajectoires</a>
-        <a href="#methode">Méthode</a>
-        <a href="#roi">ROI & KPI</a>
-        <a href="#securite">Sécurité</a>
-        <a href="#contact" class="nav-cta">Planifier une rencontre</a>
-      </nav>
+<!-- NAV -->
+<nav id="mainNav">
+  <a href="#hero" class="nav-logo">
+    <div class="logo-wrap"><img src="data:image/png;base64,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" alt="La Qualia"></div>
+    <span class="nav-brand">La Qualia</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#about">À propos</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#trajectoires">Trajectoires</a></li>
+    <li><a href="#methode">Méthode</a></li>
+    <li><a href="#contact" class="nav-cta">Nous joindre</a></li>
+  </ul>
+</nav>
+
+<!-- ═══ HERO (slide 1 : coucher de soleil, grand logo, titre serif) ═══ -->
+<section id="hero">
+  <div class="hero-inner fade-in">
+    <div class="hero-logo-wrap">
+      <img src="data:image/png;base64,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" alt="La Qualia">
     </div>
-  </header>
+    <h1 class="hero-title">La Qualia</h1>
+    <p class="hero-sub">La technologie au service de l'expérience humaine.</p>
+    <div class="hero-btns">
+      <a href="#services" class="btn-primary">Découvrir nos services</a>
+      <a href="#contact" class="btn-outline">Prendre contact</a>
+    </div>
+  </div>
+</section>
 
-  <main id="contenu">
-    <section class="hero" id="accueil" aria-labelledby="hero-title">
-      <div class="hero-orb hero-orb-one" aria-hidden="true"></div>
-      <div class="hero-orb hero-orb-two" aria-hidden="true"></div>
-      <div class="container hero-grid">
-        <div class="hero-copy reveal">
-          <p class="eyebrow">La Qualia Saguenay · Services IA Québec</p>
-          <h1 id="hero-title">Transformez vos irritants quotidiens en leviers IA concrets.</h1>
-          <p class="hero-lead">Une intelligence artificielle simple, utile et humaine pour alléger le travail, structurer l'information, automatiser les suivis et soutenir vos équipes dans le vrai monde.</p>
-          <div class="hero-actions" aria-label="Actions principales">
-            <a class="btn btn-primary" href="#contact">Planifier une rencontre</a>
-            <a class="btn btn-ghost" href="#services">Voir les services</a>
-          </div>
-          <div class="proof-strip" aria-label="Repères de services">
-            <span>Diagnostic IA</span>
-            <span>Automatisation</span>
-            <span>Assistants IA</span>
-            <span>Formation</span>
-            <span>ROI & KPI</span>
-          </div>
-        </div>
-        <div class="hero-card reveal delay-1">
-          <img src="assets/hero-visual.svg" alt="Illustration de flux IA, d'assistants et d'automatisation" width="900" height="720">
-        </div>
+<div class="tagline-strip">
+  TECHNOLOGIE<span>✦</span>CLARTÉ<span>✦</span>TEMPS<span>✦</span>SENS<span>✦</span>EXPÉRIENCE
+</div>
+
+<!-- ═══ SLIDE 36 : LA QUALIA — grand dégradé + Q filigrane ═══ -->
+<section id="qualia-manifeste">
+  <div class="manifeste-inner fade-in">
+    <h2 class="manifeste-name">La Qualia.</h2>
+    <p class="manifeste-tagline">Là où la technologie rencontre la beauté de l'expérience humaine.</p>
+    <div class="manifeste-cards">
+      <div class="manifeste-block">
+        <h4>Pourquoi ce nom ?</h4>
+        <p>« Qualia » désigne la qualité vécue et subjective de nos expériences : ce que nous ressentons, percevons, goûtons, voyons. La Qualia place l'humain au cœur de la technologie pour simplifier, soutenir et enrichir chaque moment de vie.</p>
       </div>
-    </section>
-
-    <section class="section intro" id="mission" aria-labelledby="mission-title">
-      <div class="container split">
-        <div class="section-kicker reveal">
-          <p class="eyebrow">Mission</p>
-          <h2 id="mission-title">Une IA utile, intégrée au quotidien.</h2>
-        </div>
-        <div class="rich-copy reveal delay-1">
-          <p>La Qualia accompagne les PME, directions, gestionnaires et organisations qui veulent passer de l'intérêt pour l'IA à des gains concrets dans le travail réel.</p>
-          <p>L'approche part du terrain : comprendre les irritants, préparer l'information, créer le bon levier IA, accompagner l'adoption et mesurer la valeur. L'IA ne doit pas alourdir le travail. Elle doit libérer du temps, rendre l'information plus claire et soutenir les décisions.</p>
-          <div class="mini-grid" aria-label="Positionnement La Qualia">
-            <article><strong>Située au Saguenay</strong><span>Un ancrage régional, une portée Québec.</span></article>
-            <article><strong>Humaine et structurée</strong><span>Des solutions compréhensibles, pas de boîte noire.</span></article>
-            <article><strong>Orientée résultats</strong><span>Des gains visibles : temps, clarté, adoption, qualité.</span></article>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section irritants" aria-labelledby="irritants-title">
-      <div class="container">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Le point de départ</p>
-          <h2 id="irritants-title">L'IA devient crédible lorsqu'elle règle un vrai irritant.</h2>
-          <p>La Qualia ne commence pas par l'outil. Elle commence par ce qui ralentit vos équipes.</p>
-        </div>
-        <div class="irritant-board reveal delay-1" role="list" aria-label="Irritants courants">
-          <span role="listitem">Information difficile à trouver</span>
-          <span role="listitem">Documents dispersés</span>
-          <span role="listitem">Demandes répétitives</span>
-          <span role="listitem">Tâches manuelles</span>
-          <span role="listitem">Suivis par copier-coller</span>
-          <span role="listitem">Formation difficile à répéter</span>
-          <span role="listitem">Dépendance à des personnes clés</span>
-          <span role="listitem">Adoption floue de l'IA</span>
-          <span role="listitem">Perte de temps opérationnelle</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section services" id="services" aria-labelledby="services-title">
-      <div class="container">
-        <div class="section-heading narrow reveal">
-          <p class="eyebrow">Services IA</p>
-          <h2 id="services-title">Cinq services pour passer de l'idée à l'usage.</h2>
-          <p>Une offre modulaire qui s'adapte à votre maturité numérique, à vos outils et à la capacité réelle de vos équipes.</p>
-        </div>
-        <div class="cards service-grid">
-          <article class="card reveal">
-            <div class="icon" aria-hidden="true">◎</div>
-            <h3>Diagnostic IA et numérique</h3>
-            <p>Explorer votre réalité, comprendre les irritants, évaluer la maturité numérique et établir les priorités.</p>
-            <strong>Résultat : une vision claire des possibilités, risques et prochaines étapes.</strong>
-          </article>
-          <article class="card reveal delay-1">
-            <div class="icon" aria-hidden="true">◌</div>
-            <h3>Préparation de l'entreprise à l'IA</h3>
-            <p>Structurer les documents, clarifier les contenus utiles et préparer le terreau numérique nécessaire à une IA fiable.</p>
-            <strong>Résultat : une organisation mieux outillée pour intégrer l'IA.</strong>
-          </article>
-          <article class="card reveal delay-2">
-            <div class="icon" aria-hidden="true">✦</div>
-            <h3>Solutions IA personnalisées</h3>
-            <p>Créer des assistants IA, agents IA ou compagnons IA adaptés à vos règles, contenus, processus et besoins.</p>
-            <strong>Résultat : un outil capable de chercher, guider, rédiger et soutenir.</strong>
-          </article>
-          <article class="card reveal">
-            <div class="icon" aria-hidden="true">↬</div>
-            <h3>Automatisation intelligente</h3>
-            <p>Automatiser les suivis, transferts d'information, tâches répétitives et workflows qui ralentissent les équipes.</p>
-            <strong>Résultat : moins de copier-coller, plus de fluidité opérationnelle.</strong>
-          </article>
-          <article class="card featured-card reveal delay-1">
-            <div class="icon" aria-hidden="true">◈</div>
-            <h3>Notre Académie</h3>
-            <p>Former, sensibiliser et accompagner les gestionnaires et équipes dans un usage concret, prudent et responsable de l'IA.</p>
-            <strong>Résultat : des équipes plus confiantes, mieux formées et plus autonomes.</strong>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section trajectories" id="trajectoires" aria-labelledby="trajectoires-title">
-      <div class="container">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Trajectoires d'accompagnement</p>
-          <h2 id="trajectoires-title">Trois intensités selon votre maturité IA.</h2>
-          <p>La même architecture de services, mais avec un niveau d'analyse, de préparation et d'accompagnement adapté à votre réalité.</p>
-        </div>
-        <div class="trajectory-grid">
-          <article class="trajectory-card reveal">
-            <p class="tag">Trajectoire 1</p>
-            <h3>Agile et rapide</h3>
-            <p class="subtitle">Fast Track</p>
-            <p>Pour démarrer vite, tester un cas d'usage et obtenir un premier résultat concret sans lancer un grand chantier.</p>
-            <ul>
-              <li>Diagnostic léger et quick wins</li>
-              <li>Prototype ou premier assistant</li>
-              <li>Formation d'introduction</li>
-            </ul>
-            <a href="#contact">Tester le potentiel IA</a>
-          </article>
-          <article class="trajectory-card trajectory-card-hot reveal delay-1">
-            <p class="tag">Trajectoire 2</p>
-            <h3>Soutenue et pragmatique</h3>
-            <p class="subtitle">Intégration progressive</p>
-            <p>Pour intégrer l'IA dans les opérations avec des contenus mieux structurés, des outils ciblés et une adoption accompagnée.</p>
-            <ul>
-              <li>Diagnostic structuré</li>
-              <li>Assistants ou agents par équipe</li>
-              <li>Automatisations ciblées</li>
-            </ul>
-            <a href="#contact">Structurer l'intégration</a>
-          </article>
-          <article class="trajectory-card reveal delay-2">
-            <p class="tag">Trajectoire 3</p>
-            <h3>Profonde et mature</h3>
-            <p class="subtitle">Levier stratégique</p>
-            <p>Pour faire de l'IA un levier durable de transformation, de gouvernance, de sécurité et d'amélioration continue.</p>
-            <ul>
-              <li>Stratégie IA et gouvernance</li>
-              <li>Architecture de connaissances</li>
-              <li>Portefeuille d'occasions IA</li>
-            </ul>
-            <a href="#contact">Bâtir une capacité IA</a>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section benefits" aria-labelledby="benefits-title">
-      <div class="container">
-        <div class="section-heading narrow reveal">
-          <p class="eyebrow">Bénéfices concrets</p>
-          <h2 id="benefits-title">Moins de friction. Plus de clarté. Des gains observables.</h2>
-        </div>
-        <div class="comparison reveal delay-1" role="table" aria-label="Irritants, solutions et gains">
-          <div class="comparison-row comparison-head" role="row">
-            <span role="columnheader">Irritant</span>
-            <span role="columnheader">Après La Qualia</span>
-            <span role="columnheader">Gain recherché</span>
-          </div>
-          <div class="comparison-row" role="row"><span>Documents dispersés</span><strong>Base de connaissances claire</strong><span>Recherche plus rapide</span></div>
-          <div class="comparison-row" role="row"><span>Questions répétitives</span><strong>Assistant IA qui guide</strong><span>Moins d'interruptions</span></div>
-          <div class="comparison-row" role="row"><span>Formation verbale difficile à répéter</span><strong>Parcours réutilisable</strong><span>Intégration plus constante</span></div>
-          <div class="comparison-row" role="row"><span>Suivis manuels</span><strong>Workflow automatisé</strong><span>Moins d'étapes manuelles</span></div>
-          <div class="comparison-row" role="row"><span>Adoption floue de l'IA</span><strong>Règles et cas pratiques</strong><span>Usage plus responsable</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section roi" id="roi" aria-labelledby="roi-title">
-      <div class="container roi-grid">
-        <div class="section-kicker reveal">
-          <p class="eyebrow">ROI & KPI IA</p>
-          <h2 id="roi-title">Mesurer pour prioriser, ajuster et démontrer la valeur.</h2>
-          <p>Un projet IA doit être relié à des gains observables : temps économisé, réduction des erreurs, adoption, qualité des réponses, productivité ou meilleure expérience client.</p>
-        </div>
-        <div class="metrics-panel reveal delay-1">
-          <div class="metric"><span>Heures économisées</span><strong>Temps libéré</strong></div>
-          <div class="metric"><span>Temps de traitement</span><strong>Délais réduits</strong></div>
-          <div class="metric"><span>Processus automatisés</span><strong>Capacité accrue</strong></div>
-          <div class="metric"><span>Taux d'adoption</span><strong>Usage réel</strong></div>
-          <div class="metric"><span>Qualité des réponses IA</span><strong>Confiance</strong></div>
-          <div class="metric"><span>ROI estimé</span><strong>Décision go/no-go</strong></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section method" id="methode" aria-labelledby="method-title">
-      <div class="container">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Méthode</p>
-          <h2 id="method-title">Une démarche simple : partir du terrain, créer utile, accompagner l'usage.</h2>
-          <p>On part d'un irritant. On vérifie ce qui est possible. On structure l'information. On crée le bon levier IA. On accompagne l'équipe. On mesure les gains.</p>
-        </div>
-        <ol class="steps" aria-label="Méthode La Qualia en six étapes">
-          <li class="reveal"><span>01</span><strong>Repérer l'irritant</strong><p>Comprendre ce qui ralentit le quotidien et ce qui mérite vraiment d'être amélioré.</p></li>
-          <li class="reveal delay-1"><span>02</span><strong>Évaluer l'environnement</strong><p>Vérifier les outils, accès, fichiers, contraintes, risques et conditions de faisabilité.</p></li>
-          <li class="reveal delay-2"><span>03</span><strong>Structurer l'information</strong><p>Trier, clarifier et organiser les contenus qui alimenteront la solution.</p></li>
-          <li class="reveal"><span>04</span><strong>Choisir le bon levier IA</strong><p>Déterminer si le besoin appelle un assistant, une automatisation, une formation ou une combinaison.</p></li>
-          <li class="reveal delay-1"><span>05</span><strong>Tester avec les équipes</strong><p>Valider rapidement dans le travail réel, ajuster les réponses et améliorer le workflow.</p></li>
-          <li class="reveal delay-2"><span>06</span><strong>Propulser l'adoption</strong><p>Former, documenter, accompagner, mesurer les gains et installer les bons réflexes.</p></li>
-        </ol>
-        <div class="method-note reveal">
-          <span>Maturité numérique</span>
-          <span>Cartographie des processus</span>
-          <span>Analyse de faisabilité</span>
-          <span>Gestion du changement</span>
-          <span>Amélioration continue</span>
-          <span>Gouvernance IA</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="section security" id="securite" aria-labelledby="security-title">
-      <div class="container security-grid">
-        <div class="security-visual reveal" aria-hidden="true">
-          <div class="shield">Q</div>
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <div class="security-copy reveal delay-1">
-          <p class="eyebrow">Sécurité et IA responsable</p>
-          <h2 id="security-title">Intégrer l'IA sans ouvrir la porte au chaos numérique.</h2>
-          <p>L'IA peut amplifier la valeur d'une organisation. Elle peut aussi amplifier ses fragilités si les données, les accès et les règles d'usage ne sont pas clarifiés.</p>
-          <div class="check-grid">
-            <div><strong>Données</strong><span>Identifier les informations sensibles et ce qui peut ou non alimenter l'IA.</span></div>
-            <div><strong>Accès</strong><span>Donner les bons droits aux bonnes personnes, selon les rôles.</span></div>
-            <div><strong>Validation humaine</strong><span>Garder l'humain responsable des décisions importantes.</span></div>
-            <div><strong>Documentation</strong><span>Installer des règles simples, des limites d'usage et un suivi des risques.</span></div>
-          </div>
-          <p class="quote">Une IA responsable ne remplace pas le jugement. Elle soutient les équipes avec des règles claires, une information maîtrisée et une supervision adaptée.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section why" aria-labelledby="why-title">
-      <div class="container split reverse">
-        <div class="section-kicker reveal">
-          <p class="eyebrow">Pourquoi La Qualia</p>
-          <h2 id="why-title">Une combinaison de vision numérique, d'accompagnement humain et de sens opérationnel.</h2>
-        </div>
-        <div class="why-list reveal delay-1">
-          <article><strong>On commence par les irritants réels.</strong><span>Pas par une mode, un outil ou une promesse magique.</span></article>
-          <article><strong>On prépare l'information avant l'outil.</strong><span>Parce qu'une IA fiable dépend d'un contenu clair, accessible et bien gouverné.</span></article>
-          <article><strong>On vise l'adoption, pas seulement l'implantation.</strong><span>Formation, vulgarisation, gestion du changement et soutien aux équipes.</span></article>
-          <article><strong>On garde les solutions simples, utiles et mesurables.</strong><span>Des assistants IA, agents, automatisations et formations qui peuvent évoluer.</span></article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section contact" id="contact" aria-labelledby="contact-title">
-      <div class="container contact-grid">
-        <div class="contact-copy reveal">
-          <p class="eyebrow">Contact</p>
-          <h2 id="contact-title">Commençons par un irritant concret.</h2>
-          <p>Une rencontre exploratoire permet de clarifier votre réalité, de repérer les premiers leviers IA et de déterminer la trajectoire la plus pertinente.</p>
-          <div class="contact-card">
-            <strong>Amélie Brunelle</strong>
-            <span>La Qualia</span>
-            <a href="mailto:Amelie.brunelle@laqualia.com">Amelie.brunelle@laqualia.com</a>
-            <span>Saguenay, Québec</span>
-          </div>
-        </div>
-        <form class="contact-form reveal delay-1" id="contactForm" novalidate>
-          <label for="name">Nom</label>
-          <input id="name" name="name" type="text" autocomplete="name" required>
-
-          <label for="organization">Organisation</label>
-          <input id="organization" name="organization" type="text" autocomplete="organization">
-
-          <label for="email">Courriel</label>
-          <input id="email" name="email" type="email" autocomplete="email" required>
-
-          <label for="message">Message</label>
-          <textarea id="message" name="message" rows="5" required placeholder="Expliquez brièvement l'irritant ou le projet IA à explorer."></textarea>
-
-          <button class="btn btn-primary" type="submit">Envoyer la demande</button>
-          <p class="form-note" data-form-note>Le formulaire ouvre votre application courriel avec un message déjà préparé.</p>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-grid">
-      <div>
-        <a class="footer-brand" href="#accueil">La Qualia</a>
-        <p>Intelligence artificielle, automatisation, ROI et accompagnement numérique.</p>
-        <p>Saguenay, Québec · Services IA Québec</p>
-      </div>
-      <nav aria-label="Navigation secondaire">
-        <a href="#services">Services</a>
-        <a href="#trajectoires">Trajectoires</a>
-        <a href="#methode">Méthode</a>
-        <a href="#roi">ROI & KPI</a>
-        <a href="#securite">Sécurité</a>
-        <a href="#contact">Contact</a>
-      </nav>
-      <div>
-        <a href="mailto:Amelie.brunelle@laqualia.com">Amelie.brunelle@laqualia.com</a>
-        <p class="fineprint">© <span data-year></span> La Qualia. Technologie. Clarté. Temps. Sens. Expérience.</p>
+      <div class="manifeste-divider"></div>
+      <div class="manifeste-block">
+        <h4>Notre vision</h4>
+        <p>Devenir plus humain avec et par la technologie. Nous créons des solutions qui libèrent du temps, apportent de la clarté et rendent chaque moment plus significatif.</p>
       </div>
     </div>
-  </footer>
+    <p class="manifeste-footer">TECHNOLOGIE<span>✦</span>CLARTÉ<span>✦</span>TEMPS<span>✦</span>SENS<span>✦</span>EXPÉRIENCE</p>
+  </div>
+  <span class="manifeste-bottom-label">IDENTITÉ &amp; SENS · LA QUALIA</span>
+</section>
 
-  <script src="script.js" defer></script>
+<!-- ═══ ABOUT (slide 4 : vision / mission / valeurs) ═══ -->
+<section id="about">
+  <div class="section-inner">
+    <div class="about-grid">
+      <div class="fade-in">
+        <span class="section-label">Notre approche</span>
+        <h2 class="section-title">La technologie au service de l'expérience humaine.</h2>
+        <p style="font-size:.94rem;color:var(--brown-lt);line-height:1.82;margin-bottom:20px;">La Qualia accompagne les organisations qui souhaitent utiliser l'IA de façon concrète, responsable et progressive. L'objectif n'est pas de tout transformer d'un coup, mais de créer des leviers utiles, bien intégrés et faciles à comprendre.</p>
+        <div class="quote-block">
+          <p>« Une IA performante commence rarement par l'outil. Elle commence par une bonne compréhension du travail, une information claire et des équipes accompagnées. »</p>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="stat-num">70%</div><div class="stat-label">Humain &amp; processus</div></div>
+          <div class="stat"><div class="stat-num">30%</div><div class="stat-label">Technologie</div></div>
+          <div class="stat"><div class="stat-num">5</div><div class="stat-label">Services modulaires</div></div>
+        </div>
+      </div>
+      <div class="fade-in" style="animation-delay:.12s">
+        <span class="section-label">Nos valeurs</span>
+        <div class="values-row">
+          <div class="value-item"><div class="value-dot">H</div><div class="value-text"><h4>Humanité</h4><p>La technologie doit d'abord soutenir les humains. Nous intervenons avec empathie et respect.</p></div></div>
+          <div class="value-item"><div class="value-dot">C</div><div class="value-text"><h4>Clarté</h4><p>Le numérique et l'IA doivent rendre le travail plus simple, plus fluide et plus compréhensible.</p></div></div>
+          <div class="value-item"><div class="value-dot">P</div><div class="value-text"><h4>Progression</h4><p>Nous privilégions une évolution progressive, réaliste et durable, adaptée à chaque rythme.</p></div></div>
+          <div class="value-item"><div class="value-dot">Pe</div><div class="value-text"><h4>Pertinence</h4><p>Chaque solution doit être utile, pratique et ancrée dans la réalité. Nous évitons les approches déconnectées du terrain.</p></div></div>
+          <div class="value-item"><div class="value-dot">D</div><div class="value-text"><h4>Discernement</h4><p>L'IA doit être utilisée avec responsabilité, bon sens et précision. Nous valorisons un usage réfléchi et respectueux.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROBLÈME (slide 6 : fond crème chaud, 3 colonnes avec illustrations) ═══ -->
+<section id="probleme">
+  <div class="section-inner">
+    <span class="section-label">Le défi de vos équipes</span>
+    <h2 class="section-title" style="font-weight:600;font-family:'Jost',sans-serif;font-size:clamp(1.8rem,3.5vw,2.6rem);">Vos équipes sont<br>sous pression.</h2>
+    <div class="pression-grid fade-in">
+      <!-- Colonne 1 : dossiers en désordre -->
+      <div class="pression-col">
+        <div class="pression-svg">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="rgba(244,183,193,0.35)"/>
+            <!-- Dossier fond -->
+            <rect x="18" y="52" width="58" height="42" rx="5" fill="#e8c4a0" stroke="#d4a878" stroke-width="1.5"/>
+            <path d="M18 58 Q18 52 24 52 L44 52 L48 46 L76 46 Q82 46 82 52 L82 58Z" fill="#d4a878"/>
+            <!-- Documents qui s'échappent -->
+            <rect x="32" y="30" width="38" height="28" rx="3" fill="white" stroke="#d4a878" stroke-width="1.2" transform="rotate(-12 51 44)"/>
+            <rect x="55" y="22" width="38" height="28" rx="3" fill="white" stroke="#FF8C6D" stroke-width="1.2" transform="rotate(8 74 36)"/>
+            <line x1="38" y1="36" x2="58" y2="36" stroke="#d4a878" stroke-width="1.2" transform="rotate(-12 51 44)"/>
+            <line x1="38" y1="41" x2="54" y2="41" stroke="#d4a878" stroke-width="1" transform="rotate(-12 51 44)"/>
+          </svg>
+        </div>
+        <h4>Volume d'information élevé.</h4>
+      </div>
+      <!-- Colonne 2 : boucle infinie -->
+      <div class="pression-col">
+        <div class="pression-svg">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="rgba(244,183,193,0.35)"/>
+            <!-- Symbole infini avec flèches -->
+            <path d="M28 60 C28 44 40 36 52 44 C60 50 60 70 68 76 C80 84 92 76 92 60 C92 44 80 36 68 44 C60 50 60 70 52 76 C40 84 28 76 28 60Z" fill="none" stroke="#d4a878" stroke-width="5" stroke-linecap="round"/>
+            <!-- Flèche gauche -->
+            <polygon points="32,52 26,60 32,68" fill="#FF8C6D" opacity=".8"/>
+            <!-- Flèche droite -->
+            <polygon points="88,52 94,60 88,68" fill="#FF8C6D" opacity=".8"/>
+          </svg>
+        </div>
+        <h4>Demandes répétitives.</h4>
+      </div>
+      <!-- Colonne 3 : horloge sous pression -->
+      <div class="pression-col">
+        <div class="pression-svg">
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="60" cy="60" r="54" fill="rgba(244,183,193,0.35)"/>
+            <!-- Orbite/vitesse -->
+            <ellipse cx="60" cy="68" rx="46" ry="8" fill="none" stroke="rgba(255,140,109,.3)" stroke-width="2" stroke-dasharray="4 3"/>
+            <!-- Horloge -->
+            <circle cx="60" cy="58" r="30" fill="white" stroke="#d4a878" stroke-width="2"/>
+            <circle cx="60" cy="58" r="2.5" fill="#FF8C6D"/>
+            <!-- Aiguilles -->
+            <line x1="60" y1="58" x2="60" y2="38" stroke="#3D2B1F" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="60" y1="58" x2="76" y2="63" stroke="#FF8C6D" stroke-width="2" stroke-linecap="round"/>
+            <!-- Traits vitesse -->
+            <line x1="92" y1="38" x2="100" y2="34" stroke="#FFC66D" stroke-width="2" stroke-linecap="round"/>
+            <line x1="94" y1="48" x2="103" y2="46" stroke="#FFC66D" stroke-width="2" stroke-linecap="round"/>
+            <line x1="92" y1="58" x2="102" y2="58" stroke="#FFC66D" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h4>Attente constante de rapidité.</h4>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ IRRITANT → FLUIDITÉ (slide 9 : pelote + flèche + trident) ═══ -->
+<section id="irritant">
+  <div class="section-inner">
+    <div class="irritant-grid">
+      <div class="fade-in">
+        <span class="section-label">Notre promesse opérationnelle</span>
+        <h2 class="section-title" style="font-weight:600;font-family:'Jost',sans-serif;">Transformer l'irritant<br>en fluidité.</h2>
+        <p style="font-size:.97rem;color:var(--brown-lt);line-height:1.82;margin-bottom:22px;">Nous créons des solutions IA simples et concrètes qui règlent de vrais problèmes de terrain.</p>
+        <p style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-style:italic;color:var(--brown-lt);">(Information introuvable, tâches manuelles, formation dispersée)</p>
+      </div>
+      <!-- SVG pelote + flèche + trident fidèle slide 9 -->
+      <div class="fade-in" style="animation-delay:.12s;display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 480 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:480px;">
+          <!-- Pelote de fils emmêlés -->
+          <g transform="translate(50,40)">
+            <path d="M120 100 C60 40 20 80 40 120 C60 160 110 140 130 100 C150 60 120 20 80 30 C40 40 20 80 50 110 C80 140 130 120 140 80 C150 40 110 10 70 20 C30 30 10 70 30 100 C50 130 100 140 120 110" fill="none" stroke="#2d2d2d" stroke-width="2.5" stroke-linecap="round" opacity=".75"/>
+            <path d="M100 80 C50 30 10 70 30 110 C50 150 100 130 115 90 C130 50 95 15 60 25 C25 35 10 75 35 105 C60 135 110 115 120 75" fill="none" stroke="#3d3d3d" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+            <path d="M90 90 C55 45 25 75 45 105 C65 135 105 120 115 82" fill="none" stroke="#555" stroke-width="1.8" stroke-linecap="round" opacity=".5"/>
+          </g>
+          <!-- Flèche gradient or→corail -->
+          <defs>
+            <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#FFC66D"/>
+              <stop offset="100%" style="stop-color:#FF8C6D"/>
+            </linearGradient>
+          </defs>
+          <path d="M210 140 L310 140" stroke="url(#arrowGrad)" stroke-width="14" stroke-linecap="round"/>
+          <polygon points="308,122 340,140 308,158" fill="#FF8C6D"/>
+          <!-- Trident corail (3 branches) -->
+          <line x1="342" y1="140" x2="400" y2="140" stroke="#FF8C6D" stroke-width="12" stroke-linecap="round"/>
+          <line x1="395" y1="140" x2="440" y2="105" stroke="#FF8C6D" stroke-width="10" stroke-linecap="round"/>
+          <line x1="395" y1="140" x2="440" y2="140" stroke="#FF8C6D" stroke-width="10" stroke-linecap="round"/>
+          <line x1="395" y1="140" x2="440" y2="175" stroke="#FF8C6D" stroke-width="10" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ APPROCHE (slide 10 : fond blanc, X vs ✓) ═══ -->
+<section id="approche">
+  <div class="section-inner">
+    <div class="approche-top fade-in">
+      <span class="section-label">Notre angle</span>
+      <h2 class="section-title" style="font-weight:600;font-family:'Jost',sans-serif;">Notre approche :<br>L'IA au service de l'humain.</h2>
+      <div class="approche-vs-grid">
+        <div class="vs-block evite">
+          <h4>Ce que nous évitons</h4>
+          <div class="vs-row x"><div class="vs-icon">✕</div><p>Projets lourds et envahissants.</p></div>
+          <div class="vs-row x"><div class="vs-icon">✕</div><p>Outils imposés et déconnectés du terrain.</p></div>
+          <div class="vs-row x"><div class="vs-icon">✕</div><p>Complexité technologique ajoutée.</p></div>
+        </div>
+        <div class="vs-block propose">
+          <h4>Ce que nous proposons</h4>
+          <div class="vs-row check"><div class="vs-icon">✓</div><p>Solutions <strong>simples et concrètes.</strong></p></div>
+          <div class="vs-row check"><div class="vs-icon">✓</div><p>Ancrage dans <strong>vos besoins réels.</strong></p></div>
+          <div class="vs-row check"><div class="vs-icon">✓</div><p>Implantation <strong>progressive et sécurisante.</strong></p></div>
+        </div>
+      </div>
+      <div class="approche-banner">
+        <p>L'objectif n'est pas de tout transformer d'un coup,<br>mais de commencer là où ça compte vraiment.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SERVICES ═══ -->
+<section id="services">
+  <div class="section-inner">
+    <span class="section-label">Nos 5 grands services</span>
+    <h2 class="section-title">Une offre modulaire qui s'adapte à votre réalité.</h2>
+    <p class="section-lead">Chaque service peut démarrer simplement ou s'inscrire dans une transformation plus complète. Nous partons toujours du terrain.</p>
+    <div class="services-grid fade-in">
+      <div class="service-card">
+        <div class="service-num">01</div>
+        <h3 class="service-title">Diagnostic IA et numérique</h3>
+        <p class="service-desc">Explorer la réalité de l'entreprise, comprendre les irritants et déterminer où l'IA peut créer une valeur réelle.</p>
+        <ul class="service-bullets">
+          <li>Analyse de l'organisation</li>
+          <li>Identification des besoins et irritants</li>
+          <li>Évaluation de la maturité numérique</li>
+          <li>Clarification des priorités</li>
+          <li>Plan de faisabilité et documents pour appel d'offres</li>
+        </ul>
+        <div class="service-result">Une feuille de route claire pour prioriser les initiatives IA les plus utiles, réalistes et rentables.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">02</div>
+        <h3 class="service-title">Préparation de l'entreprise à l'IA</h3>
+        <p class="service-desc">Structurer l'information, organiser les contenus utiles et consolider le terreau numérique nécessaire à une IA fiable.</p>
+        <ul class="service-bullets">
+          <li>Tri et préparation des contenus utiles</li>
+          <li>Organisation des documents, politiques et procédures</li>
+          <li>Amélioration de l'environnement numérique</li>
+          <li>Base infonuagique minimale au besoin</li>
+          <li>Structure évolutive pour soutenir l'IA</li>
+        </ul>
+        <div class="service-result">Une organisation mieux structurée, prête à tirer parti d'une IA cohérente et fiable.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">03</div>
+        <h3 class="service-title">Solutions IA et outils personnalisés</h3>
+        <p class="service-desc">Créer des assistants IA adaptés aux documents, règles, processus et besoins de l'entreprise.</p>
+        <ul class="service-bullets">
+          <li>Assistants numériques, agents IA ou compagnons IA</li>
+          <li>Bases de connaissances internes</li>
+          <li>Règles et contenus métiers intégrés</li>
+          <li>Tests, ajustements et amélioration des réponses</li>
+          <li>Guide d'utilisation pour les équipes</li>
+        </ul>
+        <div class="service-result">Un compagnon IA toujours disponible pour soutenir les équipes dans leurs tâches quotidiennes.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-num">04</div>
+        <h3 class="service-title">Automatisation intelligente</h3>
+        <p class="service-desc">Automatiser les tâches répétitives, les suivis et les transferts d'information qui ralentissent le travail quotidien.</p>
+        <ul class="service-bullets">
+          <li>Analyse des processus existants</li>
+          <li>Automatisation des tâches manuelles et répétitives</li>
+          <li>Workflows intelligents</li>
+          <li>Intégration aux outils existants</li>
+          <li>Tests, ajustements et transfert</li>
+        </ul>
+        <div class="service-result">Moins de copier-coller, moins d'oublis, moins de suivis manuels — une information plus fluide.</div>
+      </div>
+      <div class="service-card wide">
+        <div class="service-num">05</div>
+        <h3 class="service-title">Notre Académie — Formation et adoption IA</h3>
+        <p class="service-desc">Former, sensibiliser et accompagner les gestionnaires et équipes dans l'usage concret, responsable et sécuritaire de l'IA.</p>
+        <ul class="service-bullets">
+          <li>Formations IA et numérique sur mesure</li>
+          <li>Ateliers pratiques et conférences</li>
+          <li>Accompagnement des gestionnaires</li>
+          <li>Soutien continu à l'adoption terrain</li>
+          <li>Réflexes d'utilisation responsable</li>
+          <li>Bonnes pratiques et sécurité des données sensibles</li>
+        </ul>
+        <div class="service-result">Des équipes confiantes, mieux outillées et capables d'utiliser l'IA efficacement — dans le respect des bonnes pratiques.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CAS D'USAGE (slide 23 — avant/après cartes arrondies) ═══ -->
+<section id="cas-usage">
+  <div class="section-inner">
+    <span class="section-label">L'impact dans le quotidien</span>
+    <h2 class="section-title">De l'irritant à la fluidité : exemples concrets.</h2>
+    <p class="section-lead">Avant et après La Qualia — comment l'IA change vraiment le quotidien des équipes.</p>
+    <!-- Tableau avant/après fidèle slide 23 -->
+    <div class="impact-table fade-in">
+      <div class="impact-col avant">
+        <h3>Avant</h3>
+        <div class="impact-row"><p>Documents dispersés</p></div>
+        <div class="impact-row"><p>Questions répétitives aux collègues</p></div>
+        <div class="impact-row"><p>Formation verbale qui se perd</p></div>
+        <div class="impact-row"><p>Suivis manuels (copier-coller)</p></div>
+      </div>
+      <div class="impact-mid">
+        <svg viewBox="0 0 24 80" width="24" height="80"><defs><marker id="a4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#FF8C6D"/></marker></defs><path d="M12 8 L12 72" stroke="#FF8C6D" stroke-width="2.5" stroke-dasharray="4 3" marker-end="url(#a4)"/></svg>
+      </div>
+      <div class="impact-col apres">
+        <h3>Après La Qualia</h3>
+        <div class="impact-row"><p>Base de connaissances claire</p></div>
+        <div class="impact-row"><p>Assistant IA qui guide</p></div>
+        <div class="impact-row"><p>Parcours réutilisable et soutenu</p></div>
+        <div class="impact-row"><p>Workflow automatisé et constant</p></div>
+      </div>
+    </div>
+    <div class="cas-grid fade-in">
+      <div class="cas-card">
+        <div class="cas-header"><h3>La procédure introuvable</h3><p>Cas d'usage · Information et documentation</p></div>
+        <div class="cas-body">
+          <div class="cas-col avant"><div class="cas-col-label">L'irritant</div><div class="cas-item">Incertitude sur la bonne procédure</div><div class="cas-item">Recherche fastidieuse</div><div class="cas-item">Interruption d'un collègue occupé</div></div>
+          <div class="cas-col apres"><div class="cas-col-label">La Solution Qualia</div><div class="cas-item">Contenus clarifiés et organisés</div><div class="cas-item">Interface IA mise en place</div><div class="cas-item">Réponse fiable et instantanée</div></div>
+        </div>
+        <div class="cas-result"><strong>Résultat :</strong> Moins d'interruptions, moins de stress, équipe mieux soutenue.</div>
+      </div>
+      <div class="cas-card">
+        <div class="cas-header"><h3>L'intégration d'une nouvelle recrue</h3><p>Cas d'usage · Formation et onboarding</p></div>
+        <div class="cas-body">
+          <div class="cas-col avant"><div class="cas-col-label">L'irritant</div><div class="cas-item">Dépendance aux explications verbales</div><div class="cas-item">Surcharge du formateur</div><div class="cas-item">Documents dispersés ou obsolètes</div></div>
+          <div class="cas-col apres"><div class="cas-col-label">La Solution Qualia</div><div class="cas-item">Parcours structuré avec quiz</div><div class="cas-item">Assistant IA couplé au parcours</div><div class="cas-item">Soutien constant après la formation</div></div>
+        </div>
+        <div class="cas-result"><strong>Résultat :</strong> Apprentissage plus rapide, moins de charge pour l'équipe.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ TRAJECTOIRES ═══ -->
+<section id="trajectoires">
+  <div class="section-inner">
+    <span class="section-label">Trois trajectoires d'accompagnement</span>
+    <h2 class="section-title">Selon votre niveau de maturité.</h2>
+    <p class="section-lead">Chaque trajectoire contient les 5 services. Ce qui change : le niveau d'analyse, la profondeur de préparation et l'intensité d'accompagnement.</p>
+    <div class="traj-grid">
+      <div class="traj-card t1 fade-in"><div class="traj-badge">Trajectoire 1</div><h3 class="traj-name">Agile et rapide</h3><p class="traj-sub">Fast Track</p><p class="traj-desc">Démarrer rapidement, tester l'IA et obtenir un premier résultat tangible. Idéale pour valider le potentiel sans engagement long terme.</p></div>
+      <div class="traj-card t2 fade-in" style="animation-delay:.1s"><div class="traj-badge">Trajectoire 2</div><h3 class="traj-name">Soutenue et pragmatique</h3><p class="traj-sub">Intégration progressive</p><p class="traj-desc">Structurer l'intégration de l'IA avec des outils et automatisations ciblées. Pour ancrer l'IA dans les opérations quotidiennes.</p></div>
+      <div class="traj-card t3 fade-in" style="animation-delay:.2s"><div class="traj-badge">Trajectoire 3</div><h3 class="traj-name">Profonde et mature</h3><p class="traj-sub">Levier stratégique</p><p class="traj-desc">Faire de l'IA un levier durable de transformation, de gouvernance et d'amélioration continue.</p></div>
+    </div>
+    <div style="margin-top:36px;background:var(--white);border-left:3px solid var(--gold);padding:22px 26px;border-radius:0 8px 8px 0;max-width:660px;">
+      <p style="font-size:.86rem;color:var(--brown-lt);line-height:1.75;"><strong style="color:var(--brown);">Comment choisir ?</strong> La bonne trajectoire dépend du niveau de maturité numérique, de l'urgence et du degré de transformation souhaité. Une organisation peut commencer en Fast Track, puis évoluer vers un accompagnement plus soutenu.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ MÉTHODE (slide 15 : chemin sinueux, cercles or/corail alternés) ═══ -->
+<section id="methode">
+  <div class="section-inner">
+    <span class="section-label">Notre démarche terrain</span>
+    <h2 class="section-title">Notre démarche terrain.</h2>
+    <p class="section-lead" style="margin-bottom:64px;">Six étapes, volontairement pragmatiques — partir du terrain, choisir le bon levier, tester rapidement et accompagner dans la durée.</p>
+    <div class="methode-path fade-in">
+      <div class="methode-path-line"></div>
+      <div class="methode-steps">
+        <div class="step">
+          <div class="step-icon">🔍</div>
+          <div class="step-circle">1</div>
+          <h4>Repérer l'irritant</h4>
+          <p>Identifier ce qui bloque réellement les équipes au quotidien.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">🗺️</div>
+          <div class="step-circle">2</div>
+          <h4>Évaluer l'environnement</h4>
+          <p>Analyser la maturité numérique et les ressources disponibles.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">🗄️</div>
+          <div class="step-circle">3</div>
+          <h4>Structurer l'information</h4>
+          <p>Clarifier et organiser l'information utile pour préparer l'IA.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">👆</div>
+          <div class="step-circle">4</div>
+          <h4>Choisir le bon levier IA</h4>
+          <p>Sélectionner la solution la plus pertinente selon les priorités.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">👥</div>
+          <div class="step-circle">5</div>
+          <h4>Tester avec les équipes</h4>
+          <p>Déployer rapidement et ajuster selon les retours terrain.</p>
+        </div>
+        <div class="step">
+          <div class="step-icon">🎓</div>
+          <div class="step-circle">6</div>
+          <h4>Former et faire adopter</h4>
+          <p>Installer les bons réflexes et mesurer les gains dans le temps.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ POURQUOI QUALIA (slide 28 : 4 puzzles sur fond dégradé rose/corail) ═══ -->
+<section id="ecosysteme">
+  <div class="section-inner">
+    <div class="eco-header fade-in">
+      <span class="section-label">Pourquoi confier cette évolution à La Qualia ?</span>
+      <h2 class="section-title">Une combinaison unique d'expériences<br>pour comprendre le travail réel.</h2>
+    </div>
+    <div class="piliers-row fade-in">
+      <div class="pilier">
+        <h4>Le Terrain</h4>
+        <p>Une connaissance directe du milieu et de ses réalités sous haute pression.</p>
+      </div>
+      <div class="pilier">
+        <h4>La Pédagogie</h4>
+        <p>Une expertise pointue en technopédagogie et en création de parcours de formation.</p>
+      </div>
+      <div class="pilier">
+        <h4>L'Humain</h4>
+        <p>Une expérience croisée en ressources humaines et en gestion du changement numérique.</p>
+      </div>
+      <div class="pilier">
+        <h4>L'Information</h4>
+        <p>Plus de 20 ans d'expérience en structuration et gestion des ressources informationnelles.</p>
+      </div>
+    </div>
+    <div class="eco-banner fade-in">
+      <p>Nous ne nous contentons pas d'implanter un outil. Nous comprenons la circulation de l'information et les enjeux humains.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROMESSE ═══ -->
+<section id="positionnement">
+  <span class="section-label">Notre promesse</span>
+  <h2 class="section-title">Moins de friction. Plus de clarté.<br>Des équipes mieux soutenues.</h2>
+  <p class="section-lead">La Qualia ne vend pas de la complexité. Elle aide les organisations à identifier ce qui ralentit leurs équipes et à déployer des leviers IA qui soutiennent vraiment le quotidien.</p>
+  <div class="promise-grid">
+    <div class="promise-card"><div class="promise-icon">✦</div><h4>Ce que nous créons</h4><p>Des outils IA, des automatisations et des formations conçus à partir de votre réalité et des besoins concrets de vos équipes.</p></div>
+    <div class="promise-card"><div class="promise-icon">✧</div><h4>Ce que nous évitons</h4><p>Les projets lourds, les solutions déconnectées du terrain et la technologie ajoutée sans préparation.</p></div>
+    <div class="promise-card"><div class="promise-icon">✓</div><h4>Notre engagement</h4><p>Une IA qui simplifie le travail, libère du temps et améliore la rentabilité — au rythme et selon les besoins réels de votre organisation.</p></div>
+  </div>
+</section>
+
+<!-- ═══ CONTACT ═══ -->
+<section id="contact">
+  <div class="contact-inner fade-in">
+    <span class="section-label">Commençons</span>
+    <h2 class="section-title">Prêt à transformer vos irritants en solutions IA&nbsp;?</h2>
+    <p>Parlons de votre réalité. Ensemble, nous identifierons les leviers les plus utiles pour votre organisation. Pas de jargon, pas de promesses impossibles.</p>
+    <a href="mailto:Amelie.brunelle@laqualia.com" class="contact-email">Amelie.brunelle@laqualia.com</a><br>
+    <a href="mailto:Amelie.brunelle@laqualia.com" class="btn-primary" style="margin-top:10px;">Envoyer un message</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">
+    <div class="logo-wrap"><img src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCADcAPUDASIAAhEBAxEB/8QAHQABAAIBBQEAAAAAAAAAAAAAAAcIBgIDBAUJAf/EAEAQAAEEAQIEBAMFBQQLAQAAAAEAAgMEBQYRBxIhMQhBUWETInEUIzKBkRUzQlLRYqGxwRYXJCUmQ1NjcpLh0v/EABsBAQACAwEBAAAAAAAAAAAAAAAFBgEDBAIH/8QANhEAAQMCBAQDBgUEAwAAAAAAAAECAwQFERIhURMxQZEUYYEGIjKhsdEjNHHB8BVCU/EkkuH/2gAMAwEAAhEDEQA/AKZIiIAiIgCIiAIi5eLxt/KXGU8dUmtWHnZscTC4lYVURMVCJjyOItUcb5HhkbS5x6AAbkqwvDrw15G9BFf1faNCJx61Yv3m317KU7GG4U8KsWbE9WiJWDmHxtnzPI9B6qKmu8LXZI0Vy+RJRWyRyZpFyp5lWNN8Ltc5/rQwNkMI3DpW8gI/NZviPDfri3C2S3NSo79xI7fZZZq3xNmNzq+lMKxsbRs2WwOn/qFE+oeL2vc1K8z52xBE7/lQHlaF5a+4zaoiMTz1U9ObQxaYq5eyGfVvDTmJHvZJqjGRuZ33af6rdm8MmXLg2tqnGSHbc7s6f4qELWezNqYyz5W7I89NzO7+qQ57NQ7fCy15m3UbTu/qt3h63/Kn/U08al/xr3Jbyvhs1vXZvRsUb7j2ax3KsL1Hwm1/gSftunrT2ju6BvxAP0WzhuKOusVLE+rqO7tGdwx79wfqpV0l4oc/WkbBqPF1r1ckB74hyv28z7rGNfHs75GUSjfu35lfLNeetK6KxE+KRp2LXtIIW0ryYXJcHOL9B1Q1KYtvG5ikYI5mn1Hqo44n+F63Wjff0Va+0sA3+yzu+Y/QrMVyYrskqZV8zElC5EzRrmQrEi7DPYXKYLIyY/L0Z6dlh2LJWEH6j1C69SKKipihxKmGihERZMBERAEREAREQBERAEREAREQBERAERTh4e+DE+rJos/qBjocOx28cRGxsH/8rRUVEdOxXvXQ3QQPnfkYmpinCHhRnNfXBJE11TGsd95Ye3v7N9Vb3QHD/S3D7GbUazGyNbvLalALyQOp38lkuOpY3AYwxVoYataFhIDQGtACqh4huM9rUF2bT+nbMkGMjJbPIw7GV3mAfRVpZqi6SZG6M/nMnkjhtzM7tXGWcavEBHWmkw2kD8WeJxa+247tB9vVVqzeYyeavSXcpdmtTvO5dI7dcEnc7nuvisNLRRUzcGJruQlRVyVDsXqERF1nMEREAREQHIx923j7cdulYkrzxndj2O2IKs5wP8Rjh9mwWtnkjoxl7f8ATmH+aq2i56imjnbg9DdDO+F2LVPRXXWgtG8ScO196vHI+RvNDbj/ABt6dOqpxxl4PZ/h9akslrrmIc/aO00dh5Bw8lm/hi4zyaftRaU1FMX4+Z+1ew925hJ7NJP8KtvkKmOz2Jmo3q0VmrZi2c12zg4FQrZJqCTIurSWWOKtZmbo48w0Uz+Ifg5a0RkJMvh4XyYOV25HcwE+R9vdQwp6KVsrczSGkjdG7K4IiLYeAiIgCIiAIiIAiIgCIiAIi7rROnrmqdTU8JSG8th+xP8AK3zK8ucjGq5eSGWtVyoiczP/AA7cM5dbZ8378BGIpEOkLh0ld/KFcynVrY+pFUqxshhjaGsY0bAD0XWaD03S0ppqph6DeWOFgBJHVx8yfddXxg1XX0doy3lnOHxw3lgY4/ieeyo9ZVvr58G8uSIW6mpmUcOK8+qkP+Kbil8Fh0fgrBbI4f7ZKx3Vo/lVYiSTuVyctesZPJWMhbeXz2JDJI4+ZJXFVwo6VtNEjG+pWKmodUSK5QiIuo5wiIgCIiAIiIAiIgPoJB3BIIVtfCHxJdlKsmk8xZc61XbzV5Hu3MjPT6hVJXcaOz9zTOo6Waovc2WtIH7A/iHmPzXNV06Txq3r0OimnWGRHdD0iz+Ix+dxVjFZCJs1e0wxyNI33BVBeN/Dq5w+1XLTLXSY6dxfUm27t/lPuFeLhpqmnrLSdHOVHN5ZmguaO7HeYK6jjjoWvrfRVui6KM3I2GStJt1DwOigKGpdTSZXcupOVlM2ePM3n0PPRFv36k9G7NTsxmOaB5je09wQdithWgrYREQBERAEREAREQBERAFZ/wAIOihBTn1fci+8m3jqkjs0dz+qrdgMdNls1TxtdjnyWZmxgNG56leguksPDp/TVDD12Bra0LWHbzO3UqBv1Vw4UiTm76EzZqfPIsi8m/U7gyAbddh6qoni11i7M6vjwNWbenj2/O0HoZD/AEVoNW5WPDaevZGTblggc/qfMBefueyE2VzNvI2HOdJYldIST16lR9gps8iyr0+p13ioVsaRp1OCiIrcVsIiIAiIgCIiAIiIAiIgCIiAsn4LdafY8lb0hZkPLZPxq4PYEfiVsJHB7fPsvObhNnH6e4hYbKNcQI7TQ/3aTsQvQ+CwJKzZW7Hmbuq1dY+HNmTqWK1v4kOVehUDxgaIGF1czUtKAMp5L95yjYCUd/1UCq/XiF0yzU/DTI1w0OnrxmeE9+Vw6qgzgWuLXAgg7EFSlsn4sOC800I65wcKbFOS6nxERSJHBERAEREAREQBERASx4WcOMpxRr2Hs5mUonTewPYf4q6DHdgAqy+DSqAc7f5BzgxxtcR5dd1ZCKZxf1I/RUm9yK+rVNsELjZ4stKi74kYeK7KjHcLZIGPLZLkzYht06dyqYFWh8aNn/cWArE9XTvftv6DZVeU9Y40bSou6qQd5djUqmyIERFMEUEREAREQBERAEREAREQBERAaonujkbIwkOaQQfcL0M4XZP9rcO8JefIHvkps5z/AGgOq88VdfwuZCa3wjoxyPDjXe+MdOu26hb2zGJrtlJyxOXjOZuhJ+XEdihNBIN2SMLSPUFeemusc7E6vymPI/c2XgfQncL0FnkcI3Dp281SDxCwfA4sZgBuwke14/NoXNZX4SOb5HTe4/w2u2Uj5ERWMrQREQBERAEREAREQFn/AAfBrNNZWTbYmwAffop5jOzt9jsq/eECYnAZiI9mztP6hT22Tcj6qjXNv/LeX21NRaRhXnxoTEzaciA6GOVx/UKuasf4yYg6vp+xv1HxGD8+qrgrPaPyjfX6lWvLcKx/p9AiIpIiwiIgCIiAIiIAiIgCIiAIiIAreeEm2Bw0kY4HZllwGyqGrbeFSP4fDVzj2ksuP6KJvP5b1Qm/Z9uar9FJhsSgtI3Kpz4m2gcT7JG/zRMJ3VvJX/L7qnviTnEvFG63/psY3v7KNs+PH9CVvrUSm9UI0REVoKeEREAREQBERAEREBYHwg32ttZnHucAXtZI0eZ27qxrCNwqaeH3PfsPiNU5tvh22mu8k9t+u/8AcrhMmcdiNttlUbxEralV3L97PP4tGjU/tVU/ch3xe1viaNxdpo3+Fc5SfQFpVXFcbj7jZsxw4vxNaHuhAmb07bf/ABU5PdTFmfjT5dlID2jiVlXm3RPsERFLEAEREAREQBERAEREAREQBERAB3VxfDdV+Bwmxz3N5XSvkf18xzFU8jaXvaxo3LjsFebhxUOM0Lh6JAaYqjOYehI6qFvbvwmt3Us3sxGrqhz9k+qnf2XARklw22VK+Ndtl3iXmJ2ODm/GDQR7BXE1LcFLA37ziAIIHSfmAqI5S0+9krNx53dNK55/M7rRZY1zOedXtNJlYyPdcTjIiKwlPCIiAIiIAiIgCIiA36FiSndgtRHaSGQPafcHdXX4e6hg1HpmlkYXFxkjHP7OHcfqqQqcvC/qr7Pfn03Zf8k33sHM7sR3AUVdqbixZ05tLF7OVqQVHCcujvr0LBZms27jbNVw3EsTmbfUKj2qsbLh9RXsbM3lfBM5u3+CvK93OOnZVu8TumHVM5FqKvH9zaHJLyjs8difqo+0TIyVWL1Jr2lpFlp0mb/b9FIYREVlKGEREAWuGN80zIomlz3uDWtHck9AFoWU8J68FriLgobIBidbbvv26dQvEj8jFdse4253o3cm/hv4c6VjEQ3dW2ZxYmaHivA7l5AfIn1WviL4caUOFsXdJWLDrULS8V5nb/EA6kD3VjIdhGAFrB6hUZLvVrJnzenQuH9LpsuTL69TzYnikgmfDMxzJGOLXNcNiCO4WhZxx2iqRcVs+ylyfBFk7cvbfz/vWDq8RP4jEfuhT5WZHq3YIiLYeAiIgMk4Z4Y57W+Lx2xLHztc8jyaOpV2Y+WKFjGjYNaAAq7eFjTfxr1vUc7DtEPgwb+ZPcqwVqX4TS4kAAddyqzdpeJNlToX72cplhpeIvN30QjzxF6lbhtCzUo3EWL5+E3Y9h5lVMUgcc9X/wClesZTA/enU+5h27Ejuf1UfqYt9PwYURea6lYvdYlVVKrfhTRAiIu4iAiIgCIiAIiIAiIgC5eJv2cXkYL9OV0c8Lw5rgVxEWFRFTBTLXK1cULmcOdU19V6Xr5CORpn2DZ2A9WPHdcvXGCr6k03bxU7Wn4zDyOI/C7yKqtww1re0dmhNE/mpzENsRnsR6j3VssFmKWdxkN6hMyWKVu4I/wVUraV1JLmby6H0u03GO5U/Dk+JEwVN/MpXmsdZxOUsY+2wsmgeWOHrt5rhqyHHnhz+1aLtQ4qMm7C3eaNo/eN9fqq4Pa5ji1wIcDsQfJWKkqW1EaOTn1KJc7e+hnWNeXRd0PiLcrQTWZ2wV4nyyPOzWsG5JWWVdCW4GMn1DdrYWB3Uid4+Lt7M7re+RrPiU4WRuf8KGHrfpWJ6VuK3XeY5oXh7HA9iFJ+LbwTxtflyE+cylpvQuYzljP0XdVdZcFIi3/gufp03d1XI6rcujY3L6YfU6m0rebpGp/PIkThxx+0zbxFatqWaenkGR8sjwzeNxHTfdaOJHiEwFHGTVNLiS/elaWtlcOVkXT8XuV0WF1ZwCyDwy1p6Km53y800OzR+ay+nw54Q6pr/GxNavJG4dDVl2Krr4aSGTPJE5E26E/HLVTR5I5GqvzKhXrM925LbsvMk0zy97j3JPdbKtFqXw5YKxE52AyNmpL3DZzzNUO624R6x0sx089A26rd95q3zho9T6KwU9zpptGuwXZdCDqLZVQ+85uKbpqR+i+kEEgggjuCvikCPC5mFx1nLZSvjqjC+aeQMaB7lcNWC8NuhDCwaqycHzvG1Rr29h/MuaqqEgjV6+h3W+jdWTpGnLr+hMWjMDX01pmjiq7QPgRAPIH4neZWCeILWsWB0y/F1JtshdHKA3uxnmfZZdxJ1ZT0jp2a/ZmYJy3aCM95HegCp7qrO39R5qfKZCUvlld0G/Ro8gFBW6kdPJxX8se6lxvlyZRw+Hi+JUw/RDqySSSTuSviIrMUAIiIAiIgCIiAIiIAiIgCIiALN+Fuv72j8gGPL5sbIfvYd+3uFhCLXJE2VqtcmKG6nqJKeRJI1wVC8OmM3jtQYaK7RmZPFIzrsdyPYhQxxr4UvfLNn9N19wBz2K7e5PmWhRRobWOX0lkm2sfM4xE/eQuPyvH0VkuH3FLT2qImV5ZmUbxbs6GY7Bx/snzVffTT0EnEi1b/ADmXWGuo7xDwaj3X/vui/sVdxmWu4Yv+xE17O+xl2+do9B6LhW7Vm3M6a1PJNI47lz3EkqzPFHhJjdRCTJ4YMp5DbdwaPkl/++6rxqbTWa07cNXK0pIXDs7bdrh6gqXpauGo1bo75lZuNrqaJcH6t6KnL/w6dERdpFBc/D5nKYey2zjL89WVvZ0byFwEWFajkwUyiq1cULE8J+PMjrEWL1i4crvlbcA7enMP81YWq6rk6bZYJYrNaVu4c13M1wXnipH4Q8U8xonIRwzTS2sS5wEldzt+QeZaoCuszXe/BouxYbde1Z+HUapv9yduK/A/Eajilv4RjMfkttwGjZkh9wqsao09ltNZWTG5eo+vPGdvmHRw9QfMK+elNT4bU+KZkMRcisROHUA/M0+hHquFrfR2B1bQNXL0Y5th8km3ztP1XFR3WSmXhypinzQ7qy1RVacSLBF+SlS+DGgJNT5Vl7IMc3GwnmP/AHD6fRWH1lq7B6E09D9q2byt5III9t3EDoPosJ17kJuE+Ojx+PovsRObtDKG/K3/AMiq86jzuTz+Rfeydl80rj0BPRo9APJSKQvuD0kcvudDQytjtMKxxpjKvPyOy4g6xyesc2+/fkIib8sEIPyxt/qsaRFNMY1jUa1NEK1LK+V6veuKqERF6NYREQBERAEREAREQBERAEREAREQBamPcxwcxxa4dQQdiFpRASNozi9qjT8bK80oyFZnZkx+YfmpQxvFXQur6gx2pqTaxkHK/wCKN2/kVWlFwTW6CVc2GC7oS1NeqqBuRVzN2XUsRmOCuk8wDZ01n2wB/wAzWF4e36BYfkOAmt67t6zalqM/hcyXrt9FGNLI3qUgkqW54XDzY8hd9T4g6zqFpg1FkG8vYGUkLWlPWR6MkRU80MyVVDNq6JWr5L9ztZ+EOvopeT9hTP8AdvULkVeC+vp++J+EPV79lx6/F7X8P4c9M7c7nm67rYyXFTXd8/eagtRjbb7p3KtieN65fmaF8Dhpm+R3X+pPU9cNkydnHU4j3LpwSPyXHuaU0TgHO/auphkJmbEw1R/csJyOezOQ3+25O3Pv355Sd11xJJ3PUra2KZfjf2Q0OkiT4Gd1JMw/E6HS2R59KYsV65cPiCR5+8H08lZrhfxHwutMS2SCyyO6APjVnnZzD7eoVGFzsHlr+FyMWQxtl9exEd2uadv1XLWWuOobpo7f7nVSXOSB2C6t2+x6D5rC4zOYyWjfqxWK8g5XNe0FVk4u8Ar+JdLlNKfEuVDu51Yj54x7eqzbhBx4xuVijxepnso3TsBMekbz/kp1qTRW4Q+OVksThu17CCCq22WqtsmXD7KT7oqa4R4/7Q837VeerO6CxE+KVh2cx7diCtpXz4icKtJawqudeotr2wPkswjleD7+oVfdUeHLU1OcnC36d+Hfpzu5HAKw095p5E99cq+f3IKe0Txr7iZk/nQg5Fmdzhbr2tMY3aauybfxRt3BWijwx13btCvHpu81xOxL2bBv1K7/ABcGGOdO6HCtNMi4ZF7KYeikO/w/r6Ub9o1pkYYXjq2jWfzyy+2/8KwzPXKl28X0aLKVdo5Y4wdzt6k+ZXqKdsvwapv0PMkLo/j0XbqdeiItxqCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiID6Dsdwsz0VxO1hpIBmLyshhHaGb52D6ArC0XiSNkiZXpih7ZI6NcWrgpZXTniccYGwagwu7thzTQO7/kspi8QOgZ4S+R9+J3m10PVVBRRctkpZFxwVP0UkorzVRphii/qhay/4hNGwtd9kr5Gw7yBZygqONYcf9S5Nr4MNDHi4HbjmB5n7fXyUNIsw2SjiXHLivnqeZ7vVTJgrsP0OTkb1zIWn2r1mWxO87ukkduSuMiKVRERMEI1Vx1UIiLJgIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIi3arYn2I2zvMcRcOdwG5AQG0ikCPDcMvhtc/VWR5iOrRUPQrS3C8NdyXasvgb9AKh32XP4luy9lN/AdundDAUUhfsXhgZOmq8i1nLv1qnff0X1+G4XkM+HqrIg7/MXVfL2TxDdl7KOA7dO6EeIpBdh+GPI4N1Rki/+EmrsFqjwvDBrwJNWZBw2/hqFPEN2Xso4C7p3QjxFIH7E4ZgAu1ZeJ/lbVPRfDheGpLiNWX2tHYGoSSniG7L2UxwHbp3QwBFn0uF4auLPhasvNGx5i6oT1Wg4fhxybN1Tf5t+5qHbZZ8Q3ZeyjgO3TuhgiKQocJwy3LX6svk7dCKpAW9jcFwyfkqkcmqrj43yASB1ctA6+q8rVNTovZT0lM5eqd0Or09w+vXsbHlMrkaOFozD7qS3Jyuk+je+3uuBqjR+QwtcXY5q+Qx7jsLVV/Owex9Cuz402J3a3nqB7jSqxsjpt/hEQA2IXYcGHm1U1Hi7h58c/GySva78LXtHyn6rSssrY+Mq6beX3NqRxq/hYa7/AM6EboiLvOIIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAiIgCIiAIiIAvoJBBHcL4iAzaHVeFy2Nr09V4uazPXbyRXK7+WTl8gfVcfOarqDCuwWnKBoUJHc0z3u3ll+p9PZYii50pY0XH5dOxuWd6ph/sIiLoNJ//2Q==" alt="La Qualia"></div>
+    <div>
+      <div class="footer-name">La Qualia</div>
+      <div class="footer-tagline">La technologie au service de l'expérience humaine.</div>
+    </div>
+  </div>
+  <div class="footer-info">
+    Saguenay, Québec<br>
+    <a href="mailto:Amelie.brunelle@laqualia.com">Amelie.brunelle@laqualia.com</a><br>
+    <span style="opacity:.38;font-size:.71rem;margin-top:4px;display:block;">© 2025 La Qualia · Tous droits réservés</span>
+  </div>
+</footer>
+
+<script>
+const nav = document.getElementById('mainNav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 40));
+const obs = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+</script>
 </body>
 </html>
