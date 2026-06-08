@@ -87,6 +87,21 @@ nav.scrolled{background:rgba(12,11,10,0.96);padding-top:0.85rem;padding-bottom:0
 /* ================= HERO ================= */
 #hero{min-height:100vh;position:relative;display:flex;align-items:center;overflow:hidden;background:radial-gradient(130% 100% at 50% 0%,#4a2f18 0%,#33200f 26%,#1f1209 58%,#100a06 100%)}
 .hero-glow-top{position:absolute;top:-220px;left:50%;transform:translateX(-50%);width:1300px;height:720px;border-radius:50%;background:radial-gradient(circle,rgba(240,200,120,0.4) 0%,rgba(216,114,74,0.16) 40%,transparent 68%);filter:blur(34px);pointer-events:none}
+/* Abstract human-tech scene */
+.hero-scene{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:hidden}
+.hero-scene svg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:1}
+.hero-scene .fig{opacity:0;animation:figureFade 1.6s ease forwards}
+.hero-scene .fig-1{animation-delay:0.6s}
+.hero-scene .fig-2{animation-delay:0.9s}
+.hero-scene .fig-3{animation-delay:1.2s}
+.hero-scene .net-line{stroke-dasharray:3 6;animation:dashFlow 12s linear infinite}
+.hero-scene .pulse-node{transform-origin:center;transform-box:fill-box;animation:nodePulse 3s ease-in-out infinite}
+.hero-scene .pulse-node-2{animation-delay:1s}
+.hero-scene .pulse-node-3{animation-delay:2s}
+@keyframes figureFade{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dashFlow{to{stroke-dashoffset:-90}}
+@keyframes nodePulse{0%,100%{opacity:0.3;transform:scale(0.85)}50%{opacity:1;transform:scale(1.15)}}
+@media(max-width:768px){.hero-scene svg{opacity:0.35;right:-20%}}
 .hero-horizon{position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent 5%,var(--cuivre) 35%,var(--or-vif) 50%,var(--corail) 65%,transparent 95%);box-shadow:0 0 60px 8px var(--glow-corail);opacity:0.8}
 .hero-sun{position:absolute;bottom:-340px;left:50%;transform:translateX(-50%);width:680px;height:680px;border-radius:50%;background:radial-gradient(circle,rgba(232,184,96,0.5) 0%,rgba(216,114,74,0.25) 30%,transparent 62%);filter:blur(20px)}
 .hero-content{position:relative;z-index:3;max-width:900px;padding:8rem clamp(1.5rem,5vw,5rem) 6rem}
@@ -112,6 +127,20 @@ nav.scrolled{background:rgba(12,11,10,0.96);padding-top:0.85rem;padding-bottom:0
 .defi-card h3{font-size:1.05rem;font-family:'DM Sans',sans-serif;font-weight:500;letter-spacing:0.02em;color:var(--or-vif);margin-bottom:1rem;text-transform:none}
 .defi-card p{font-family:'Cormorant Garamond',serif;font-size:1.45rem;line-height:1.5;color:var(--ivoire)}
 .defi-card .src-dot{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--corail);box-shadow:0 0 10px var(--corail)}
+/* Palette evolution showcase inside Pourquoi ce nom */
+.palette-evo{margin-top:2rem;padding-top:1.8rem;border-top:1px solid var(--border)}
+.palette-evo-label{font-size:0.64rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-dim);margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between}
+.palette-evo-label span:last-child{color:var(--or-vif)}
+.palette-bar{height:54px;border-radius:10px;position:relative;overflow:hidden;background:linear-gradient(90deg,#0c0b0a 0%,#3a2412 18%,#8a3a1e 38%,#d4724a 58%,#e8603a 70%,#e8b860 86%,#f0e8d8 100%);background-size:200% 100%;animation:paletteShift 9s ease-in-out infinite}
+@keyframes paletteShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.palette-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.12) 50%,transparent 100%);background-size:50% 100%;animation:paletteSheen 4.5s ease-in-out infinite}
+@keyframes paletteSheen{0%{background-position:-60% 0}100%{background-position:160% 0}}
+.palette-swatches{display:flex;gap:0;margin-top:0.8rem;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.palette-swatch{flex:1;height:30px;position:relative;transition:flex var(--t)}
+.palette-swatch:hover{flex:1.8}
+.palette-ends{display:flex;justify-content:space-between;margin-top:0.7rem;font-size:0.72rem}
+.palette-ends .pe-tech{color:var(--text-dim)}
+.palette-ends .pe-human{color:var(--or-vif);font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.9rem}
 .donut-wrap{display:flex;flex-direction:column;align-items:center;gap:2rem}
 .donut{position:relative;width:min(340px,72vw);aspect-ratio:1}
 .donut svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -335,6 +364,32 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 .reveal.visible{opacity:1;transform:translateY(0)}
 .rd1{transition-delay:.08s}.rd2{transition-delay:.16s}.rd3{transition-delay:.24s}.rd4{transition-delay:.32s}.rd5{transition-delay:.4s}
 
+/* ================= MÉTRO TRAJECTOIRE ================= */
+#metro{background:radial-gradient(110% 90% at 50% 30%,#1a1109 0%,var(--noir) 60%);overflow:hidden}
+.metro-wrap{margin-top:1rem;position:relative}
+.metro-svg{width:100%;height:auto;display:block;overflow:visible}
+.metro-station-label{font-family:'DM Sans',sans-serif;font-size:13px;fill:var(--ivoire-dim);font-weight:400}
+.metro-icon{stroke:var(--or-vif);fill:none;stroke-width:1.4;opacity:0.85}
+.metro-line-path{fill:none;stroke-width:7;stroke-linecap:round}
+.metro-line-1{stroke:url(#mLine1)}
+.metro-line-2{stroke:url(#mLine2)}
+.metro-line-3{stroke:url(#mLine3)}
+.metro-stop{opacity:1}
+.metro-stop-pulse{transform-origin:center;transform-box:fill-box;animation:metroPulse 3s ease-in-out infinite}
+@keyframes metroPulse{0%,100%{opacity:0.55}50%{opacity:1}}
+.metro-qnode{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:38px;fill:var(--or-vif)}
+.metro-legend{display:flex;justify-content:center;gap:2.5rem;flex-wrap:wrap;margin-top:2.5rem}
+.metro-leg-item{display:flex;align-items:center;gap:0.8rem}
+.metro-leg-dot{width:30px;height:8px;border-radius:6px;flex-shrink:0}
+.metro-leg-text .t1{font-family:'Cormorant Garamond',serif;font-size:1.15rem;line-height:1.1}
+.metro-leg-text .t2{font-size:0.74rem;color:var(--text-dim);letter-spacing:0.04em}
+.metro-mobile-note{display:none}
+@media(max-width:768px){
+  .metro-svg{display:none}
+  .metro-mobile-note{display:block}
+  .metro-legend{flex-direction:column;align-items:flex-start;gap:1.5rem;max-width:420px;margin-left:auto;margin-right:auto}
+}
+
 /* ================= RESPONSIVE ================= */
 @media(max-width:1024px){
   .eco-grid{grid-template-columns:repeat(3,1fr)}
@@ -391,6 +446,167 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 <!-- ============ HERO ============ -->
 <section id="hero" aria-label="Introduction">
   <div class="hero-glow-top"></div>
+  <div class="hero-scene" aria-hidden="true">
+    <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bigHalo" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#e8b860" stop-opacity="0.32"/>
+          <stop offset="50%" stop-color="#d4724a" stop-opacity="0.14"/>
+          <stop offset="100%" stop-color="#e8603a" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="silhouette" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#e8b860" stop-opacity="0.14"/>
+          <stop offset="60%" stop-color="#d4724a" stop-opacity="0.18"/>
+          <stop offset="100%" stop-color="#e8603a" stop-opacity="0.26"/>
+        </linearGradient>
+        <linearGradient id="silhouetteRim" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#f4e0b0" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#e8603a" stop-opacity="0.85"/>
+        </linearGradient>
+        <radialGradient id="nodeGlow">
+          <stop offset="0%" stop-color="#fff5dd" stop-opacity="1"/>
+          <stop offset="35%" stop-color="#e8b860" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="#d4724a" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="netGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="#e8b860" stop-opacity="0"/>
+          <stop offset="50%" stop-color="#f0d9a0" stop-opacity="0.7"/>
+          <stop offset="100%" stop-color="#e8b860" stop-opacity="0"/>
+        </linearGradient>
+        <pattern id="dotMesh" x="0" y="0" width="11" height="11" patternUnits="userSpaceOnUse">
+          <circle cx="2" cy="2" r="0.8" fill="#e8b860" opacity="0.5"/>
+        </pattern>
+      </defs>
+
+      <!-- Atmospheric warm halos behind silhouettes -->
+      <ellipse cx="900" cy="280" rx="220" ry="200" fill="url(#bigHalo)"/>
+      <ellipse cx="1180" cy="450" rx="320" ry="290" fill="url(#bigHalo)"/>
+      <ellipse cx="1420" cy="520" rx="180" ry="170" fill="url(#bigHalo)"/>
+
+      <!-- Neural network lines (back layer, flowing dashed) -->
+      <g stroke="url(#netGrad)" stroke-width="1.4" fill="none">
+        <path class="net-line" d="M 900 280 Q 1040 350 1180 320"/>
+        <path class="net-line" d="M 1180 320 Q 1300 440 1420 580"/>
+        <path class="net-line" d="M 900 280 Q 1000 510 1080 690"/>
+        <path class="net-line" d="M 1080 690 Q 1260 640 1420 580"/>
+        <path class="net-line" d="M 1180 320 Q 1120 470 1080 690"/>
+        <path class="net-line" d="M 900 280 Q 1140 410 1420 580"/>
+      </g>
+
+      <!-- Constellation dots -->
+      <g fill="#e8b860">
+        <circle cx="820" cy="200" r="1.4" opacity="0.55"/>
+        <circle cx="1300" cy="190" r="1.6" opacity="0.6"/>
+        <circle cx="1500" cy="350" r="1.3" opacity="0.5"/>
+        <circle cx="820" cy="640" r="1.7" opacity="0.6"/>
+        <circle cx="1340" cy="780" r="1.4" opacity="0.55"/>
+        <circle cx="950" cy="820" r="1.5" opacity="0.55"/>
+        <circle cx="1530" cy="470" r="1.2" opacity="0.5"/>
+        <circle cx="980" cy="120" r="1.1" opacity="0.45"/>
+        <circle cx="1200" cy="80" r="1.4" opacity="0.55"/>
+        <circle cx="760" cy="400" r="1.3" opacity="0.5"/>
+        <circle cx="1100" cy="180" r="1" opacity="0.4"/>
+        <circle cx="1550" cy="720" r="1.2" opacity="0.5"/>
+      </g>
+
+      <!-- ===== FIGURE 1 — left, smaller silhouette ===== -->
+      <g class="fig fig-1" transform="translate(900 290)">
+        <!-- Combined silhouette path: head + shoulders -->
+        <path d="M -38 -76 C -38 -106, 38 -106, 38 -76 C 38 -52, 38 -30, 32 -6 C 30 4, 28 14, 24 22 L 24 36 C 24 38, 24 40, 24 42 L 65 90 L -65 90 L -24 42 C -24 40, -24 38, -24 36 L -24 22 C -28 14, -30 4, -32 -6 C -38 -30, -38 -52, -38 -76 Z" fill="url(#silhouette)"/>
+        <!-- Rim light on silhouette -->
+        <path d="M -38 -76 C -38 -106, 38 -106, 38 -76 C 38 -52, 38 -30, 32 -6 C 30 4, 28 14, 24 22 L 24 36 C 24 38, 24 40, 24 42 L 65 90 L -65 90 L -24 42 C -24 40, -24 38, -24 36 L -24 22 C -28 14, -30 4, -32 -6 C -38 -30, -38 -52, -38 -76 Z" fill="none" stroke="url(#silhouetteRim)" stroke-width="1.7" opacity="0.92"/>
+        <!-- Tech overlay: dot mesh inside head -->
+        <ellipse cx="0" cy="-58" rx="32" ry="42" fill="url(#dotMesh)" opacity="0.7"/>
+        <!-- Brain circuit -->
+        <g stroke="#f4e0b0" stroke-width="0.9" fill="none" opacity="0.7">
+          <path d="M -22 -72 Q -8 -58 -22 -44"/>
+          <path d="M 22 -72 Q 8 -58 22 -44"/>
+          <path d="M -16 -58 L 16 -58"/>
+          <path d="M -14 -42 L 14 -42"/>
+          <path d="M 0 -86 L 0 -34"/>
+        </g>
+        <!-- Glowing nodes -->
+        <circle class="pulse-node" cx="-14" cy="-62" r="2.4" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-2" cx="16" cy="-54" r="2" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-3" cx="0" cy="-78" r="1.8" fill="#fff5dd"/>
+        <!-- Shoulder circuit lines -->
+        <g stroke="#e8b860" stroke-width="0.7" opacity="0.5" fill="none">
+          <path d="M -54 68 L 54 68"/>
+          <path d="M -45 54 L 45 54"/>
+        </g>
+        <!-- Core heart node -->
+        <circle class="pulse-node" cx="0" cy="60" r="5" fill="url(#nodeGlow)"/>
+      </g>
+
+      <!-- ===== FIGURE 2 — center, large focal silhouette ===== -->
+      <g class="fig fig-2" transform="translate(1180 440)">
+        <!-- Combined silhouette: bigger head + shoulders -->
+        <path d="M -52 -102 C -52 -140, 52 -140, 52 -102 C 52 -72, 52 -42, 44 -10 C 42 4, 38 16, 32 28 L 32 46 C 32 48, 32 52, 32 54 L 90 120 L -90 120 L -32 54 C -32 52, -32 48, -32 46 L -32 28 C -38 16, -42 4, -44 -10 C -52 -42, -52 -72, -52 -102 Z" fill="url(#silhouette)"/>
+        <!-- Rim light highlight on silhouette -->
+        <path d="M -52 -102 C -52 -140, 52 -140, 52 -102 C 52 -72, 52 -42, 44 -10 C 42 4, 38 16, 32 28 L 32 46 C 32 48, 32 52, 32 54 L 90 120 L -90 120 L -32 54 C -32 52, -32 48, -32 46 L -32 28 C -38 16, -42 4, -44 -10 C -52 -42, -52 -72, -52 -102 Z" fill="none" stroke="url(#silhouetteRim)" stroke-width="2.2" opacity="1"/>
+        <!-- Tech overlay: dot mesh -->
+        <ellipse cx="0" cy="-76" rx="46" ry="58" fill="url(#dotMesh)" opacity="0.75"/>
+        <!-- Brain circuit pattern (more elaborate) -->
+        <g stroke="#f4e0b0" stroke-width="1.1" fill="none" opacity="0.78">
+          <path d="M -32 -100 Q -12 -82 -32 -64 Q -12 -46 -32 -28"/>
+          <path d="M 32 -100 Q 12 -82 32 -64 Q 12 -46 32 -28"/>
+          <path d="M -25 -78 L 25 -78"/>
+          <path d="M -20 -58 L 20 -58"/>
+          <path d="M 0 -112 L 0 -42"/>
+          <path d="M -18 -94 Q 0 -90 18 -94"/>
+        </g>
+        <!-- Glowing nodes inside head -->
+        <circle class="pulse-node" cx="-20" cy="-86" r="3" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-2" cx="22" cy="-72" r="2.6" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-3" cx="-10" cy="-62" r="2.3" fill="#fff5dd"/>
+        <circle class="pulse-node" cx="16" cy="-96" r="2.1" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-2" cx="0" cy="-110" r="1.8" fill="#fff5dd"/>
+        <!-- Shoulder circuit grid -->
+        <g stroke="#e8b860" stroke-width="0.9" opacity="0.55" fill="none">
+          <path d="M -75 90 L 75 90"/>
+          <path d="M -83 108 L 83 108"/>
+          <path d="M -60 70 L 60 70"/>
+        </g>
+        <!-- Heart/core glow - prominent -->
+        <circle cx="0" cy="78" r="5" fill="#e8603a" opacity="0.85"/>
+        <circle class="pulse-node" cx="0" cy="78" r="11" fill="url(#nodeGlow)"/>
+      </g>
+
+      <!-- ===== FIGURE 3 — right, smaller silhouette ===== -->
+      <g class="fig fig-3" transform="translate(1420 520)">
+        <!-- Combined silhouette -->
+        <path d="M -35 -70 C -35 -100, 35 -100, 35 -70 C 35 -48, 35 -28, 30 -6 C 28 4, 26 12, 22 20 L 22 32 C 22 34, 22 36, 22 38 L 60 80 L -60 80 L -22 38 C -22 36, -22 34, -22 32 L -22 20 C -26 12, -28 4, -30 -6 C -35 -28, -35 -48, -35 -70 Z" fill="url(#silhouette)"/>
+        <!-- Rim light -->
+        <path d="M -35 -70 C -35 -100, 35 -100, 35 -70 C 35 -48, 35 -28, 30 -6 C 28 4, 26 12, 22 20 L 22 32 C 22 34, 22 36, 22 38 L 60 80 L -60 80 L -22 38 C -22 36, -22 34, -22 32 L -22 20 C -26 12, -28 4, -30 -6 C -35 -28, -35 -48, -35 -70 Z" fill="none" stroke="url(#silhouetteRim)" stroke-width="1.7" opacity="0.92"/>
+        <!-- Tech overlay -->
+        <ellipse cx="0" cy="-52" rx="30" ry="38" fill="url(#dotMesh)" opacity="0.7"/>
+        <!-- Brain circuit -->
+        <g stroke="#f4e0b0" stroke-width="0.9" fill="none" opacity="0.7">
+          <path d="M -20 -66 Q -7 -52 -20 -38"/>
+          <path d="M 20 -66 Q 7 -52 20 -38"/>
+          <path d="M -14 -52 L 14 -52"/>
+          <path d="M 0 -78 L 0 -32"/>
+        </g>
+        <!-- Pulse nodes -->
+        <circle class="pulse-node pulse-node-2" cx="12" cy="-58" r="2.2" fill="#fff5dd"/>
+        <circle class="pulse-node pulse-node-3" cx="-14" cy="-46" r="1.9" fill="#fff5dd"/>
+        <circle class="pulse-node" cx="-2" cy="-70" r="1.7" fill="#fff5dd"/>
+        <!-- Shoulder lines -->
+        <g stroke="#e8b860" stroke-width="0.7" opacity="0.5" fill="none">
+          <path d="M -48 60 L 48 60"/>
+          <path d="M -42 48 L 42 48"/>
+        </g>
+        <!-- Heart node -->
+        <circle class="pulse-node" cx="0" cy="55" r="5" fill="url(#nodeGlow)"/>
+      </g>
+
+      <!-- Connection node sparkles at network intersections -->
+      <circle class="pulse-node" cx="1030" cy="370" r="3.5" fill="url(#nodeGlow)"/>
+      <circle class="pulse-node pulse-node-2" cx="1290" cy="440" r="3" fill="url(#nodeGlow)"/>
+      <circle class="pulse-node pulse-node-3" cx="1080" cy="610" r="3.2" fill="url(#nodeGlow)"/>
+      <circle class="pulse-node" cx="1250" cy="700" r="2.6" fill="url(#nodeGlow)"/>
+    </svg>
+  </div>
   <div class="hero-sun"></div>
   <div class="hero-horizon"></div>
   <div class="hero-content">
@@ -426,6 +642,20 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
         </div>
         <h3>Pourquoi ce nom&nbsp;?</h3>
         <p>«&nbsp;Qualia&nbsp;» désigne la qualité vécue et subjective de nos expériences. Nous plaçons l'humain au cœur de la technologie pour simplifier, soutenir et enrichir chaque moment de vie.</p>
+        <div class="palette-evo">
+          <div class="palette-evo-label"><span>De la technologie…</span><span>…à l'expérience humaine</span></div>
+          <div class="palette-bar" role="img" aria-label="Évolution de la palette : du charbon technologique vers l'ivoire humain"></div>
+          <div class="palette-swatches" aria-hidden="true">
+            <div class="palette-swatch" style="background:#0c0b0a" title="Charbon"></div>
+            <div class="palette-swatch" style="background:#3a2412" title="Brun profond"></div>
+            <div class="palette-swatch" style="background:#8a3a1e" title="Cuivre brûlé"></div>
+            <div class="palette-swatch" style="background:#d4724a" title="Cuivre"></div>
+            <div class="palette-swatch" style="background:#e8603a" title="Corail"></div>
+            <div class="palette-swatch" style="background:#e8b860" title="Ambre"></div>
+            <div class="palette-swatch" style="background:#f0e8d8" title="Ivoire"></div>
+          </div>
+          <div class="palette-ends"><span class="pe-tech">Charbon · structure · machine</span><span class="pe-human">Lumière · chaleur · vie</span></div>
+        </div>
       </div>
       <div class="reveal rd2">
         <div class="donut-wrap">
@@ -677,6 +907,112 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
       </div>
     </div>
     <p class="traj-note reveal">Chaque trajectoire inclut nos 5 services fondamentaux, ajustés selon la profondeur et l'intensité requise.</p>
+  </div>
+</section>
+
+<!-- ============ MÉTRO — LA TRAJECTOIRE ============ -->
+<section id="metro" class="section" aria-label="La trajectoire — un parcours, trois façons d'avancer">
+  <div class="container">
+    <div class="section-header center reveal">
+      <span class="label">La trajectoire</span>
+      <h2 class="headline">Un même parcours. <span class="gold">Trois façons d'avancer.</span></h2>
+      <p>Du diagnostic initial à l'amélioration continue, chaque trajectoire traverse les mêmes grandes étapes — à son propre rythme et avec sa propre intensité.</p>
+    </div>
+
+    <div class="metro-wrap reveal rd1">
+      <svg class="metro-svg" viewBox="0 0 1180 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagramme en ligne de métro : trois trajectoires traversant six stations">
+        <defs>
+          <linearGradient id="mLine1" gradientUnits="userSpaceOnUse" x1="80" y1="180" x2="1140" y2="180">
+            <stop offset="0%" stop-color="#e8603a"/><stop offset="100%" stop-color="#d4724a"/>
+          </linearGradient>
+          <linearGradient id="mLine2" gradientUnits="userSpaceOnUse" x1="80" y1="270" x2="1140" y2="270">
+            <stop offset="0%" stop-color="#e8b860"/><stop offset="100%" stop-color="#c8a050"/>
+          </linearGradient>
+          <linearGradient id="mLine3" gradientUnits="userSpaceOnUse" x1="80" y1="360" x2="1140" y2="360">
+            <stop offset="0%" stop-color="#e88a9a"/><stop offset="100%" stop-color="#d4677e"/>
+          </linearGradient>
+          <radialGradient id="mQGlow"><stop offset="0%" stop-color="#e8b860" stop-opacity="0.5"/><stop offset="100%" stop-color="#e8b860" stop-opacity="0"/></radialGradient>
+          <radialGradient id="mStopGlow"><stop offset="0%" stop-color="#fff5dd"/><stop offset="60%" stop-color="#e8b860" stop-opacity="0.5"/><stop offset="100%" stop-color="#e8b860" stop-opacity="0"/></radialGradient>
+        </defs>
+
+        <!-- Station labels + icons (6 stations at x = 250,410,570,730,890,1050) -->
+        <g class="metro-station-label" text-anchor="middle">
+          <text x="250" y="60">Diagnostic</text>
+          <text x="410" y="60">Préparation</text>
+          <text x="570" y="60">Solutions IA</text>
+          <text x="730" y="60">Automatisation</text>
+          <text x="890" y="60">Académie</text>
+          <text x="1050" y="52">Amélioration</text>
+          <text x="1050" y="70">continue</text>
+        </g>
+        <g class="metro-icon">
+          <!-- Diagnostic: magnifier+bars -->
+          <g transform="translate(250 95)"><circle cx="-4" cy="-4" r="9"/><path d="M3 3 l7 7"/><path d="M-8 -2 v3 M-4 -4 v5 M0 -6 v7"/></g>
+          <!-- Préparation: clipboard -->
+          <g transform="translate(410 95)"><rect x="-9" y="-11" width="18" height="22" rx="2"/><path d="M-4 -11 v-2 h8 v2"/><path d="M-5 -4 h10 M-5 1 h10 M-5 6 h6"/></g>
+          <!-- Solutions IA: brain/chip -->
+          <g transform="translate(570 95)"><circle cx="0" cy="0" r="10"/><path d="M0 -10 v20 M-10 0 h20" opacity="0.6"/><circle cx="0" cy="0" r="3" fill="var(--or-vif)" stroke="none"/></g>
+          <!-- Automatisation: gear -->
+          <g transform="translate(730 95)"><circle cx="0" cy="0" r="6"/><path d="M0 -11 v4 M0 7 v4 M-11 0 h4 M7 0 h4 M-8 -8 l3 3 M5 5 l3 3 M8 -8 l-3 3 M-5 5 l-3 3"/></g>
+          <!-- Académie: graduation cap -->
+          <g transform="translate(890 95)"><path d="M-11 -2 l11 -5 l11 5 l-11 5 z"/><path d="M-6 1 v6 c0 2 12 2 12 0 v-6"/></g>
+          <!-- Amélioration continue: refresh -->
+          <g transform="translate(1050 95)"><path d="M9 -3 a10 10 0 1 0 1 7"/><path d="M9 -10 v7 h-7"/></g>
+        </g>
+
+        <!-- METRO LINES (3 parallel routes) -->
+        <!-- Route 1 (top, coral) y=180 -->
+        <path class="metro-line-path metro-line-1" d="M 95 270 C 140 270 150 180 200 180 L 1090 180 C 1130 180 1140 270 1140 270"/>
+        <!-- Route 2 (middle, gold) y=270 straight -->
+        <path class="metro-line-path metro-line-2" d="M 95 270 L 1140 270"/>
+        <!-- Route 3 (bottom, pink) y=360 -->
+        <path class="metro-line-path metro-line-3" d="M 95 270 C 140 270 150 360 200 360 L 1090 360 C 1130 360 1140 270 1140 270"/>
+
+        <!-- Q START NODE -->
+        <circle cx="80" cy="270" r="46" fill="url(#mQGlow)"/>
+        <circle cx="80" cy="270" r="30" fill="var(--noir)" stroke="var(--or-vif)" stroke-width="2.5"/>
+        <text class="metro-qnode" x="80" y="284" text-anchor="middle">Q</text>
+
+        <!-- END NODE (convergence) -->
+        <circle cx="1140" cy="270" r="34" fill="url(#mQGlow)"/>
+        <circle cx="1140" cy="270" r="17" fill="var(--noir)" stroke="var(--or-vif)" stroke-width="2.5"/>
+        <circle class="metro-stop-pulse" cx="1140" cy="270" r="6" fill="var(--or-vif)"/>
+
+        <!-- STATION STOPS (circles at each station on each line) -->
+        <!-- columns at x=250,410,570,730,890,1050 -->
+        <g>
+          <!-- Line 1 stops (coral) -->
+          <g fill="#e8603a" stroke="#fff5dd" stroke-width="2">
+            <circle class="metro-stop" cx="250" cy="180" r="11"/><circle class="metro-stop" cx="410" cy="180" r="11"/><circle class="metro-stop" cx="570" cy="180" r="11"/><circle class="metro-stop" cx="730" cy="180" r="11"/><circle class="metro-stop" cx="890" cy="180" r="11"/><circle class="metro-stop" cx="1050" cy="180" r="11"/>
+          </g>
+          <!-- Line 2 stops (gold) -->
+          <g fill="#e8b860" stroke="#fff5dd" stroke-width="2">
+            <circle class="metro-stop" cx="250" cy="270" r="11"/><circle class="metro-stop" cx="410" cy="270" r="11"/><circle class="metro-stop" cx="570" cy="270" r="11"/><circle class="metro-stop" cx="730" cy="270" r="11"/><circle class="metro-stop" cx="890" cy="270" r="11"/><circle class="metro-stop" cx="1050" cy="270" r="11"/>
+          </g>
+          <!-- Line 3 stops (pink) -->
+          <g fill="#d4677e" stroke="#fff5dd" stroke-width="2">
+            <circle class="metro-stop" cx="250" cy="360" r="11"/><circle class="metro-stop" cx="410" cy="360" r="11"/><circle class="metro-stop" cx="570" cy="360" r="11"/><circle class="metro-stop" cx="730" cy="360" r="11"/><circle class="metro-stop" cx="890" cy="360" r="11"/><circle class="metro-stop" cx="1050" cy="360" r="11"/>
+          </g>
+        </g>
+      </svg>
+
+      <!-- Legend -->
+      <div class="metro-legend">
+        <div class="metro-leg-item">
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8603a,#d4724a)"></span>
+          <span class="metro-leg-text"><span class="t1 coral">Agile et rapide</span><br><span class="t2">Lancement express</span></span>
+        </div>
+        <div class="metro-leg-item">
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8b860,#c8a050)"></span>
+          <span class="metro-leg-text"><span class="t1 gold">Soutenue et pragmatique</span><br><span class="t2">Intégration progressive</span></span>
+        </div>
+        <div class="metro-leg-item">
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e88a9a,#d4677e)"></span>
+          <span class="metro-leg-text"><span class="t1" style="color:#e88a9a">Profonde et mature</span><br><span class="t2">Levier stratégique</span></span>
+        </div>
+      </div>
+      <p class="metro-mobile-note traj-note">Diagnostic → Préparation → Solutions IA → Automatisation → Académie → Amélioration continue. Les trois trajectoires suivent ce parcours, chacune à son rythme.</p>
+    </div>
   </div>
 </section>
 
