@@ -60,8 +60,11 @@ nav.scrolled{background:rgba(12,11,10,0.96);padding-top:0.85rem;padding-bottom:0
 .nav-links a:hover{color:var(--or-vif)}
 .nav-cta{padding:0.6rem 1.5rem;border:1px solid var(--border-strong);border-radius:var(--radius-pill);color:var(--or-vif)!important;font-size:0.74rem!important;transition:all var(--t)!important}
 .nav-cta:hover{background:var(--or);color:var(--noir)!important;border-color:var(--or)}
-.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;background:none;border:none;padding:4px;z-index:101}
-.nav-toggle span{width:26px;height:2px;background:var(--ivoire);transition:var(--t);display:block}
+.nav-toggle{display:none;flex-direction:column;justify-content:center;gap:6px;cursor:pointer;background:none;border:none;padding:8px;z-index:102;width:42px;height:42px}
+.nav-toggle span{width:24px;height:2px;background:var(--ivoire);transition:var(--t);display:block;transform-origin:center}
+.nav-toggle.open span:nth-child(1){transform:translateY(8px) rotate(45deg)}
+.nav-toggle.open span:nth-child(2){opacity:0}
+.nav-toggle.open span:nth-child(3){transform:translateY(-8px) rotate(-45deg)}
 
 /* ================= BUTTONS ================= */
 .btn-primary{display:inline-flex;align-items:center;gap:0.6rem;padding:0.95rem 2.3rem;background:linear-gradient(135deg,var(--cuivre),var(--or));color:var(--noir);font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;border:none;cursor:pointer;border-radius:var(--radius-pill);transition:all var(--t);position:relative;overflow:hidden}
@@ -171,16 +174,17 @@ nav.scrolled{background:rgba(12,11,10,0.96);padding-top:0.85rem;padding-bottom:0
 
 /* ================= 5 SERVICES ================= */
 #services{background:var(--noir)}
-.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:1.4rem;margin-top:1rem}
-.svc-card{background:linear-gradient(165deg,var(--surface),rgba(20,17,15,0.5));border:1px solid var(--border);border-radius:var(--radius);padding:2.2rem 1.8rem;display:flex;flex-direction:column;transition:all var(--t);position:relative;overflow:hidden}
+.services-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.4rem;margin-top:1rem}
+.svc-card{background:linear-gradient(165deg,var(--surface),rgba(20,17,15,0.5));border:1px solid var(--border);border-radius:var(--radius);padding:2.4rem 1.9rem;display:flex;flex-direction:column;transition:all var(--t);position:relative;overflow:hidden}
 .svc-card:hover{transform:translateY(-6px);border-color:var(--border-strong);box-shadow:0 24px 60px rgba(0,0,0,0.5)}
-.svc-num{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:300;line-height:1;margin-bottom:0.5rem;background:linear-gradient(135deg,var(--or-vif),var(--cuivre));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.svc-icon{width:42px;height:42px;margin-bottom:1.2rem}
-.svc-icon svg{width:100%;height:100%;stroke:var(--corail-soft);fill:none;stroke-width:1.5}
-.svc-card h3{font-size:1.35rem;color:var(--ivoire);margin-bottom:0.7rem}
-.svc-card .desc{font-size:0.86rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.4rem;flex-grow:1}
-.svc-result{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:0.98rem;color:var(--or);padding-top:1.1rem;border-top:1px solid var(--border);line-height:1.5}
-.svc-result b{font-style:normal;font-weight:500;color:var(--or-vif);font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;display:block;margin-bottom:0.4rem}
+.svc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.4rem;gap:1rem}
+.svc-num{flex-shrink:0;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:500;color:var(--noir);background:linear-gradient(135deg,var(--or-vif),var(--cuivre));box-shadow:0 4px 14px var(--glow-or)}
+.svc-icon{width:44px;height:44px;flex-shrink:0;display:grid;place-items:center;border-radius:10px;border:1px solid var(--border);background:rgba(0,0,0,0.25)}
+.svc-icon svg{width:24px;height:24px;stroke:var(--corail-soft);fill:none;stroke-width:1.6}
+.svc-card h3{font-size:1.4rem;color:var(--ivoire);margin-bottom:0.8rem;line-height:1.2}
+.svc-card .desc{font-size:0.92rem;color:var(--text-dim);line-height:1.7;margin-bottom:1.6rem;flex-grow:1}
+.svc-result{font-size:0.95rem;line-height:1.65;color:var(--ivoire-dim);padding-top:1.3rem;border-top:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-style:italic}
+.svc-result b{font-style:normal;font-weight:600;color:var(--or-vif);font-family:'DM Sans',sans-serif;font-size:0.7rem;letter-spacing:0.16em;text-transform:uppercase;display:block;margin-bottom:0.6rem}
 
 /* ================= MÉTHODE (6 étapes) ================= */
 #methode{background:radial-gradient(100% 70% at 100% 50%,#1c1208 0%,var(--charbon) 55%)}
@@ -221,13 +225,19 @@ nav.scrolled{background:rgba(12,11,10,0.96);padding-top:0.85rem;padding-bottom:0
 .flow-arrow{display:grid;place-items:center}
 .flow-arrow svg{width:30px;height:18px;stroke:var(--cuivre);fill:none;stroke-width:2}
 .flow-after{font-weight:500;font-size:1rem;color:var(--text-dark);background:linear-gradient(120deg,rgba(232,184,96,0.32),rgba(216,114,74,0.16));padding:0.5rem 0.9rem;border-radius:8px;display:inline-block;justify-self:start}
-.flow-gain{font-size:0.9rem;color:#b8542f;font-style:italic;font-family:'Cormorant Garamond',serif;font-size:1.05rem}
+.flow-gain{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:#b8542f}
+.flow-mlabel{display:none;font-size:0.66rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:600;margin-bottom:0.35rem}
 @media(max-width:768px){
   .flow-head{display:none}
-  .flow-row{grid-template-columns:1fr;gap:0.5rem;padding:1.4rem 0}
+  .flow-row{grid-template-columns:1fr;gap:0.55rem;padding:1.4rem 1.2rem;margin-bottom:0.6rem;border-top:none;background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(180,90,50,0.08),0 0 0 1px rgba(0,0,0,0.04)}
   .flow-arrow{display:none}
-  .flow-before{font-size:0.95rem}.flow-before::before{content:'Avant · ';font-weight:600;color:#b8542f;text-transform:uppercase;font-size:0.7rem;letter-spacing:0.1em}
-  .flow-after{justify-self:stretch}
+  .flow-mlabel{display:block}
+  .flow-before .flow-mlabel{color:#9a8d7e}
+  .flow-after-wrap .flow-mlabel{color:#b8542f}
+  .flow-gain-wrap .flow-mlabel{color:#9a7440}
+  .flow-before{font-size:1rem;padding-bottom:0.5rem;border-bottom:1px dashed rgba(0,0,0,0.1)}
+  .flow-after{justify-self:stretch;width:100%;font-size:1.05rem;padding:0.65rem 1rem}
+  .flow-gain{font-size:1.1rem;padding-top:0.4rem}
 }
 
 /* ================= SÉCURITÉ ================= */
@@ -337,8 +347,11 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 @media(max-width:768px){
   .nav-links{display:none}
   .nav-toggle{display:flex}
-  .nav-links.open{display:flex;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(12,11,10,0.98);align-items:center;justify-content:center;gap:2rem;z-index:100}
-  .nav-links.open a{font-size:1.15rem}
+  .nav-links.open{display:flex!important;flex-direction:column;position:fixed;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;background:#0c0b0a;background-image:radial-gradient(120% 80% at 50% 0%,#33200f 0%,#1a1008 50%,#0c0b0a 100%);align-items:center;justify-content:center;gap:0.4rem;z-index:101;padding:4.5rem 2rem 3rem;animation:menuFadeIn 0.3s ease;overflow-y:auto}
+  .nav-links.open a{font-size:1.5rem;font-family:'Cormorant Garamond',serif;letter-spacing:0.04em;text-transform:none;color:var(--ivoire);padding:1rem 1.2rem;width:100%;text-align:center;max-width:320px;border-bottom:1px solid var(--border)}
+  .nav-links.open li:last-child a{border-bottom:none}
+  .nav-links.open .nav-cta{margin-top:1.5rem;border:1px solid var(--or)!important;padding:0.9rem 2rem!important;font-size:0.85rem!important;letter-spacing:0.12em!important;text-transform:uppercase!important;font-family:'DM Sans',sans-serif!important;background:linear-gradient(135deg,var(--cuivre),var(--or))!important;color:var(--noir)!important;border-radius:var(--radius-pill)!important;width:auto}
+  @keyframes menuFadeIn{from{opacity:0}to{opacity:1}}
   .compare-grid,.rig-grid{grid-template-columns:1fr}
   .converge{grid-template-columns:1fr;gap:1.5rem}
   .converge-core{margin:1.5rem auto}
@@ -547,39 +560,49 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
     </div>
     <div class="services-grid">
       <div class="svc-card reveal rd1">
-        <div class="svc-num">1</div>
-        <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/><path d="M10 7v6M7 10h6"/></svg></div>
-        <h3>Diagnostic IA</h3>
-        <p class="desc">Explorer la réalité de l'entreprise et comprendre les irritants. Analyse, maturité numérique, priorités et feuille de route.</p>
-        <p class="svc-result"><b>Résultat</b>Vision claire des priorités et des risques.</p>
+        <div class="svc-head">
+          <div class="svc-num">1</div>
+          <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L20 20"/><path d="M10 7v6M7 10h6"/></svg></div>
+        </div>
+        <h3>Diagnostic IA et numérique</h3>
+        <p class="desc">Explorer la réalité de l'entreprise, comprendre les irritants et déterminer où l'IA peut créer une valeur réelle.</p>
+        <p class="svc-result"><b>Résultat attendu</b>Une feuille de route claire pour prioriser les initiatives IA les plus utiles, les plus réalistes et les plus rentables.</p>
       </div>
       <div class="svc-card reveal rd2">
-        <div class="svc-num">2</div>
-        <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v9a2 2 0 01-2 2H3z"/><path d="M3 7V5h5l2 2"/></svg></div>
-        <h3>Préparation</h3>
-        <p class="desc">Organiser les contenus utiles et consolider le terreau numérique nécessaire à une IA fiable et cohérente.</p>
-        <p class="svc-result"><b>Résultat</b>Une entreprise outillée pour une IA fiable.</p>
+        <div class="svc-head">
+          <div class="svc-num">2</div>
+          <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v9a2 2 0 01-2 2H3z"/><path d="M3 7V5h5l2 2"/></svg></div>
+        </div>
+        <h3>Préparation de l'entreprise à l'IA</h3>
+        <p class="desc">Structurer l'information, organiser les contenus utiles et consolider le terreau numérique nécessaire à une IA fiable.</p>
+        <p class="svc-result"><b>Résultat attendu</b>Une organisation plus claire de l'information, qui réduit les zones floues et prépare l'entreprise à utiliser l'IA avec plus de fiabilité, de cohérence et d'efficacité.</p>
       </div>
       <div class="svc-card reveal rd3">
-        <div class="svc-num">3</div>
-        <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" rx="2"/><path d="M12 5v3M9 13h.01M15 13h.01M3 12v2M21 12v2"/></svg></div>
-        <h3>Solutions IA</h3>
-        <p class="desc">Créer des assistants IA sur mesure, adaptés à vos documents, règles et processus. Tests, ajustements et guide d'usage.</p>
-        <p class="svc-result"><b>Résultat</b>Un compagnon IA toujours disponible.</p>
+        <div class="svc-head">
+          <div class="svc-num">3</div>
+          <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" rx="2"/><path d="M12 5v3M9 13h.01M15 13h.01M3 12v2M21 12v2"/></svg></div>
+        </div>
+        <h3>Solutions IA et outils personnalisés</h3>
+        <p class="desc">Créer des assistants IA adaptés aux documents, règles, processus et besoins de l'entreprise.</p>
+        <p class="svc-result"><b>Résultat attendu</b>Un compagnon IA toujours disponible pour soutenir les équipes dans leurs recherches, leurs réponses, leurs communications, leurs apprentissages et leurs tâches du quotidien.</p>
       </div>
       <div class="svc-card reveal rd4">
-        <div class="svc-num">4</div>
-        <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="16" r="2.5"/><path d="M9 5V3M5 9H3M16 11v2M20.5 16H19"/></svg></div>
-        <h3>Automatisation</h3>
-        <p class="desc">Éliminer les tâches répétitives et les suivis manuels. Workflows intelligents intégrés à vos outils existants.</p>
-        <p class="svc-result"><b>Résultat</b>Circulation fluide, moins d'oublis.</p>
+        <div class="svc-head">
+          <div class="svc-num">4</div>
+          <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="16" r="2.5"/><path d="M9 5V3M5 9H3M16 11v2M20.5 16H19"/></svg></div>
+        </div>
+        <h3>Automatisation intelligente</h3>
+        <p class="desc">Automatiser les tâches répétitives, les suivis et les transferts d'information qui ralentissent le travail quotidien.</p>
+        <p class="svc-result"><b>Résultat attendu</b>Moins de copier-coller, moins d'oublis, moins de suivis manuels et une circulation de l'information plus fluide.</p>
       </div>
       <div class="svc-card reveal rd5">
-        <div class="svc-num">5</div>
-        <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M5 11v5c0 1.5 3 3 7 3s7-1.5 7-3v-5"/></svg></div>
+        <div class="svc-head">
+          <div class="svc-num">5</div>
+          <div class="svc-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4L2 9l10 5 10-5z"/><path d="M5 11v5c0 1.5 3 3 7 3s7-1.5 7-3v-5"/></svg></div>
+        </div>
         <h3>Notre Académie</h3>
-        <p class="desc">Former à l'usage concret, responsable et sécuritaire de l'IA. Ateliers pratiques, conférences et accompagnement.</p>
-        <p class="svc-result"><b>Résultat</b>Équipes confiantes et autonomes.</p>
+        <p class="desc">Former, sensibiliser et accompagner les gestionnaires et équipes dans l'usage concret, responsable et sécuritaire de l'IA.</p>
+        <p class="svc-result"><b>Résultat attendu</b>Des équipes plus confiantes, mieux outillées et capables d'utiliser l'IA efficacement, tout en respectant les bonnes pratiques, les données sensibles et le cadre de l'entreprise.</p>
       </div>
     </div>
   </div>
@@ -669,34 +692,34 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
       <span>Avant</span><span></span><span class="after">Après La Qualia</span><span>Gain</span>
     </div>
     <div class="flow-row reveal rd1">
-      <div class="flow-before">Documents dispersés</div>
+      <div class="flow-before"><span class="flow-mlabel">Avant</span>Documents dispersés</div>
       <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 30 18"><path d="M2 9h24M20 3l6 6-6 6"/></svg></div>
-      <div><span class="flow-after">Base de connaissances claire</span></div>
-      <div class="flow-gain">Recherche plus rapide</div>
+      <div class="flow-after-wrap"><span class="flow-mlabel">Après La Qualia</span><span class="flow-after">Base de connaissances claire</span></div>
+      <div class="flow-gain-wrap"><span class="flow-mlabel">Gain</span><div class="flow-gain">Recherche plus rapide</div></div>
     </div>
     <div class="flow-row reveal rd1">
-      <div class="flow-before">Questions répétitives</div>
+      <div class="flow-before"><span class="flow-mlabel">Avant</span>Questions répétitives</div>
       <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 30 18"><path d="M2 9h24M20 3l6 6-6 6"/></svg></div>
-      <div><span class="flow-after">Assistant IA qui guide</span></div>
-      <div class="flow-gain">Moins d'interruptions</div>
+      <div class="flow-after-wrap"><span class="flow-mlabel">Après La Qualia</span><span class="flow-after">Assistant IA qui guide</span></div>
+      <div class="flow-gain-wrap"><span class="flow-mlabel">Gain</span><div class="flow-gain">Moins d'interruptions</div></div>
     </div>
     <div class="flow-row reveal rd1">
-      <div class="flow-before">Suivis manuels</div>
+      <div class="flow-before"><span class="flow-mlabel">Avant</span>Suivis manuels</div>
       <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 30 18"><path d="M2 9h24M20 3l6 6-6 6"/></svg></div>
-      <div><span class="flow-after">Workflow automatisé</span></div>
-      <div class="flow-gain">Moins de copier-coller</div>
+      <div class="flow-after-wrap"><span class="flow-mlabel">Après La Qualia</span><span class="flow-after">Workflow automatisé</span></div>
+      <div class="flow-gain-wrap"><span class="flow-mlabel">Gain</span><div class="flow-gain">Moins de copier-coller</div></div>
     </div>
     <div class="flow-row reveal rd1">
-      <div class="flow-before">Adoption floue de l'IA</div>
+      <div class="flow-before"><span class="flow-mlabel">Avant</span>Adoption floue de l'IA</div>
       <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 30 18"><path d="M2 9h24M20 3l6 6-6 6"/></svg></div>
-      <div><span class="flow-after">Règles et cas pratiques</span></div>
-      <div class="flow-gain">Usage responsable</div>
+      <div class="flow-after-wrap"><span class="flow-mlabel">Après La Qualia</span><span class="flow-after">Règles et cas pratiques</span></div>
+      <div class="flow-gain-wrap"><span class="flow-mlabel">Gain</span><div class="flow-gain">Usage responsable</div></div>
     </div>
     <div class="flow-row reveal rd1">
-      <div class="flow-before">Formation verbale volatile</div>
+      <div class="flow-before"><span class="flow-mlabel">Avant</span>Formation verbale volatile</div>
       <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 30 18"><path d="M2 9h24M20 3l6 6-6 6"/></svg></div>
-      <div><span class="flow-after">Parcours réutilisable</span></div>
-      <div class="flow-gain">Intégration constante</div>
+      <div class="flow-after-wrap"><span class="flow-mlabel">Après La Qualia</span><span class="flow-after">Parcours réutilisable</span></div>
+      <div class="flow-gain-wrap"><span class="flow-mlabel">Gain</span><div class="flow-gain">Intégration constante</div></div>
     </div>
   </div>
 </section>
@@ -918,8 +941,8 @@ const navbar=document.getElementById('navbar');
 window.addEventListener('scroll',()=>{navbar.classList.toggle('scrolled',window.scrollY>60);},{passive:true});
 // Mobile menu
 const toggle=document.getElementById('navToggle'),navLinks=document.getElementById('navLinks');
-toggle.addEventListener('click',()=>{const o=navLinks.classList.toggle('open');toggle.setAttribute('aria-expanded',o);});
-navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{navLinks.classList.remove('open');toggle.setAttribute('aria-expanded','false');}));
+toggle.addEventListener('click',()=>{const o=navLinks.classList.toggle('open');toggle.classList.toggle('open',o);toggle.setAttribute('aria-expanded',o);document.body.style.overflow=o?'hidden':'';});
+navLinks.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{navLinks.classList.remove('open');toggle.classList.remove('open');toggle.setAttribute('aria-expanded','false');document.body.style.overflow='';}));
 // Reveal on scroll
 const obs=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:0.12,rootMargin:'0px 0px -50px 0px'});
 document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));
