@@ -920,7 +920,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
     </div>
 
     <div class="metro-wrap reveal rd1">
-      <svg class="metro-svg" viewBox="0 0 1180 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagramme en ligne de métro : trois trajectoires traversant six stations">
+      <svg class="metro-svg" viewBox="0 0 1210 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagramme en ligne de métro : trois trajectoires traversant cinq services puis convergeant vers l'amélioration continue">
         <defs>
           <linearGradient id="mLine1" gradientUnits="userSpaceOnUse" x1="80" y1="180" x2="1140" y2="180">
             <stop offset="0%" stop-color="#e8603a"/><stop offset="100%" stop-color="#d4724a"/>
@@ -935,15 +935,13 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
           <radialGradient id="mStopGlow"><stop offset="0%" stop-color="#fff5dd"/><stop offset="60%" stop-color="#e8b860" stop-opacity="0.5"/><stop offset="100%" stop-color="#e8b860" stop-opacity="0"/></radialGradient>
         </defs>
 
-        <!-- Station labels + icons (6 stations at x = 250,410,570,730,890,1050) -->
+        <!-- Station labels + icons (5 services at x = 250,410,570,730,890) -->
         <g class="metro-station-label" text-anchor="middle">
           <text x="250" y="60">Diagnostic</text>
           <text x="410" y="60">Préparation</text>
           <text x="570" y="60">Solutions IA</text>
           <text x="730" y="60">Automatisation</text>
           <text x="890" y="60">Académie</text>
-          <text x="1050" y="52">Amélioration</text>
-          <text x="1050" y="70">continue</text>
         </g>
         <g class="metro-icon">
           <!-- Diagnostic: magnifier+bars -->
@@ -956,42 +954,45 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
           <g transform="translate(730 95)"><circle cx="0" cy="0" r="6"/><path d="M0 -11 v4 M0 7 v4 M-11 0 h4 M7 0 h4 M-8 -8 l3 3 M5 5 l3 3 M8 -8 l-3 3 M-5 5 l-3 3"/></g>
           <!-- Académie: graduation cap -->
           <g transform="translate(890 95)"><path d="M-11 -2 l11 -5 l11 5 l-11 5 z"/><path d="M-6 1 v6 c0 2 12 2 12 0 v-6"/></g>
-          <!-- Amélioration continue: refresh -->
-          <g transform="translate(1050 95)"><path d="M9 -3 a10 10 0 1 0 1 7"/><path d="M9 -10 v7 h-7"/></g>
         </g>
 
-        <!-- METRO LINES (3 parallel routes) -->
+        <!-- METRO LINES (3 parallel routes through 5 stations, then converge) -->
         <!-- Route 1 (top, coral) y=180 -->
-        <path class="metro-line-path metro-line-1" d="M 95 270 C 140 270 150 180 200 180 L 1090 180 C 1130 180 1140 270 1140 270"/>
+        <path class="metro-line-path metro-line-1" d="M 95 270 C 140 270 150 180 200 180 L 940 180 C 1080 180 1090 270 1140 270"/>
         <!-- Route 2 (middle, gold) y=270 straight -->
         <path class="metro-line-path metro-line-2" d="M 95 270 L 1140 270"/>
         <!-- Route 3 (bottom, pink) y=360 -->
-        <path class="metro-line-path metro-line-3" d="M 95 270 C 140 270 150 360 200 360 L 1090 360 C 1130 360 1140 270 1140 270"/>
+        <path class="metro-line-path metro-line-3" d="M 95 270 C 140 270 150 360 200 360 L 940 360 C 1080 360 1090 270 1140 270"/>
 
         <!-- Q START NODE -->
         <circle cx="80" cy="270" r="46" fill="url(#mQGlow)"/>
         <circle cx="80" cy="270" r="30" fill="var(--noir)" stroke="var(--or-vif)" stroke-width="2.5"/>
         <text class="metro-qnode" x="80" y="284" text-anchor="middle">Q</text>
 
-        <!-- END NODE (convergence) -->
-        <circle cx="1140" cy="270" r="34" fill="url(#mQGlow)"/>
-        <circle cx="1140" cy="270" r="17" fill="var(--noir)" stroke="var(--or-vif)" stroke-width="2.5"/>
-        <circle class="metro-stop-pulse" cx="1140" cy="270" r="6" fill="var(--or-vif)"/>
+        <!-- END NODE = Amélioration continue (final destination, not a service) -->
+        <circle cx="1140" cy="270" r="40" fill="url(#mQGlow)"/>
+        <circle cx="1140" cy="270" r="24" fill="var(--noir)" stroke="var(--or-vif)" stroke-width="2.5"/>
+        <circle cx="1140" cy="270" r="13" fill="url(#mStopGlow)" opacity="0.9"/>
+        <circle class="metro-stop-pulse" cx="1140" cy="270" r="5" fill="#fff5dd"/>
+        <g class="metro-station-label" text-anchor="middle" fill="#f0e8d8">
+          <text x="1140" y="345" style="font-weight:500">Amélioration</text>
+          <text x="1140" y="363" style="font-weight:500">continue</text>
+        </g>
 
-        <!-- STATION STOPS (circles at each station on each line) -->
-        <!-- columns at x=250,410,570,730,890,1050 -->
+        <!-- STATION STOPS (circles at each of the 5 services on each line) -->
+        <!-- columns at x=250,410,570,730,890 -->
         <g>
           <!-- Line 1 stops (coral) -->
           <g fill="#e8603a" stroke="#fff5dd" stroke-width="2">
-            <circle class="metro-stop" cx="250" cy="180" r="11"/><circle class="metro-stop" cx="410" cy="180" r="11"/><circle class="metro-stop" cx="570" cy="180" r="11"/><circle class="metro-stop" cx="730" cy="180" r="11"/><circle class="metro-stop" cx="890" cy="180" r="11"/><circle class="metro-stop" cx="1050" cy="180" r="11"/>
+            <circle class="metro-stop" cx="250" cy="180" r="11"/><circle class="metro-stop" cx="410" cy="180" r="11"/><circle class="metro-stop" cx="570" cy="180" r="11"/><circle class="metro-stop" cx="730" cy="180" r="11"/><circle class="metro-stop" cx="890" cy="180" r="11"/>
           </g>
           <!-- Line 2 stops (gold) -->
           <g fill="#e8b860" stroke="#fff5dd" stroke-width="2">
-            <circle class="metro-stop" cx="250" cy="270" r="11"/><circle class="metro-stop" cx="410" cy="270" r="11"/><circle class="metro-stop" cx="570" cy="270" r="11"/><circle class="metro-stop" cx="730" cy="270" r="11"/><circle class="metro-stop" cx="890" cy="270" r="11"/><circle class="metro-stop" cx="1050" cy="270" r="11"/>
+            <circle class="metro-stop" cx="250" cy="270" r="11"/><circle class="metro-stop" cx="410" cy="270" r="11"/><circle class="metro-stop" cx="570" cy="270" r="11"/><circle class="metro-stop" cx="730" cy="270" r="11"/><circle class="metro-stop" cx="890" cy="270" r="11"/>
           </g>
           <!-- Line 3 stops (pink) -->
           <g fill="#d4677e" stroke="#fff5dd" stroke-width="2">
-            <circle class="metro-stop" cx="250" cy="360" r="11"/><circle class="metro-stop" cx="410" cy="360" r="11"/><circle class="metro-stop" cx="570" cy="360" r="11"/><circle class="metro-stop" cx="730" cy="360" r="11"/><circle class="metro-stop" cx="890" cy="360" r="11"/><circle class="metro-stop" cx="1050" cy="360" r="11"/>
+            <circle class="metro-stop" cx="250" cy="360" r="11"/><circle class="metro-stop" cx="410" cy="360" r="11"/><circle class="metro-stop" cx="570" cy="360" r="11"/><circle class="metro-stop" cx="730" cy="360" r="11"/><circle class="metro-stop" cx="890" cy="360" r="11"/>
           </g>
         </g>
       </svg>
@@ -1011,7 +1012,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
           <span class="metro-leg-text"><span class="t1" style="color:#e88a9a">Profonde et mature</span><br><span class="t2">Levier stratégique</span></span>
         </div>
       </div>
-      <p class="metro-mobile-note traj-note">Diagnostic → Préparation → Solutions IA → Automatisation → Académie → Amélioration continue. Les trois trajectoires suivent ce parcours, chacune à son rythme.</p>
+      <p class="metro-mobile-note traj-note">Diagnostic → Préparation → Solutions IA → Automatisation → Académie. Les trois trajectoires suivent ce parcours, chacune à son rythme, pour mener à une amélioration continue.</p>
     </div>
   </div>
 </section>
