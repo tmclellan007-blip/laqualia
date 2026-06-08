@@ -435,6 +435,29 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
   .metro-legend{flex-direction:column;align-items:flex-start;gap:1.5rem;max-width:420px;margin-left:auto;margin-right:auto}
 }
 
+/* ================= HUMAIN — portraits + voix ================= */
+#humain{background:var(--bg-soft)}
+.humain-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.6rem;margin-top:1rem}
+.humain-card{background:linear-gradient(165deg,var(--surface),rgba(20,17,15,0.45));border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.2rem 2rem 2.6rem;display:flex;flex-direction:column;align-items:center;text-align:center;transition:all var(--t);position:relative;overflow:hidden}
+.humain-card::before{content:'';position:absolute;inset:0;background:radial-gradient(120% 60% at 50% 18%,rgba(232,184,96,0.07),transparent 60%);opacity:0;transition:opacity var(--t);pointer-events:none}
+.humain-card:hover{transform:translateY(-6px);border-color:var(--border-strong);box-shadow:0 26px 64px rgba(0,0,0,0.5)}
+.humain-card:hover::before{opacity:1}
+.humain-portrait{width:200px;height:240px;margin-bottom:1.6rem}
+.humain-portrait svg{width:100%;height:100%;overflow:visible}
+.humain-portrait .pf-stroke{fill:none;stroke:url(#humStroke);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.humain-portrait .pf-shoulder{fill:none;stroke:url(#humStroke);stroke-width:2.2;stroke-linecap:round}
+.humain-portrait .pf-line{stroke:#e8b860;stroke-width:0.8;opacity:0.45;transition:opacity var(--t)}
+.humain-portrait .pf-node-core{fill:#fff6e0}
+.humain-portrait .pf-node{transform-box:fill-box;transform-origin:center;animation:humPulse 3.4s ease-in-out infinite}
+.humain-portrait .pf-node.n2{animation-delay:.7s}.humain-portrait .pf-node.n3{animation-delay:1.4s}.humain-portrait .pf-node.n4{animation-delay:2.1s}
+@keyframes humPulse{0%,100%{opacity:0.65;transform:scale(0.9)}50%{opacity:1;transform:scale(1.12)}}
+.humain-card:hover .pf-line{opacity:0.85}
+.humain-card:hover .pf-spark{opacity:1}
+.humain-portrait .pf-spark{transition:opacity var(--t);opacity:0.6}
+.humain-quote{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.4rem;line-height:1.5;color:var(--ivoire);margin-bottom:1.4rem;text-wrap:pretty}
+.humain-role{font-size:0.72rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--or);font-weight:500}
+.humain-note{text-align:center;margin-top:2.6rem;font-size:0.82rem;color:var(--text-dim);font-style:italic}
+
 /* ================= RESPONSIVE ================= */
 @media(max-width:1100px){
   .nav-links{gap:1.5rem}
@@ -459,6 +482,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
   .nav-links.open .nav-cta{margin-top:1.3rem;border:1px solid var(--or)!important;padding:0.9rem 2rem!important;font-size:0.85rem!important;letter-spacing:0.12em!important;text-transform:uppercase!important;font-family:'DM Sans',sans-serif!important;background:linear-gradient(135deg,var(--cuivre),var(--or))!important;color:var(--noir)!important;border-radius:var(--radius-pill)!important;width:auto}
   @keyframes menuFadeIn{from{opacity:0}to{opacity:1}}
   .compare-grid,.rig-grid{grid-template-columns:1fr}
+  .humain-grid{grid-template-columns:1fr;gap:1.4rem;max-width:480px;margin-left:auto;margin-right:auto}
   .converge{grid-template-columns:1fr;gap:1.5rem}
   .converge-core{margin:1.5rem auto}
   .form-row{grid-template-columns:1fr}
@@ -1242,6 +1266,91 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ============ HUMAIN — portraits + voix ============ -->
+<section id="humain" class="section" aria-label="L'humain au centre de l'IA">
+  <div class="container">
+    <div class="section-header center reveal">
+      <span class="label">L'humain au centre</span>
+      <h2 class="headline">L'IA travaille <span class="gold">avec vous</span>,<br>jamais <span class="gold">à votre place</span></h2>
+      <p>Derrière chaque outil que nous concevons, il y a des personnes réelles — leurs irritants, leurs idées, leur jugement. L'IA éclaire leur pensée&nbsp;; elle ne la remplace pas.</p>
+    </div>
+
+    <!-- shared gradient defs (once) -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+      <linearGradient id="humStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4e0b0"/><stop offset="1" stop-color="#d4724a"/></linearGradient>
+      <radialGradient id="humNode"><stop offset="0" stop-color="#fff6e0"/><stop offset="40%" stop-color="#e8b860"/><stop offset="100%" stop-color="#e8603a" stop-opacity="0"/></radialGradient>
+    </defs></svg>
+
+    <div class="humain-grid">
+
+      <!-- CARD 1 — faces right -->
+      <div class="humain-card reveal rd1">
+        <div class="humain-portrait">
+          <svg viewBox="0 0 220 250" aria-label="Portrait au trait d'une personne, l'IA formant une constellation dans son esprit">
+            <g transform="translate(0,2)">
+              <path class="pf-shoulder" d="M 24 246 C 28 206 52 188 84 182 L 84 172"/>
+              <path class="pf-shoulder" d="M 196 246 C 192 204 168 188 126 182"/>
+              <path class="pf-stroke" d="M 84 182 L 84 156 C 82 149 90 144 97 142 C 110 138 104 129 112 124 C 118 119 127 122 127 115 C 127 110 121 108 127 104 C 133 100 127 95 134 91 C 144 85 132 78 134 67 C 136 45 117 27 91 25 C 63 23 45 45 43 73 C 41 99 52 119 72 128 C 84 134 84 145 84 156"/>
+              <g>
+                <line class="pf-line" x1="72" y1="74" x2="96" y2="62"/><line class="pf-line" x1="96" y1="62" x2="110" y2="84"/><line class="pf-line" x1="72" y1="74" x2="84" y2="96"/><line class="pf-line" x1="84" y1="96" x2="110" y2="84"/><line class="pf-line" x1="96" y1="62" x2="84" y2="96"/>
+                <circle class="pf-node n1" cx="72" cy="74" r="7" fill="url(#humNode)"/><circle class="pf-node n2" cx="96" cy="62" r="8" fill="url(#humNode)"/><circle class="pf-node n3" cx="110" cy="84" r="6" fill="url(#humNode)"/><circle class="pf-node n4" cx="84" cy="96" r="6.5" fill="url(#humNode)"/>
+                <circle class="pf-node-core" cx="72" cy="74" r="2.1"/><circle class="pf-node-core" cx="96" cy="62" r="2.3"/><circle class="pf-node-core" cx="110" cy="84" r="1.9"/><circle class="pf-node-core" cx="84" cy="96" r="2"/>
+              </g>
+              <circle class="pf-spark" cx="100" cy="14" r="1.6" fill="#e8b860"/><circle class="pf-spark" cx="118" cy="6" r="1.1" fill="#e8b860"/>
+            </g>
+          </svg>
+        </div>
+        <p class="humain-quote">« Je passe moins de temps à chercher l'information, et plus de temps à faire ce que j'aime dans mon travail. »</p>
+        <p class="humain-role">Une voix du terrain · Coordination</p>
+      </div>
+
+      <!-- CARD 2 — faces left (mirrored), focal -->
+      <div class="humain-card reveal rd2">
+        <div class="humain-portrait">
+          <svg viewBox="0 0 220 250" aria-label="Portrait au trait d'une personne, l'IA formant une constellation dans son esprit">
+            <g transform="translate(220,2) scale(-1,1)">
+              <path class="pf-shoulder" d="M 24 246 C 28 206 52 188 84 182 L 84 172"/>
+              <path class="pf-shoulder" d="M 196 246 C 192 204 168 188 126 182"/>
+              <path class="pf-stroke" d="M 84 182 L 84 156 C 82 149 90 144 97 142 C 110 138 104 129 112 124 C 118 119 127 122 127 115 C 127 110 121 108 127 104 C 133 100 127 95 134 91 C 144 85 132 78 134 67 C 136 45 117 27 91 25 C 63 23 45 45 43 73 C 41 99 52 119 72 128 C 84 134 84 145 84 156"/>
+              <g>
+                <line class="pf-line" x1="70" y1="68" x2="98" y2="58"/><line class="pf-line" x1="98" y1="58" x2="116" y2="78"/><line class="pf-line" x1="70" y1="68" x2="80" y2="92"/><line class="pf-line" x1="80" y1="92" x2="104" y2="100"/><line class="pf-line" x1="116" y1="78" x2="104" y2="100"/><line class="pf-line" x1="98" y1="58" x2="80" y2="92"/>
+                <circle class="pf-node n1" cx="70" cy="68" r="6.5" fill="url(#humNode)"/><circle class="pf-node n2" cx="98" cy="58" r="8.5" fill="url(#humNode)"/><circle class="pf-node n3" cx="116" cy="78" r="6" fill="url(#humNode)"/><circle class="pf-node n4" cx="80" cy="92" r="6" fill="url(#humNode)"/><circle class="pf-node n2" cx="104" cy="100" r="6.5" fill="url(#humNode)"/>
+                <circle class="pf-node-core" cx="70" cy="68" r="2"/><circle class="pf-node-core" cx="98" cy="58" r="2.4"/><circle class="pf-node-core" cx="116" cy="78" r="1.9"/><circle class="pf-node-core" cx="80" cy="92" r="1.9"/><circle class="pf-node-core" cx="104" cy="100" r="2"/>
+              </g>
+              <circle class="pf-spark" cx="100" cy="14" r="1.6" fill="#e8b860"/><circle class="pf-spark" cx="82" cy="6" r="1.1" fill="#e8b860"/>
+            </g>
+          </svg>
+        </div>
+        <p class="humain-quote">« Mon équipe pose ses questions, l'assistant répond, et je garde une vue claire sur l'essentiel. »</p>
+        <p class="humain-role">Une voix du terrain · Gestion d'équipe</p>
+      </div>
+
+      <!-- CARD 3 — faces right -->
+      <div class="humain-card reveal rd3">
+        <div class="humain-portrait">
+          <svg viewBox="0 0 220 250" aria-label="Portrait au trait d'une personne, l'IA formant une constellation dans son esprit">
+            <g transform="translate(0,2)">
+              <path class="pf-shoulder" d="M 24 246 C 28 206 52 188 84 182 L 84 172"/>
+              <path class="pf-shoulder" d="M 196 246 C 192 204 168 188 126 182"/>
+              <path class="pf-stroke" d="M 84 182 L 84 156 C 82 149 90 144 97 142 C 110 138 104 129 112 124 C 118 119 127 122 127 115 C 127 110 121 108 127 104 C 133 100 127 95 134 91 C 144 85 132 78 134 67 C 136 45 117 27 91 25 C 63 23 45 45 43 73 C 41 99 52 119 72 128 C 84 134 84 145 84 156"/>
+              <g>
+                <line class="pf-line" x1="78" y1="64" x2="104" y2="72"/><line class="pf-line" x1="78" y1="64" x2="86" y2="92"/><line class="pf-line" x1="86" y1="92" x2="104" y2="72"/><line class="pf-line" x1="104" y1="72" x2="112" y2="98"/>
+                <circle class="pf-node n1" cx="78" cy="64" r="7" fill="url(#humNode)"/><circle class="pf-node n3" cx="104" cy="72" r="8" fill="url(#humNode)"/><circle class="pf-node n2" cx="86" cy="92" r="6.5" fill="url(#humNode)"/><circle class="pf-node n4" cx="112" cy="98" r="5.5" fill="url(#humNode)"/>
+                <circle class="pf-node-core" cx="78" cy="64" r="2.1"/><circle class="pf-node-core" cx="104" cy="72" r="2.3"/><circle class="pf-node-core" cx="86" cy="92" r="2"/><circle class="pf-node-core" cx="112" cy="98" r="1.8"/>
+              </g>
+              <circle class="pf-spark" cx="104" cy="14" r="1.6" fill="#e8b860"/><circle class="pf-spark" cx="122" cy="8" r="1.1" fill="#e8b860"/>
+            </g>
+          </svg>
+        </div>
+        <p class="humain-quote">« On n'a pas changé notre façon de travailler. C'est l'IA qui s'est adaptée à nous. »</p>
+        <p class="humain-role">Une voix du terrain · Direction</p>
+      </div>
+
+    </div>
+    <p class="humain-note reveal">Scénarios représentatifs des situations que nous accompagnons.</p>
   </div>
 </section>
 
