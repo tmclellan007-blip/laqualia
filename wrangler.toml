@@ -1,0 +1,8 @@
+name = "la-qualia-contact"
+type = "service"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Variables d'environnement (à compléter après création)
+[env.production]
+vars = { SENDGRID_API_KEY = "SG.xxx" }
