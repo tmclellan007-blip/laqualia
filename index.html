@@ -3152,45 +3152,6 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
   .apropos-compass{grid-template-columns:1fr}
   .compass-value{min-height:auto}
 }
-
-/* ===== STYLES FORMULAIRE CLOUDFLARE PAGES ===== */
-.message-alerte {
-  padding: 15px 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-weight: 500;
-  display: none;
-  animation: slideDown 0.3s ease-out;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.message-alerte.succes {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.message-alerte.erreur {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-#submitBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 </style>
 </head>
 <body>
@@ -4646,39 +4607,57 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
       <a href="#contactForm" class="btn-primary"><span>Contactez-nous pour entamer votre trajectoire</span></a>
     </div>
 
-    <!-- Zone d'alerte pour les messages de succès/erreur -->
-    <div id="messageAlerte" style="display:none;"></div>
-
-    <!-- Formulaire de contact sécurisé Cloudflare Pages -->
-    <form id="formulaireContact" class="contact-form reveal rd4" onsubmit="event.preventDefault(); submitForm();">
+    <div class="contact-form reveal rd4" id="contactForm">
       <h3>Entamez votre trajectoire</h3>
-      
-      <div class="form-row">
-        <div class="form-group"><label for="prenom">Prénom *</label><input type="text" id="prenom" name="prenom" placeholder="Votre prénom" autocomplete="given-name" required></div>
-        <div class="form-group"><label for="nom">Nom</label><input type="text" id="nom" name="nom" placeholder="Votre nom" autocomplete="family-name"></div>
-      </div>
-      
-      <div class="form-group"><label for="email">Courriel professionnel *</label><input type="email" id="email" name="email" placeholder="votre@organisation.com" autocomplete="email" required></div>
-      
-      <div class="form-group"><label for="telephone">Téléphone</label><input type="tel" id="telephone" name="telephone" placeholder="+1 (418) 000-0000" autocomplete="tel"></div>
-      
-      <div class="form-group"><label for="organisation">Organisation</label><input type="text" id="organisation" name="organisation" placeholder="Nom de votre entreprise" autocomplete="organization"></div>
-      
-      <div class="form-group">
-        <label for="trajectoire">Trajectoire envisagée</label>
-        <select id="trajectoire" name="trajectoire">
-          <option value="">Choisir une trajectoire…</option>
-          <option value="Agile et rapide — Lancement express">Agile et rapide — Lancement express</option>
-          <option value="Soutenue et pragmatique — Intégration progressive">Soutenue et pragmatique — Intégration progressive</option>
-          <option value="Profonde et mature — Levier stratégique">Profonde et mature — Levier stratégique</option>
-          <option value="Je veux d'abord explorer">Je veux d'abord explorer</option>
-        </select>
-      </div>
-      
-      <div class="form-group"><label for="message">Décrivez votre principal irritant *</label><textarea id="message" name="message" placeholder="Quel problème voulez-vous résoudre en priorité ?" required></textarea></div>
-      
-      <button type="submit" class="btn-primary" id="submitBtn" style="width:100%"><span>Envoyer ma demande</span></button>
-    </form>
+      <form action="https://formspree.io/f/xrewzbqp" method="POST">
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="prenom">Prénom *</label>
+            <input type="text" id="prenom" name="prenom" placeholder="Votre prénom" required>
+          </div>
+          <div class="form-group">
+            <label for="nom">Nom</label>
+            <input type="text" id="nom" name="nom" placeholder="Votre nom">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Courriel professionnel *</label>
+          <input type="email" id="email" name="email" placeholder="votre@organisation.com" required>
+        </div>
+        
+        <div class="form-group">
+          <label for="telephone">Téléphone</label>
+          <input type="tel" id="telephone" name="telephone" placeholder="+1 (418) 000-0000">
+        </div>
+        
+        <div class="form-group">
+          <label for="organisation">Organisation</label>
+          <input type="text" id="organisation" name="organisation" placeholder="Nom de votre entreprise">
+        </div>
+        
+        <div class="form-group">
+          <label for="trajectoire">Trajectoire envisagée</label>
+          <select id="trajectoire" name="trajectoire">
+            <option value="">Choisir une trajectoire…</option>
+            <option value="Agile et rapide — Lancement express">Agile et rapide — Lancement express</option>
+            <option value="Soutenue et pragmatique — Intégration progressive">Soutenue et pragmatique — Intégration progressive</option>
+            <option value="Profonde et mature — Levier stratégique">Profonde et mature — Levier stratégique</option>
+            <option value="Je veux d'abord explorer">Je veux d'abord explorer</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="message">Décrivez votre principal irritant *</label>
+          <textarea id="message" name="message" placeholder="Quel problème voulez-vous résoudre en priorité ?" required></textarea>
+        </div>
+        
+        <button type="submit" class="btn-primary" style="width:100%">
+          <span>Envoyer ma demande</span>
+        </button>
+      </form>
+    </div>
   </div>
 </section>
 
@@ -4755,104 +4734,9 @@ const spy=new IntersectionObserver((es)=>{
   if(best){ setActive(best.id); }
 },{rootMargin:'-45% 0px -45% 0px',threshold:[0,0.25,0.5,0.75,1]});
 spySections.forEach(s=>spy.observe(s));
-// ================================================
-// FORMULAIRE DE CONTACT - CLOUDFLARE PAGES SÉCURISÉ
-// ================================================
-
-async function submitForm() {
-  // Récupérer les valeurs du formulaire
-  const prenom = document.getElementById('prenom').value.trim();
-  const nom = document.getElementById('nom')?.value.trim() || '';
-  const email = document.getElementById('email').value.trim();
-  const telephone = document.getElementById('telephone')?.value.trim() || '';
-  const organisation = document.getElementById('organisation')?.value.trim() || '';
-  const trajectoire = document.getElementById('trajectoire')?.value.trim() || '';
-  const message = document.getElementById('message').value.trim();
-  
-  // Validation côté client
-  if (!prenom || !email || !message) {
-    afficherMessage('Veuillez remplir au moins : prénom, courriel et message.', 'erreur');
-    return;
-  }
-  
-  // Validation du format email
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    afficherMessage('Veuillez entrer une adresse email valide.', 'erreur');
-    return;
-  }
-  
-  // Désactiver le bouton et afficher "Envoi en cours..."
-  const btn = document.getElementById('submitBtn');
-  const textOriginal = btn.querySelector('span').textContent;
-  btn.disabled = true;
-  btn.querySelector('span').textContent = 'Envoi en cours...';
-  
-  try {
-    // Préparer les données à envoyer
-    const formData = new FormData();
-    formData.append('prenom', prenom);
-    formData.append('nom', nom);
-    formData.append('email', email);
-    formData.append('telephone', telephone);
-    formData.append('organisation', organisation);
-    formData.append('sujet', trajectoire);
-    formData.append('message', message);
-    
-    // ✅ URL du Worker Cloudflare configurée
-    const WORKER_URL = 'https://white-poetry-75ce.tmclellan007.workers.dev';
-    
-    // Envoyer la requête POST vers le Worker
-    const reponse = await fetch(WORKER_URL, {
-      method: 'POST',
-      body: formData
-    });
-    
-    // Vérifier que la réponse est OK
-    if (!reponse.ok) {
-      throw new Error('Erreur réseau (HTTP ' + reponse.status + ')');
-    }
-    
-    // Parser la réponse JSON
-    const data = await reponse.json();
-    
-    // Afficher le message de réponse
-    if (data.succes) {
-      afficherMessage(data.message, 'succes');
-      // Réinitialiser le formulaire
-      document.getElementById('formulaireContact').reset();
-    } else {
-      afficherMessage(data.message, 'erreur');
-    }
-    
-  } catch (erreur) {
-    console.error('Erreur lors de l\'envoi:', erreur);
-    afficherMessage('Une erreur est survenue lors de l\'envoi. Veuillez réessayer ou nous appeler directement.', 'erreur');
-  } finally {
-    // Réactiver le bouton
-    btn.disabled = false;
-    btn.querySelector('span').textContent = textOriginal;
-  }
-}
-
-// Fonction pour afficher les messages avec animations
-function afficherMessage(message, type) {
-  const container = document.getElementById('messageAlerte');
-  if (!container) return;
-  
-  // Appliquer la classe (succes ou erreur)
-  container.className = 'message-alerte ' + type;
-  container.textContent = message;
-  container.style.display = 'block';
-  
-  // Scroll vers le message pour que l'utilisateur le voie
-  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  
-  // Enlever le message après 8 secondes
-  setTimeout(() => {
-    container.style.display = 'none';
-  }, 8000);
-}
+// Form
+// Form - Formspree gère tout automatiquement ✅
+// Aucun JavaScript nécessaire !
 // Metro: illuminer la légende correspondante au survol d'un nœud
 const metroLegend=document.getElementById('metroLegend');
 if(metroLegend){
