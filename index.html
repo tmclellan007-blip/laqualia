@@ -221,8 +221,9 @@ footer .nav-logo-full{width:190px;max-width:100%}
   position:absolute;
   z-index:4;
   right:clamp(2rem,6vw,6.5rem);
-  top:50%;
-  transform:translateY(-50%);
+  top:auto;
+  bottom:clamp(5.5rem,9vh,7rem);
+  transform:none;
   width:clamp(330px,31vw,455px);
   pointer-events:auto;
   opacity:0;
@@ -293,7 +294,7 @@ footer .nav-logo-full{width:190px;max-width:100%}
 .agent-title{min-width:0}
 .agent-title strong{
   display:block;
-  font-size:0.82rem;
+  font-size:0.94rem;
   letter-spacing:0.08em;
   text-transform:uppercase;
   color:var(--ivoire);
@@ -306,7 +307,7 @@ footer .nav-logo-full{width:190px;max-width:100%}
   display:flex;
   align-items:center;
   gap:0.35rem;
-  font-size:0.72rem;
+  font-size:0.82rem;
   color:var(--text-dim);
   line-height:1.3;
 }
@@ -497,6 +498,7 @@ footer .nav-logo-full{width:190px;max-width:100%}
     position:relative;
     right:auto;
     top:auto;
+    bottom:auto;
     transform:none;
     width:min(540px,calc(100% - 3rem));
     margin:0.5rem auto 5.4rem;
@@ -530,11 +532,11 @@ footer .nav-logo-full{width:190px;max-width:100%}
     height:22px;
   }
   .agent-title strong{
-    font-size:0.72rem;
+    font-size:0.8rem;
     letter-spacing:0.06em;
   }
   .agent-title span{
-    font-size:0.66rem;
+    font-size:0.72rem;
   }
   .agent-chips{
     gap:0.25rem;
@@ -2279,7 +2281,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 
 /* ================= MÉTRO TRAJECTOIRE ================= */
 #metro{background:radial-gradient(110% 90% at 50% 30%,#1a1109 0%,var(--bg-deep) 62%);overflow:hidden}
-.metro-wrap{margin-top:0.4rem;position:relative}
+.metro-wrap{margin-top:0.4rem;position:relative;margin-bottom:-2.4rem}
 .metro-svg{width:100%;height:auto;display:block;overflow:visible}
 .metro-station-label{font-family:'DM Sans',sans-serif;font-size:13px;fill:var(--ivoire-dim);font-weight:400}
 .metro-icon{stroke:var(--or-vif);fill:none;stroke-width:1.4;opacity:0.85}
@@ -2293,7 +2295,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 .metro-stop-pulse{transform-origin:center;transform-box:fill-box;animation:metroPulse 3s ease-in-out infinite}
 @keyframes metroPulse{0%,100%{opacity:0.55}50%{opacity:1}}
 .metro-qnode{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:38px;fill:var(--or-vif)}
-.metro-legend{display:flex;justify-content:center;gap:2.2rem;flex-wrap:wrap;margin-top:0.4rem}
+.metro-legend{display:flex;justify-content:center;gap:2.2rem;flex-wrap:wrap;margin-top:-2.9rem;position:relative;z-index:2}
 .metro-leg-item{display:flex;align-items:center;gap:0.7rem;padding:0.4rem 0.6rem;border-radius:10px;transition:all .25s ease;border:1px solid transparent}
 .metro-leg-item.is-active{background:rgba(255,255,255,0.04);border-color:rgba(232,184,96,0.25)}
 .metro-leg-item.is-active .metro-leg-dot{box-shadow:0 0 5px currentColor,0 0 12px currentColor,0 0 22px currentColor}
@@ -2309,7 +2311,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
 @media(max-width:768px){
   .metro-svg{display:none}
   .metro-mobile-note{display:block}
-  .metro-legend{flex-direction:column;align-items:flex-start;gap:1.5rem;max-width:420px;margin-left:auto;margin-right:auto}
+  .metro-legend{flex-direction:column;align-items:flex-start;gap:1.1rem;max-width:420px;margin:-1rem auto 0 auto}
 }
 
 /* ================= HUMAIN — portraits + voix ================= */
@@ -3149,6 +3151,45 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
   }
   .apropos-compass{grid-template-columns:1fr}
   .compass-value{min-height:auto}
+}
+
+/* ===== STYLES FORMULAIRE CLOUDFLARE PAGES ===== */
+.message-alerte {
+  padding: 15px 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  display: none;
+  animation: slideDown 0.3s ease-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.message-alerte.succes {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message-alerte.erreur {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>
 </head>
@@ -4308,9 +4349,7 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
             .venn-ring.gold{stroke:#f2cc79}
             .venn-ring.coral{stroke:#ff8f61}
             .venn-fill{opacity:.95;mix-blend-mode:screen}
-            .v-line{stroke-linecap:round;stroke-width:2.1;filter:url(#vennSoftGlow)}
-            .v-dot{filter:url(#vennSoftGlow)}
-            .v-tag{fill:rgba(12,11,10,0.56);stroke:rgba(255,246,224,0.13);stroke-width:1.1}
+                        .v-tag{fill:rgba(12,11,10,0.56);stroke:rgba(255,246,224,0.13);stroke-width:1.1}
             .v-tag.soft{fill:rgba(18,16,14,0.44)}
             .v-tag.approche{fill:rgba(34,16,12,0.58);stroke:rgba(255,159,120,0.22)}
             .v-label{font-family:'DM Sans',sans-serif;font-size:18px;font-weight:500;fill:rgba(255,232,199,.97);letter-spacing:.01em}
@@ -4325,10 +4364,15 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
           <circle class="venn-ring peach" cx="255" cy="195" r="140" filter="url(#vennSoftGlow)"/>
           <circle class="venn-ring gold" cx="415" cy="195" r="140" filter="url(#vennSoftGlow)"/>
           <circle class="venn-ring coral" cx="335" cy="330" r="140" filter="url(#vennSoftGlow)"/>
-
           <!-- subtle center core -->
-          <circle cx="335" cy="276" r="18" fill="url(#vennCoreFill)" filter="url(#vennCoreGlow)" opacity=".75"/>
-          <circle cx="335" cy="276" r="5" fill="#fff7ea" opacity=".92"/>
+          <circle cx="335" cy="276" r="24" fill="url(#vennCoreFill)" filter="url(#vennCoreGlow)" opacity=".82"/>
+
+          <!-- central approach label -->
+          <rect class="v-tag approche" x="252" y="236" rx="22" ry="22" width="166" height="82"/>
+          <text class="v-label approche" x="335" y="269" text-anchor="middle">
+            <tspan x="335" dy="0">L’approche</tspan>
+            <tspan x="335" dy="28">La Qualia.</tspan>
+          </text>
 
           <!-- left label -->
           <rect class="v-tag soft" x="18" y="138" rx="18" ry="18" width="122" height="72"/>
@@ -4336,8 +4380,6 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
             <tspan x="36" dy="0">Vision</tspan>
             <tspan x="36" dy="28">numérique.</tspan>
           </text>
-          <line class="v-line" x1="140" y1="176" x2="182" y2="186" stroke="url(#linePeach)"/>
-          <circle class="v-dot" cx="188" cy="187" r="4.2" fill="#fff3e9"/>
 
           <!-- right label -->
           <rect class="v-tag soft" x="508" y="138" rx="18" ry="18" width="170" height="72"/>
@@ -4345,25 +4387,10 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
             <tspan x="526" dy="0">Compréhension</tspan>
             <tspan x="526" dy="28">humaine.</tspan>
           </text>
-          <line class="v-line" x1="510" y1="186" x2="492" y2="186" stroke="url(#lineGold)"/>
-          <line class="v-line" x1="492" y1="186" x2="485" y2="188" stroke="url(#lineGold)"/>
-          <circle class="v-dot" cx="480" cy="189" r="4.2" fill="#fff3e0"/>
 
           <!-- bottom label -->
           <rect class="v-tag" x="245" y="452" rx="18" ry="18" width="180" height="40"/>
           <text class="v-label operationnel" x="335" y="478" text-anchor="middle">Sens opérationnel.</text>
-          <line class="v-line" x1="335" y1="452" x2="335" y2="414" stroke="url(#lineGold)"/>
-          <circle class="v-dot" cx="335" cy="408" r="4.2" fill="#ffd08e"/>
-
-          <!-- approach label -->
-          <rect class="v-tag approche" x="36" y="330" rx="18" ry="18" width="146" height="76"/>
-          <text class="v-label approche" x="54" y="360">
-            <tspan x="54" dy="0">L’approche</tspan>
-            <tspan x="54" dy="28">La Qualia.</tspan>
-          </text>
-          <line class="v-line" x1="184" y1="367" x2="230" y2="340" stroke="url(#lineCoral)"/>
-          <line class="v-line" x1="230" y1="340" x2="327" y2="283" stroke="url(#lineCoral)"/>
-          <circle class="v-dot" cx="232" cy="339" r="4.2" fill="#ff9f78"/>
         </svg>
       </div>
       <div class="reveal rd2">
@@ -4619,27 +4646,39 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4rem clamp(
       <a href="#contactForm" class="btn-primary"><span>Contactez-nous pour entamer votre trajectoire</span></a>
     </div>
 
-    <div class="contact-form reveal rd4" id="contactForm">
+    <!-- Zone d'alerte pour les messages de succès/erreur -->
+    <div id="messageAlerte" style="display:none;"></div>
+
+    <!-- Formulaire de contact sécurisé Cloudflare Pages -->
+    <form id="formulaireContact" class="contact-form reveal rd4" onsubmit="event.preventDefault(); submitForm();">
       <h3>Entamez votre trajectoire</h3>
+      
       <div class="form-row">
-        <div class="form-group"><label for="prenom">Prénom</label><input type="text" id="prenom" placeholder="Votre prénom" autocomplete="given-name"></div>
-        <div class="form-group"><label for="nom">Nom</label><input type="text" id="nom" placeholder="Votre nom" autocomplete="family-name"></div>
+        <div class="form-group"><label for="prenom">Prénom *</label><input type="text" id="prenom" name="prenom" placeholder="Votre prénom" autocomplete="given-name" required></div>
+        <div class="form-group"><label for="nom">Nom</label><input type="text" id="nom" name="nom" placeholder="Votre nom" autocomplete="family-name"></div>
       </div>
-      <div class="form-group"><label for="email">Courriel</label><input type="email" id="email" placeholder="votre@organisation.com" autocomplete="email"></div>
-      <div class="form-group"><label for="organisation">Organisation</label><input type="text" id="organisation" placeholder="Nom de votre entreprise" autocomplete="organization"></div>
+      
+      <div class="form-group"><label for="email">Courriel professionnel *</label><input type="email" id="email" name="email" placeholder="votre@organisation.com" autocomplete="email" required></div>
+      
+      <div class="form-group"><label for="telephone">Téléphone</label><input type="tel" id="telephone" name="telephone" placeholder="+1 (418) 000-0000" autocomplete="tel"></div>
+      
+      <div class="form-group"><label for="organisation">Organisation</label><input type="text" id="organisation" name="organisation" placeholder="Nom de votre entreprise" autocomplete="organization"></div>
+      
       <div class="form-group">
         <label for="trajectoire">Trajectoire envisagée</label>
-        <select id="trajectoire">
-          <option value="" disabled selected>Choisir une trajectoire…</option>
-          <option>Agile et rapide — Lancement express</option>
-          <option>Soutenue et pragmatique — Intégration progressive</option>
-          <option>Profonde et mature — Levier stratégique</option>
-          <option>Je veux d'abord explorer</option>
+        <select id="trajectoire" name="trajectoire">
+          <option value="">Choisir une trajectoire…</option>
+          <option value="Agile et rapide — Lancement express">Agile et rapide — Lancement express</option>
+          <option value="Soutenue et pragmatique — Intégration progressive">Soutenue et pragmatique — Intégration progressive</option>
+          <option value="Profonde et mature — Levier stratégique">Profonde et mature — Levier stratégique</option>
+          <option value="Je veux d'abord explorer">Je veux d'abord explorer</option>
         </select>
       </div>
-      <div class="form-group"><label for="message">Décrivez votre principal irritant</label><textarea id="message" placeholder="Quel problème voulez-vous résoudre en priorité ?"></textarea></div>
-      <button type="button" class="btn-primary" style="width:100%" onclick="submitForm()"><span>Envoyer ma demande</span></button>
-    </div>
+      
+      <div class="form-group"><label for="message">Décrivez votre principal irritant *</label><textarea id="message" name="message" placeholder="Quel problème voulez-vous résoudre en priorité ?" required></textarea></div>
+      
+      <button type="submit" class="btn-primary" id="submitBtn" style="width:100%"><span>Envoyer ma demande</span></button>
+    </form>
   </div>
 </section>
 
@@ -4716,11 +4755,103 @@ const spy=new IntersectionObserver((es)=>{
   if(best){ setActive(best.id); }
 },{rootMargin:'-45% 0px -45% 0px',threshold:[0,0.25,0.5,0.75,1]});
 spySections.forEach(s=>spy.observe(s));
-// Form
-function submitForm(){
-  const p=document.getElementById('prenom').value,m=document.getElementById('email').value;
-  if(!p||!m){alert('Veuillez remplir au moins votre prénom et votre courriel.');return;}
-  alert('Merci '+p+' ! Nous vous contacterons très bientôt pour entamer votre trajectoire.');
+// ================================================
+// FORMULAIRE DE CONTACT - CLOUDFLARE PAGES SÉCURISÉ
+// ================================================
+
+async function submitForm() {
+  // Récupérer les valeurs du formulaire
+  const prenom = document.getElementById('prenom').value.trim();
+  const nom = document.getElementById('nom')?.value.trim() || '';
+  const email = document.getElementById('email').value.trim();
+  const telephone = document.getElementById('telephone')?.value.trim() || '';
+  const organisation = document.getElementById('organisation')?.value.trim() || '';
+  const trajectoire = document.getElementById('trajectoire')?.value.trim() || '';
+  const message = document.getElementById('message').value.trim();
+  
+  // Validation côté client
+  if (!prenom || !email || !message) {
+    afficherMessage('Veuillez remplir au moins : prénom, courriel et message.', 'erreur');
+    return;
+  }
+  
+  // Validation du format email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    afficherMessage('Veuillez entrer une adresse email valide.', 'erreur');
+    return;
+  }
+  
+  // Désactiver le bouton et afficher "Envoi en cours..."
+  const btn = document.getElementById('submitBtn');
+  const textOriginal = btn.querySelector('span').textContent;
+  btn.disabled = true;
+  btn.querySelector('span').textContent = 'Envoi en cours...';
+  
+  try {
+    // Préparer les données à envoyer
+    const formData = new FormData();
+    formData.append('prenom', prenom);
+    formData.append('nom', nom);
+    formData.append('email', email);
+    formData.append('telephone', telephone);
+    formData.append('organisation', organisation);
+    formData.append('sujet', trajectoire);
+    formData.append('message', message);
+    
+    // ✅ URL du Worker Cloudflare configurée
+    const WORKER_URL = 'https://white-poetry-75ce.tmclellan007.workers.dev';
+    
+    // Envoyer la requête POST vers le Worker
+    const reponse = await fetch(WORKER_URL, {
+      method: 'POST',
+      body: formData
+    });
+    
+    // Vérifier que la réponse est OK
+    if (!reponse.ok) {
+      throw new Error('Erreur réseau (HTTP ' + reponse.status + ')');
+    }
+    
+    // Parser la réponse JSON
+    const data = await reponse.json();
+    
+    // Afficher le message de réponse
+    if (data.succes) {
+      afficherMessage(data.message, 'succes');
+      // Réinitialiser le formulaire
+      document.getElementById('formulaireContact').reset();
+    } else {
+      afficherMessage(data.message, 'erreur');
+    }
+    
+  } catch (erreur) {
+    console.error('Erreur lors de l\'envoi:', erreur);
+    afficherMessage('Une erreur est survenue lors de l\'envoi. Veuillez réessayer ou nous appeler directement.', 'erreur');
+  } finally {
+    // Réactiver le bouton
+    btn.disabled = false;
+    btn.querySelector('span').textContent = textOriginal;
+  }
+}
+
+// Fonction pour afficher les messages avec animations
+function afficherMessage(message, type) {
+  const container = document.getElementById('messageAlerte');
+  if (!container) return;
+  
+  // Appliquer la classe (succes ou erreur)
+  container.className = 'message-alerte ' + type;
+  container.textContent = message;
+  container.style.display = 'block';
+  
+  // Scroll vers le message pour que l'utilisateur le voie
+  container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  
+  // Enlever le message après 8 secondes
+  setTimeout(() => {
+    container.style.display = 'none';
+  }, 8000);
 }
 // Metro: illuminer la légende correspondante au survol d'un nœud
 const metroLegend=document.getElementById('metroLegend');
