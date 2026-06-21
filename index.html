@@ -2028,10 +2028,10 @@ footer{background:#080706;border-top:1px solid var(--border);padding:4.5rem clam
 .metro-svg{width:100%;height:auto;display:block;overflow:visible}
 .metro-station-label{font-family:'DM Sans',sans-serif;font-size:13px;fill:var(--ivoire-dim);font-weight:400}
 .metro-icon{stroke:var(--or-vif);fill:none;stroke-width:1.4;opacity:0.85}
-.metro-line-path{fill:none;stroke-width:7;stroke-linecap:round}
-.metro-line-1{stroke:url(#mLine1)}
-.metro-line-2{stroke:url(#mLine2)}
-.metro-line-3{stroke:url(#mLine3)}
+.metro-line-path{fill:none;stroke-linecap:round}
+.metro-line-1{stroke:url(#mLine1);stroke-width:4}
+.metro-line-2{stroke:url(#mLine2);stroke-width:7.5}
+.metro-line-3{stroke:url(#mLine3);stroke-width:12}
 .metro-stop{opacity:1;transition:all .25s ease;cursor:pointer;transform-box:fill-box;transform-origin:center}
 .metro-stop-group{cursor:pointer}
 .metro-stop-group:hover .metro-stop{transform:scale(1.35);filter:drop-shadow(0 0 4px currentColor) drop-shadow(0 0 10px currentColor) drop-shadow(0 0 18px currentColor)}
@@ -3771,11 +3771,11 @@ html {
         <!-- columns at x=250,410,570,730,890 -->
         <g>
           <g fill="#e8603a" stroke="#fff5dd" stroke-width="2" style="color:#e8603a">
-            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="250" cy="180" r="11"/></g>
-            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="410" cy="180" r="11"/></g>
-            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="570" cy="180" r="11"/></g>
-            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="730" cy="180" r="11"/></g>
-            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="890" cy="180" r="11"/></g>
+            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="250" cy="180" r="8"/></g>
+            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="410" cy="180" r="8"/></g>
+            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="570" cy="180" r="8"/></g>
+            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="730" cy="180" r="8"/></g>
+            <g class="metro-stop-group" data-line="1"><circle class="metro-stop" cx="890" cy="180" r="8"/></g>
           </g>
           <g fill="#e8b860" stroke="#fff5dd" stroke-width="2" style="color:#e8b860">
             <g class="metro-stop-group" data-line="2"><circle class="metro-stop" cx="250" cy="270" r="11"/></g>
@@ -3785,11 +3785,11 @@ html {
             <g class="metro-stop-group" data-line="2"><circle class="metro-stop" cx="890" cy="270" r="11"/></g>
           </g>
           <g fill="#d4677e" stroke="#fff5dd" stroke-width="2" style="color:#d4677e">
-            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="250" cy="360" r="11"/></g>
-            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="410" cy="360" r="11"/></g>
-            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="570" cy="360" r="11"/></g>
-            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="730" cy="360" r="11"/></g>
-            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="890" cy="360" r="11"/></g>
+            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="250" cy="360" r="14"/></g>
+            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="410" cy="360" r="14"/></g>
+            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="570" cy="360" r="14"/></g>
+            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="730" cy="360" r="14"/></g>
+            <g class="metro-stop-group" data-line="3"><circle class="metro-stop" cx="890" cy="360" r="14"/></g>
           </g>
         </g>
       </svg>
@@ -3797,15 +3797,15 @@ html {
       <!-- Legend -->
       <div class="metro-legend" id="metroLegend">
         <div class="metro-leg-item" data-line="1">
-          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8603a,#d4724a)"></span>
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8603a,#d4724a);height:4px"></span>
           <span class="metro-leg-text"><span class="t1 coral">Agile et rapide</span><br><span class="t2">Lancement express</span><span class="t3">Le trajet le plus direct.</span></span>
         </div>
         <div class="metro-leg-item" data-line="2">
-          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8b860,#c8a050)"></span>
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e8b860,#c8a050);height:7px"></span>
           <span class="metro-leg-text"><span class="t1 gold">Soutenue et pragmatique</span><br><span class="t2">Intégration progressive</span><span class="t3">Un arrêt à chaque station.</span></span>
         </div>
         <div class="metro-leg-item" data-line="3">
-          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e88a9a,#d4677e)"></span>
+          <span class="metro-leg-dot" style="background:linear-gradient(90deg,#e88a9a,#d4677e);height:11px"></span>
           <span class="metro-leg-text"><span class="t1" style="color:#e88a9a">Profonde et mature</span><br><span class="t2">Levier stratégique</span><span class="t3">Le détour le plus large.</span></span>
         </div>
       </div>
