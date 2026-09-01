@@ -3464,6 +3464,79 @@ main{display:flex;flex-direction:column}
 @media(max-width:900px){.focus-offers,.unified-grid{grid-template-columns:1fr}.offer-support{grid-template-columns:1fr}.hero-content{max-width:none}}
 @media(max-width:640px){.focus-offer{padding:1.4rem}.hero-kicker{font-size:.64rem}.hero-subtitle{font-size:.95rem}.hero-founder{align-items:flex-start;padding:.9rem}.hero-founder-mark{width:45px;height:45px;flex-basis:45px;font-size:1.05rem}.hero-founder-copy strong{font-size:1.05rem}.orientation-zone{padding-top:4.4rem;padding-bottom:4.4rem}.orientation-zone::after{width:420px;height:420px;right:-300px;bottom:-220px}}
 </style>
+<style>
+  /* Signature remontée pour préserver le visage sur le visuel de la fondatrice. */
+  #fondatrice { padding-top: clamp(2.75rem, 4.5vw, 4.5rem); }
+  @media (max-width: 600px) { #fondatrice { padding-top: 2.5rem; } }
+
+  /* Deux grandes orientations : deux univers, une seule signature. */
+  .orientation-zone .section-header{max-width:980px}
+  .orientation-zone .section-header .headline{font-size:clamp(2.6rem,5.3vw,5rem);line-height:.98}
+  .orientation-zone .focus-offers{position:relative;gap:1.65rem;align-items:stretch}
+
+  .orientation-zone .focus-offer{min-height:720px;padding:2.25rem 2.1rem 1.8rem;border-radius:32px;isolation:isolate;transform-style:preserve-3d}
+  .orientation-zone .focus-offer:hover{transform:translateY(-9px) scale(1.008)}
+  .orientation-zone .focus-offer::before{right:1.4rem;top:.35rem;font-size:7rem;font-weight:600;opacity:1}
+  .orientation-zone .focus-offer::after{z-index:-1}
+
+  .orientation-zone #agents{color:#eef8ff;border-color:rgba(103,214,255,.42);background:radial-gradient(circle at 86% 13%,rgba(71,204,255,.23),transparent 30%),radial-gradient(circle at 6% 94%,rgba(239,106,50,.17),transparent 34%),linear-gradient(145deg,#06152a 0%,#092d56 55%,#071d3d 100%);box-shadow:0 30px 75px rgba(3,24,53,.34),inset 0 1px 0 rgba(255,255,255,.16)}
+  .orientation-zone #agents::before{color:rgba(115,222,255,.12)}
+  .orientation-zone #agents::after{width:390px;height:390px;right:-210px;bottom:-240px;border-color:rgba(93,218,255,.34);box-shadow:0 0 0 44px rgba(54,154,231,.05),0 0 72px rgba(66,190,255,.16)}
+  .orientation-zone #agents h3,.orientation-zone #agents>p{color:#f5fbff!important}
+  .orientation-zone #agents .focus-offer-kicker{color:#84e4ff}
+  .orientation-zone #agents .focus-offer-icon{color:#8be7ff;background:linear-gradient(145deg,rgba(68,185,245,.28),rgba(7,34,68,.8));border-color:rgba(133,231,255,.42);box-shadow:0 0 0 7px rgba(87,207,255,.06),0 16px 34px rgba(0,14,38,.38),0 0 32px rgba(69,197,255,.18)}
+  .orientation-zone #agents .focus-item{background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(24,96,156,.12));border-color:rgba(132,222,255,.22);box-shadow:0 10px 26px rgba(0,13,34,.18)}
+  .orientation-zone #agents .focus-item b{color:#fff!important}
+  .orientation-zone #agents .focus-item span{color:rgba(229,244,255,.78)!important}
+  .orientation-zone #agents .focus-dot{background:#7ee7ff;box-shadow:0 0 0 4px rgba(126,231,255,.11),0 0 18px rgba(126,231,255,.68)}
+  .orientation-zone #agents .focus-offer-link{color:#8ee8ff!important}
+
+  .orientation-zone #academie{color:#241a15;border-color:rgba(231,108,55,.35);background:radial-gradient(circle at 88% 9%,rgba(255,190,100,.28),transparent 31%),radial-gradient(circle at 5% 96%,rgba(47,180,188,.15),transparent 34%),linear-gradient(145deg,#fffdfa 0%,#ffead6 60%,#f8f2e8 100%);box-shadow:0 30px 75px rgba(97,52,26,.2),inset 0 1px 0 rgba(255,255,255,.92)}
+  .orientation-zone #academie::before{color:rgba(226,103,49,.10)}
+  .orientation-zone #academie::after{width:390px;height:390px;right:-210px;bottom:-240px;border-color:rgba(230,105,48,.28);box-shadow:0 0 0 44px rgba(239,168,83,.06),0 0 72px rgba(225,111,56,.10)}
+  .orientation-zone #academie .focus-offer-icon{color:#e35f2d;background:linear-gradient(145deg,#fff,#ffd5ad);border-color:rgba(227,95,45,.36);box-shadow:0 0 0 7px rgba(227,95,45,.06),0 16px 34px rgba(105,57,28,.16)}
+  .orientation-zone #academie .focus-offer-kicker{color:#c84c21}
+  .orientation-zone #academie .focus-item{background:rgba(255,255,255,.72);border-color:rgba(184,82,38,.16);box-shadow:0 10px 24px rgba(102,57,31,.07)}
+  .orientation-zone #academie .focus-dot{background:#ec6d35;box-shadow:0 0 0 4px rgba(236,109,53,.11)}
+  .orientation-zone #academie .focus-offer-link{color:#bd461e!important}
+
+  .focus-image{position:relative;height:180px;margin:1.35rem 0 1.5rem;border-radius:20px;overflow:hidden}
+  .focus-image::after{content:"";position:absolute;inset:0;pointer-events:none}
+  .focus-image img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .7s cubic-bezier(.2,.65,.2,1),filter .7s ease}
+  .focus-offer:hover .focus-image img{transform:scale(1.035)}
+  .agent-image{border:1px solid rgba(119,222,255,.24);box-shadow:0 16px 34px rgba(0,12,34,.34),inset 0 1px 0 rgba(255,255,255,.08)}
+  .agent-image img{object-position:center 45%;filter:saturate(.94) contrast(1.05)}
+  .agent-image::after{background:linear-gradient(90deg,rgba(3,17,39,.45),transparent 34%,transparent 76%,rgba(3,17,39,.16)),linear-gradient(to top,rgba(3,17,39,.35),transparent 45%)}
+  .academy-image{border:1px solid rgba(204,101,50,.2);box-shadow:0 16px 34px rgba(113,61,30,.15),inset 0 1px 0 rgba(255,255,255,.6)}
+  .academy-image img{object-position:center 48%;filter:saturate(.9) contrast(1.02)}
+  .academy-image::after{background:linear-gradient(to top,rgba(255,239,220,.18),transparent 45%)}
+
+  /* L'Académie suit sa propre recette éditoriale : image d'abord, titre superposé, parcours décalé. */
+  .orientation-zone #academie{display:flex;flex-direction:column;padding-top:2.25rem}
+  .orientation-zone #academie .academy-image{order:-3;height:248px;margin:0 -2.1rem;border:0;border-bottom:1px solid rgba(204,101,50,.2);border-radius:31px 31px 0 0;box-shadow:0 18px 36px rgba(113,61,30,.14)}
+  .orientation-zone #academie .academy-image img{object-position:center 50%}
+  .orientation-zone #academie .focus-offer-top{order:-2;position:relative;z-index:3;align-self:center;width:calc(100% - 1.4rem);margin:0 0 1.15rem;padding:.9rem 1rem;border:1px solid rgba(207,100,48,.22);border-radius:19px;background:rgba(255,249,241,.88);box-shadow:0 16px 34px rgba(92,47,24,.16);backdrop-filter:blur(14px)}
+  .orientation-zone #academie>p{order:-1;margin:.15rem 0 .75rem;font-size:1rem;max-width:520px}
+  .orientation-zone #academie .focus-list{display:grid;grid-template-columns:1fr 1fr;gap:.85rem 1rem;margin:1rem 0 1.65rem;align-items:start}
+  .orientation-zone #academie .focus-item{position:relative;min-height:116px;padding:1.05rem 1rem 1rem;overflow:hidden}
+  .orientation-zone #academie .focus-item::after{position:absolute;right:.65rem;bottom:-.38rem;color:rgba(214,91,41,.09);font-family:var(--serif);font-size:3.5rem;font-weight:650;line-height:1}
+  .orientation-zone #academie .focus-item:nth-child(1){grid-column:1}
+  .orientation-zone #academie .focus-item:nth-child(1)::after{content:"01"}
+  .orientation-zone #academie .focus-item:nth-child(2){grid-column:2;margin-top:1.55rem}
+  .orientation-zone #academie .focus-item:nth-child(2)::after{content:"02"}
+  .orientation-zone #academie .focus-item:nth-child(3){grid-column:1/3;width:78%;justify-self:end;margin-top:-.1rem;background:linear-gradient(135deg,rgba(255,255,255,.78),rgba(224,247,244,.68));border-color:rgba(44,166,182,.22)}
+  .orientation-zone #academie .focus-item:nth-child(3)::after{content:"03";color:rgba(36,150,164,.10)}
+  .orientation-zone #academie .focus-offer-link{margin-top:auto;align-self:flex-start}
+
+  .hero-manifesto{position:relative;max-width:680px;margin-top:1.65rem;padding:1.05rem 1.25rem 1.1rem;border:1px solid rgba(232,184,96,.16);border-radius:16px;background:linear-gradient(112deg,rgba(255,255,255,.055),rgba(216,114,74,.025));box-shadow:0 12px 34px rgba(0,0,0,.11);backdrop-filter:blur(10px);opacity:0;animation:fadeUp 1s ease .8s forwards}
+  .hero-manifesto::before{content:"";position:absolute;left:1.25rem;top:0;width:42px;height:1px;background:linear-gradient(90deg,var(--or),transparent)}
+  .hero-manifesto>span{display:block;margin-bottom:.42rem;color:rgba(232,184,96,.78);font-size:.56rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase}
+  .hero-manifesto>p{margin:0;color:rgba(238,224,204,.78);font-family:var(--serif);font-size:clamp(1.08rem,1.85vw,1.36rem);font-style:italic;font-weight:400;line-height:1.42;letter-spacing:.006em}
+  .footer-ai-note{flex-basis:100%;margin:.05rem 0 0!important;text-align:right;font-size:.59rem!important;letter-spacing:.025em;color:rgba(232,223,211,.38)!important}
+
+  @media(max-width:900px){.orientation-zone .focus-offer{min-height:auto}}
+  @media(max-width:600px){.orientation-zone .focus-offer{padding:1.55rem}.focus-image{height:154px}.orientation-zone #academie{padding-top:1.55rem}.orientation-zone #academie .academy-image{height:210px;margin:0 -1.55rem}.orientation-zone #academie .focus-offer-top{width:calc(100% - .5rem);margin-top:0}.orientation-zone #academie .focus-list{grid-template-columns:1fr}.orientation-zone #academie .focus-item:nth-child(n){grid-column:1;width:100%;margin-top:0}.hero-manifesto{padding:.9rem 1rem}.footer-ai-note{text-align:center}}
+</style>
 </head>
 <body>
 
@@ -3476,8 +3549,8 @@ main{display:flex;flex-direction:column}
     <span></span><span></span><span></span>
   </button>
   <ul class="nav-links" id="navLinks" role="list">
-    <li><a href="#agents" data-target="services">Agents IA</a></li>
-    <li><a href="#academie" data-target="services">Académie</a></li>
+    <li></li>
+    <li></li>
     <li><a href="#offre-modulaire" data-target="services">Services</a></li>
     <li><a href="#methode" data-target="methode">Méthode</a></li>
     <li><a href="#nom-qualia" data-target="nom-qualia">À-propos</a></li>
@@ -3656,7 +3729,6 @@ main{display:flex;flex-direction:column}
   <div class="hero-content">
     <p class="hero-kicker">Intelligence artificielle · Transformation humaine</p>
     <h1 class="display hero-title">Des services d'intelligence artificielle<br><span class="gold">au Saguenay–Lac-Saint-Jean.</span></h1>
-    <p class="hero-subtitle">L'intelligence artificielle n'est qu'un levier. L'expérience est humaine.</p>
   </div>
 
   <div class="hero-agent-chat" aria-label="Exemple de conversation avec un agent IA en entreprise">
@@ -4914,7 +4986,6 @@ main{display:flex;flex-direction:column}
 <section id="fondatrice" aria-label="La fondatrice de La Qualia">
   <div class="founder-shell">
     <header class="founder-head reveal">
-      <span class="founder-label">La Qualia</span>
       <h2>La fondatrice.</h2>
     </header>
 
@@ -4964,7 +5035,7 @@ main{display:flex;flex-direction:column}
   <div class="cta-content">
     <p class="label reveal" style="margin-bottom:1.6rem">La prochaine étape</p>
     <h2 class="reveal">Devenir plus humain<br>avec et par <span class="gold">la technologie.</span></h2>
-    <p class="sub reveal rd1">L'intelligence artificielle n'est qu'un levier. L'expérience est humaine.</p>
+    <p class="sub reveal rd1">Une expertise terrain, une créativité utile et la passion de faire avancer vos projets.</p>
     <p class="reveal rd2">Basée au Saguenay–Lac-Saint-Jean, La Qualia accompagne les organisations d'ici et d'ailleurs. Une première rencontre permet de clarifier votre réalité et de voir si votre besoin appelle un agent IA, une activité de l'Académie ou une combinaison des deux.</p>
     <div class="cta-actions reveal rd3">
       <a class="btn-primary" style="cursor: default; display: flex; align-items: center; justify-content: center; gap: 10px;">
@@ -5092,6 +5163,7 @@ main{display:flex;flex-direction:column}
   <div class="footer-bottom">
     <p>© 2025 La Qualia — Entreprise en IA au Saguenay–Lac-Saint-Jean. Tous droits réservés.</p>
     <p class="footer-tag">Humanité · Clarté · Progression · Pertinence · Discernement</p>
+    <p class="footer-ai-note">Ce site a été conçu avec l'aide de l'IA, par souci de transparence.</p>
   </div>
 </footer>
 
