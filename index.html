@@ -4263,11 +4263,12 @@ main{display:flex;flex-direction:column}
 
 
 
-<!-- Google Consent Mode v2 + GA4 : consentement requis avant chargement Analytics -->
+<!-- Google Consent Mode v2 + GA4 -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
 
+  /* Consentement refusé par défaut avant le chargement de la balise Google */
   gtag('consent', 'default', {
     'analytics_storage': 'denied',
     'ad_storage': 'denied',
@@ -4277,6 +4278,15 @@ main{display:flex;flex-direction:column}
   });
 
   gtag('set', 'ads_data_redaction', true);
+</script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-7WQ2G8JCFT"></script>
+<script>
+  gtag('js', new Date());
+  gtag('config', 'G-7WQ2G8JCFT', {
+    'anonymize_ip': true
+  });
 </script>
 
 <style>
@@ -6281,27 +6291,12 @@ if(metroLegend){
   const saveBtn = document.getElementById('cookieSave');
   const settingsLink = document.getElementById('cookieSettingsLink');
 
-  let analyticsLoaded = false;
-
   function loadAnalytics(){
-    if (analyticsLoaded) return;
-    analyticsLoaded = true;
-
     gtag('consent', 'update', {
       'analytics_storage': 'granted',
       'ad_storage': 'denied',
       'ad_user_data': 'denied',
       'ad_personalization': 'denied'
-    });
-
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA_ID);
-    document.head.appendChild(s);
-
-    gtag('js', new Date());
-    gtag('config', GA_ID, {
-      'anonymize_ip': true
     });
   }
 
