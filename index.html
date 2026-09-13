@@ -3906,6 +3906,73 @@ main{display:flex;flex-direction:column}
   line-height:1.55!important;
 }
 
+.academy-program-icon{
+  margin-top:1.1rem;
+  padding-top:1rem;
+  border-top:1px solid rgba(111,76,49,.12);
+  display:flex;
+  align-items:center;
+  gap:.95rem;
+}
+.academy-program-icon__seal{
+  width:82px;
+  height:82px;
+  flex:0 0 82px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(145deg,rgba(255,255,255,.76),rgba(244,235,224,.96));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 12px 22px rgba(69,48,31,.08);
+  position:relative;
+}
+.academy-program-icon__seal::before{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border-radius:50%;
+  border:1px dashed rgba(111,76,49,.20);
+}
+.academy-program-icon__seal svg{
+  width:42px;
+  height:42px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.academy-program-icon__copy{
+  min-width:0;
+}
+.academy-program-icon__copy strong{
+  display:block;
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.1rem;
+  font-weight:700;
+  color:#211a16;
+  line-height:1.05;
+  margin-bottom:.16rem;
+}
+.academy-program-icon__copy span{
+  display:block;
+  font-size:.72rem;
+  line-height:1.45;
+  color:#6a594d;
+}
+
+.academy-program--conference .academy-program-icon__seal{
+  color:#2f8085;
+  border:1px solid rgba(47,128,133,.18);
+}
+.academy-program--formation .academy-program-icon__seal{
+  color:#d4724a;
+  border:1px solid rgba(212,114,74,.18);
+}
+.academy-program--atelier .academy-program-icon__seal{
+  color:#b38c3e;
+  border:1px solid rgba(179,140,62,.22);
+}
+
 .academy-detail-cta{
   margin-top:1.35rem;
   padding:1.2rem 1.3rem;
@@ -3959,6 +4026,9 @@ main{display:flex;flex-direction:column}
   .academy-detail-shell{padding:1.7rem 1rem}
   .academy-detail-head{margin-bottom:1.8rem}
   .academy-program{padding:1.15rem;border-radius:18px}
+  .academy-program-icon{gap:.8rem}
+  .academy-program-icon__seal{width:72px;height:72px;flex-basis:72px}
+  .academy-program-icon__seal svg{width:38px;height:38px}
   .academy-detail-cta{align-items:flex-start;flex-direction:column}
   .academy-detail-cta a{width:100%;justify-content:center}
 }
@@ -4306,6 +4376,13 @@ main{display:flex;flex-direction:column}
 
 
 
+
+<style>
+.academy-program-icon{
+  justify-content:center!important;
+}
+</style>
+
 </head>
 <body>
 
@@ -4627,6 +4704,19 @@ main{display:flex;flex-direction:column}
               <p>Comment mieux transmettre ce que l’équipe sait déjà? Une réflexion sur l’accueil des nouveaux employés, le partage des savoirs et les nouvelles possibilités offertes par le numérique et l’IA.</p>
             </div>
           </div>
+
+          <div class="academy-program-icon" aria-hidden="true">
+            <div class="academy-program-icon__seal">
+              <svg viewBox="0 0 48 48">
+                <path d="M11 37h26"/>
+                <path d="M15 37V20l9-5 9 5v17"/>
+                <path d="M19 24h10"/>
+                <path d="M19 29h10"/>
+                <path d="M24 15V9"/>
+                <path d="M20.5 11.5 24 9l3.5 2.5"/>
+              </svg>
+            </div>
+          </div>
         </article>
 
         <article class="academy-program academy-program--formation reveal rd2">
@@ -4651,6 +4741,18 @@ main{display:flex;flex-direction:column}
             <div class="academy-topic">
               <h4>Transformer les connaissances de votre équipe en ressources utiles</h4>
               <p>Apprendre à mieux organiser les procédures, les réponses fréquentes et le savoir interne afin que l’information soit plus facile à retrouver, à partager et à utiliser.</p>
+            </div>
+          </div>
+
+          <div class="academy-program-icon" aria-hidden="true">
+            <div class="academy-program-icon__seal">
+              <svg viewBox="0 0 48 48">
+                <path d="M11 14.5c4-2.5 8-2.5 12 0v20c-4-2.5-8-2.5-12 0z"/>
+                <path d="M37 14.5c-4-2.5-8-2.5-12 0v20c4-2.5 8-2.5 12 0z"/>
+                <path d="M23 16v18"/>
+                <path d="M15 20.5h4.5"/>
+                <path d="M28.5 20.5H33"/>
+              </svg>
             </div>
           </div>
         </article>
@@ -4681,6 +4783,21 @@ main{display:flex;flex-direction:column}
             <div class="academy-topic">
               <h4>Repenser l’accueil d’un nouvel employé</h4>
               <p>Revoir votre parcours actuel, identifier ce qui surcharge ou ralentit l’intégration et bâtir une expérience plus claire et progressive.</p>
+            </div>
+          </div>
+
+          <div class="academy-program-icon" aria-hidden="true">
+            <div class="academy-program-icon__seal">
+              <svg viewBox="0 0 48 48">
+                <path d="M12 24.5h24"/>
+                <path d="M16 17.5h16"/>
+                <path d="M16 31.5h16"/>
+                <path d="M18 24.5v7"/>
+                <path d="M30 17.5v7"/>
+                <circle cx="18" cy="33.5" r="2.2"/>
+                <circle cx="30" cy="24.5" r="2.2"/>
+                <circle cx="24" cy="17.5" r="2.2"/>
+              </svg>
             </div>
           </div>
         </article>
