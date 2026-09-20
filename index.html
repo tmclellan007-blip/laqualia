@@ -4515,11 +4515,26 @@ main{display:flex;flex-direction:column}
       apply(analytics);
       if (dialog.open) close();
       banner.hidden = true;
-      document.getElementById('lq-cookie-open').focus();
+      const top = document.querySelector('h1');
+      if (top) {
+        const previousTabindex = top.getAttribute('tabindex');
+        top.setAttribute('tabindex', '-1');
+        top.focus({preventScroll:true});
+        top.addEventListener('blur', () => {
+          if (previousTabindex === null) top.removeAttribute('tabindex');
+          else top.setAttribute('tabindex', previousTabindex);
+        }, {once:true});
+      }
+      // Remove section anchors so a consent-withdrawal reload cannot jump to the footer.
+      try { history.replaceState(history.state, '', location.pathname + location.search); } catch (_) {}
+      window.scrollTo({top:0, left:0, behavior:'instant'});
       status.textContent = persisted ? text.saved : text.temporary;
       setTimeout(() => { status.textContent = ''; }, 8000);
       // Unload the previously authorized library after revocation.
-      if (!analytics && wasLoaded && persisted) location.reload();
+      if (!analytics && wasLoaded && persisted) {
+        try { history.scrollRestoration = 'manual'; } catch (_) {}
+        location.reload();
+      }
     }
     banner.hidden = !!current;
     document.querySelectorAll('[data-cookie-action]').forEach(button => {
