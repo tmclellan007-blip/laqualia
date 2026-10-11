@@ -558,3 +558,9 @@
 .hub-ring{left:37.84%;top:11.83%;width:24.36%;aspect-ratio:auto;border-radius:0;padding:0;background:none;box-shadow:none}
 .hub-portrait{display:block;width:100%;height:auto;filter:drop-shadow(0 1.2cqw 2.4cqw #40109822)}
 @media(max-width:760px){.hub-ring{position:relative;left:auto;top:auto;grid-column:1/-1;width:min(250px,66%);justify-self:center;margin-bottom:6px}.hub-portrait{filter:drop-shadow(0 10px 20px #40109822)}}
+
+/* Note « Mieux outillé » : logos Teams et Slack */
+.pn-app{display:inline-flex;align-items:center;gap:8px;margin:-4px 3px;vertical-align:middle;font-weight:700;color:#eef1fb;white-space:nowrap}
+.pn-chip{display:inline-grid;place-items:center;flex:none;width:28px;height:28px;border-radius:8px;background:#fff;box-shadow:0 2px 8px #00000040}
+.pn-chip svg{display:block;width:19px;height:19px}
+@media(max-width:640px){.pn-chip{width:26px;height:26px}.pn-chip svg{width:18px;height:18px}}
