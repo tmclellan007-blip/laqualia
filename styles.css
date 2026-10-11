@@ -571,3 +571,4 @@
 .pn-card .pn-chip svg{display:block;width:18px;height:18px}
 @media(max-width:640px){.pil .pil-note.pn-card{padding:14px 18px 16px;gap:10px}.pn-card .pn-body{font-size:15px;gap:10px}.pn-card .pn-app{font-size:14.5px}}
 
+@media(min-width:901px) and (max-width:990px){.brand img{width:158px}.nav-wrap{gap:12px}nav{gap:12px}nav>a.button.small{padding:11px 13px;gap:7px;white-space:nowrap}}
