@@ -582,3 +582,20 @@
 @media(min-width:901px) and (max-width:1100px){.lang-switch{font-size:12px;gap:5px}}
 @media(max-width:480px){.nav-wrap{gap:6px}.brand img{width:132px}.lang-switch{margin-right:6px;gap:5px;font-size:12px}.menu-toggle{gap:8px;padding:9px 10px}}
 @media(max-width:350px){.brand img{width:112px}.lang-switch{margin-right:2px}.menu-toggle{padding:9px 8px;gap:6px}}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.form-status{margin:0 0 14px;font-size:14px;font-weight:600;line-height:1.5;min-height:0;outline:none}
+.form-status:empty{display:none}
+.form-status[data-kind=ok]{color:#0d6b3a;background:#e7f6ee;border-radius:10px;padding:12px 14px}
+.form-status[data-kind=error]{color:#a3210f;background:#fdeceb;border-radius:10px;padding:12px 14px}
+form [aria-invalid=true]{border-color:#c62d1a!important;box-shadow:0 0 0 3px #c62d1a22}
+/* Cibles tactiles et lisibilité */
+.contact-reveal,.footer-link,.footer-coordinates a,.linkedin-link{min-height:44px;display:inline-flex;align-items:center}
+.footer .linkedin-link,.footer-coordinates .linkedin-link{min-height:44px}
+.lang-switch a,.lang-switch .ls-cur{padding:12px 4px 11px;margin:-7px 0}
+.lq-cookie-eyebrow{font-size:12px}
+@media(max-width:900px){.menu-toggle{min-height:44px}nav>a{min-height:44px;display:flex;align-items:center}}
+.footer>div>a,.footer>div>.footer-link{display:inline-flex;align-items:center;min-height:44px}
+.lang-switch a,.lang-switch .ls-cur{padding:12px 7px 11px}
+.lang-switch{gap:0}
+.lang-switch a,.lang-switch .ls-cur{padding:5px 7px 4px;margin:0;position:relative}
+.lang-switch a::after,.lang-switch .ls-cur::after{content:"";position:absolute;inset:-10px -2px}

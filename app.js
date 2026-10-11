@@ -40,3 +40,34 @@ document.getElementById('year').textContent=String(new Date().getFullYear());
   button.hidden = false;
  });
 })();
+
+// Formulaire : envoi sans quitter la page, messages localisés, repli sur l'envoi classique.
+(() => {
+ const form = document.getElementById('contact-form'); if (!form) return;
+ const en = document.documentElement.lang.startsWith('en');
+ const T = en
+  ? {req:'Please fill in this field.',mail:'Please enter a valid email address (e.g. name@clinic.com).',sending:'Sending…',ok:'Thank you! Your request has been sent. We will get back to you shortly.',err:'Sorry, your request could not be sent. Please try again or use the contact details on this page.',fix:'Please check the highlighted fields.',btn:'Send my request'}
+  : {req:'Veuillez remplir ce champ.',mail:'Veuillez saisir une adresse courriel valide (ex. : nom@clinique.com).',sending:'Envoi en cours…',ok:'Merci ! Votre demande a bien été envoyée. Nous vous répondrons sous peu.',err:'Désolé, votre demande n’a pas pu être envoyée. Veuillez réessayer ou utiliser les coordonnées de cette page.',fix:'Veuillez vérifier les champs signalés.',btn:'Envoyer ma demande'};
+ const status = document.getElementById('form-status'), btn = form.querySelector('button[type=submit]'), label = btn.querySelector('span');
+ const say = (msg, kind) => { status.textContent = msg; status.dataset.kind = kind || ''; };
+ const check = field => {
+  field.setCustomValidity('');
+  if (!field.checkValidity()) field.setCustomValidity(field.validity.valueMissing ? T.req : T.mail);
+  field.setAttribute('aria-invalid', String(!field.checkValidity()));
+  return field.checkValidity();
+ };
+ const fields = [...form.querySelectorAll('input:not([type=hidden]):not(.hp),textarea')];
+ fields.forEach(f => { f.addEventListener('blur', () => { if (f.value || f.getAttribute('aria-invalid')) check(f); }); f.addEventListener('input', () => { if (f.getAttribute('aria-invalid') === 'true') check(f); }); });
+ form.addEventListener('submit', async event => {
+  event.preventDefault();
+  const bad = fields.filter(f => !check(f));
+  if (bad.length) { say(T.fix, 'error'); bad[0].focus(); bad[0].reportValidity(); return; }
+  btn.disabled = true; label.textContent = T.sending; say('', '');
+  try {
+   const res = await fetch(form.action, {method:'POST', body:new FormData(form), headers:{Accept:'application/json'}});
+   if (!res.ok) throw new Error(res.status);
+   form.reset(); say(T.ok, 'ok'); status.focus();
+  } catch (e) { say(T.err, 'error'); }
+  btn.disabled = false; label.textContent = T.btn;
+ });
+})();
