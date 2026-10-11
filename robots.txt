@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://laqualia.com/sitemap.xml
+Sitemap: https://www.laqualia.com/sitemap.xml
