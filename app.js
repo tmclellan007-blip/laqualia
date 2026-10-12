@@ -86,23 +86,18 @@ document.getElementById('year').textContent=String(new Date().getFullYear());
    label.textContent = open ? btn.dataset.close : btn.dataset.open;
    if (open) warm();
   };
-  // Au dépliage, on centre le milieu de la maquette dans l'écran.
+  // Au dépliage, on centre la maquette elle-même dans l'écran (sous la barre du haut).
   const centre = () => {
-   const close = panel.querySelector('.pil-close'), headH = (document.querySelector('.header') || {offsetHeight: 88}).offsetHeight;
-   const h = panel.scrollHeight - (close ? close.offsetHeight + 26 : 0);
-   const head = pil.querySelector('.pil-head'), gapNow = parseFloat(getComputedStyle(head).marginBottom) || 0;
-   const gapEnd = Math.min(48, Math.max(30, innerWidth * 0.04));
-   const top = panel.getBoundingClientRect().top + scrollY + (gapEnd - gapNow);
-   return Math.max(0, top + h / 2 - (innerHeight + headH) / 2);
+   const mock = [...panel.querySelectorAll('.appwin,.enc-mobile')].find(e => e.offsetParent) || panel, headH = (document.querySelector('.header') || {offsetHeight: 88}).offsetHeight;
+   const r = mock.getBoundingClientRect();
+   return Math.max(0, r.top + scrollY + r.height / 2 - (innerHeight + headH) / 2);
   };
   btn.addEventListener('click', () => {
    const open = !pil.classList.contains('is-open');
    set(open);
    if (!open) return;
-   const go = () => scrollTo({top: centre(), behavior: reduce ? 'auto' : 'smooth'});
+   const go = () => scrollTo({top: centre(), behavior: 'auto'});
    requestAnimationFrame(go);
-   const fix = () => { if (Math.abs(centre() - scrollY) > 8) scrollTo({top: centre(), behavior: reduce ? 'auto' : 'smooth'}); };
-   panel.parentElement.addEventListener('transitionend', fix, {once: true});
   });
   pil.querySelectorAll('[data-pil-close]').forEach(close => close.addEventListener('click', () => {
    set(false);
