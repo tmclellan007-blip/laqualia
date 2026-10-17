@@ -381,6 +381,56 @@ body.learn .side-user{background:#ffffff1a}
 .actions{padding-top:2px}
 @media (max-width:860px){.msg.a > .av{display:none}.box-live .box-body{font-size:16.5px}.bh-hint{display:none}}
 
+/* ======== Zone centrale : accueil + saisie ======== */
+.hello2{display:flex;align-items:center;gap:18px}
+.hello2-av{width:72px;height:72px;border-radius:50%;object-fit:cover;padding:3px;flex:none;background:conic-gradient(var(--orange,#ff5a00),var(--lime,#c7ff00),var(--blue,#005dff),var(--purple,#401098),var(--orange,#ff5a00))}
+.hello2-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hello2-txt .eyebrow{margin:0 0 4px;font-size:11px}
+.hello2-txt h1{font-size:clamp(30px,4.2vw,44px);line-height:1.02;letter-spacing:-1.8px;margin:0;font-weight:800}
+.hello2-sub{margin:0;font-size:clamp(18px,2.2vw,22px);font-weight:600;letter-spacing:-.4px;color:#4a4b52}
+.welcome{padding-top:0;gap:0}
+/* état vide (ordinateur) : accueil + saisie centrés verticalement, suggestions sous la saisie */
+.main.is-empty .scroller{flex:0 1 auto;margin-top:auto}
+.main.is-empty .composer{margin-bottom:auto;background:none;padding-top:4px}
+.main.is-empty .col{padding-bottom:18px}
+.under{display:none;flex-direction:column;gap:10px;margin-top:6px}
+.main.is-empty .under{display:flex}
+.under-lab{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:#7a7b82;padding:0 4px}
+.under .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.under .card{min-height:0;padding:12px 14px;border-radius:14px;font-size:14px;gap:5px}
+.under .card .tag{font-size:10px}
+.notice2{display:flex;align-items:flex-start;gap:8px;margin:4px 4px 0;font-size:12.5px;line-height:1.45;color:#7a5a3a}
+.notice2 svg{flex:none;margin-top:1px;color:var(--orange,#ff5a00)}
+.main.is-empty .composer-meta .fine{display:none}
+/* boîte de saisie */
+.box{min-height:64px;border-radius:22px;padding:8px 8px 8px 20px;border:1.5px solid #dcdbe3;box-shadow:0 1px 2px rgb(16 16 16/.04),0 8px 24px rgb(16 16 16/.06)}
+.box:hover{border-color:#c9c3dc}
+.box:focus-within{border-color:var(--purple,#401098);box-shadow:0 0 0 4px rgb(64 16 152/.12),0 8px 24px rgb(64 16 152/.12)}
+.main.is-empty .box{min-height:76px;border-radius:24px}
+.main.is-empty .box textarea{font-size:18px}
+.send{width:46px;height:46px;transition:transform .15s,background .15s,opacity .15s}
+.send:not(:disabled){background:var(--purple,#401098);box-shadow:0 4px 12px rgb(64 16 152/.3)}
+.send:not(:disabled):hover{transform:translateY(-1px)}
+.send:disabled{background:#d9d4e8;opacity:1;color:#fff}
+.composer-meta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 6px}
+.composer-meta .fine{text-align:left}
+.keys{font-size:11.5px;color:#8a8b92;white-space:nowrap}
+.keys kbd{font:inherit;font-weight:700;color:#5b5c63;background:#fff;border:1px solid #dcdbe3;border-bottom-width:2px;border-radius:5px;padding:0 5px}
+@media (max-width:860px){
+  .main.is-empty .scroller{flex:1 1 auto;margin-top:0}
+  .main.is-empty .composer{margin-bottom:0;background:linear-gradient(to top,var(--paper,#f6f6f2) 80%,transparent)}
+  .main.is-empty .under{order:-1;margin:0 0 8px}
+  .main.is-empty .composer-in{display:flex;flex-direction:column}
+  .under .cards{grid-template-columns:1fr 1fr}
+  .under .card{font-size:13px;padding:10px 12px}
+  .under-lab,.notice2,.keys{display:none}
+  .hello2{gap:14px}
+  .hello2-txt .eyebrow{display:none}
+  .hello2-av{width:56px;height:56px}
+  .main.is-empty .box{min-height:62px}
+  .main.is-empty .box textarea{font-size:16px}
+}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -532,16 +582,14 @@ body.learn .side-user{background:#ffffff1a}
     <div class="scroller" id="scroller">
       <div class="col">
         <section class="welcome" id="empty">
-          <div class="hello">
-          <div class="hello-text">
-          <img class="hello-av" src="avatar.webp" alt="">
-          <p class="eyebrow"><span class="dot"></span>OUTIL DE FORMATION · ÉQUIPE D'ACCUEIL</p>
-          <h1>Bonjour<span id="helloName"></span><span class="orange">.</span> Comment puis-je vous aider<span class="orange">?</span></h1>
+          <div class="hello2">
+            <img class="hello2-av" src="avatar.webp" width="72" height="72" alt="">
+            <div class="hello2-txt">
+              <p class="eyebrow"><span class="dot"></span>OUTIL DE FORMATION · ÉQUIPE D'ACCUEIL</p>
+              <h1>Bonjour<span id="helloName"></span><span class="orange">.</span></h1>
+              <p class="hello2-sub">Comment puis-je vous aider aujourd'hui<span class="orange">?</span></p>
+            </div>
           </div>
-          <figure class="hero-av"><img src="avatar-hero.webp" width="360" height="478" alt="Votre assistante La Qualia"><figcaption><b>Votre coach d'accueil</b><span>Disponible 24 h sur 24</span></figcaption></figure>
-          </div>
-          <div class="notice" id="disclaimer"><b>Important</b><span id="disclaimerText"></span></div>
-          <div class="cards" id="examples"></div>
         </section>
         <div class="thread" id="thread"></div>
         <section class="sim-home learn-only" id="simHome">
@@ -577,7 +625,12 @@ body.learn .side-user{background:#ffffff1a}
           <button class="send" id="send" type="submit" aria-label="Envoyer" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           <button class="stop" id="stop" type="button" aria-label="Arrêter la réponse" hidden><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
         </form>
-        <p class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</p>
+        <div class="composer-meta"><span class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</span><span class="keys"><kbd>Entrée</kbd> envoyer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> nouvelle ligne</span></div>
+        <div class="under" id="under">
+          <div class="under-lab">Suggestions</div>
+          <div class="cards" id="examples"></div>
+          <p class="notice2" id="disclaimer"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg><span id="disclaimerText"></span></p>
+        </div>
       </div>
     </div>
   </main>
@@ -611,6 +664,6 @@ body.learn .side-user{background:#ffffff1a}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171857"></script>
+<script src="app-agent.js?v=202610171901"></script>
 </body>
 </html>

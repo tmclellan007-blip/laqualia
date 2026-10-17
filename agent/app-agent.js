@@ -898,6 +898,23 @@
     }
   });
 
+  /* ---------- état vide : accueil + saisie centrés, suggestions sous la saisie ---------- */
+  const mainEl = document.querySelector(".main");
+  function syncEmpty() { mainEl.classList.toggle("is-empty", !$("empty").hidden && !document.body.classList.contains("learn")); }
+  new MutationObserver(syncEmpty).observe($("empty"), { attributes: true, attributeFilter: ["hidden"] });
+  new MutationObserver(syncEmpty).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  syncEmpty();
+
+  // Exemples qui défilent dans la zone de saisie vide (s'arrêtent dès qu'on écrit ou qu'on clique)
+  const PH = ["Écrivez votre question…", "Ex. : un client conteste sa facture", "Ex. : que veut dire « NPO » ?", "Ex. : un chien a mangé du chocolat", "Ex. : comment annoncer un retard ?"];
+  let phI = 0;
+  setInterval(() => {
+    const q = $("q");
+    if (document.activeElement === q || q.value || q.disabled || document.body.classList.contains("learn")) return;
+    phI = (phI + 1) % PH.length; q.placeholder = PH[phI];
+  }, 3500);
+  if (matchMedia("(min-width: 861px)").matches) setTimeout(() => { if (!$("codebox").hidden) return; $("q").focus(); }, 400);
+
   /* ---------- démarrage ---------- */
   showName();
   if (store.get("lq-learn") === "1") setLearn(true);
