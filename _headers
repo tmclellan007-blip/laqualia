@@ -11,3 +11,6 @@
 /agent/*
   X-Robots-Tag: noindex, nofollow, noarchive
   Cache-Control: no-cache
+
+/cloudflare-worker/*
+  X-Robots-Tag: noindex, nofollow

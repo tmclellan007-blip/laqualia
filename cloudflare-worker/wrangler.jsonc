@@ -1,0 +1,12 @@
+// Configuration de déploiement du relais de l'Assistant La Qualia.
+// Sert quand le Worker « laqualia-agent » est relié à ce dépôt GitHub
+// (Cloudflare > laqualia-agent > Paramètres > Builds > Connecter).
+// Les variables et secrets (clé API, code d'équipe, SITE_URL, ALLOWED_ORIGINS)
+// restent ceux définis dans le tableau de bord : keep_vars les protège.
+{
+  "name": "laqualia-agent",
+  "main": "agent-worker.js",
+  "compatibility_date": "2026-10-01",
+  "keep_vars": true,
+  "workers_dev": true
+}

@@ -1,0 +1,44 @@
+# Activer l'Assistant La Qualia (relais Cloudflare)
+
+Le site est hébergé sur GitHub Pages, qui ne sert que des fichiers statiques. Pour que l'assistant réponde sans exposer la clé API, un petit relais tourne sur Cloudflare Workers (gratuit à ce volume). Il se configure une seule fois, en une dizaine de minutes.
+
+## 1. Créer la clé API Anthropic
+
+1. Allez sur https://console.anthropic.com et créez un compte.
+2. Dans **Billing**, ajoutez des crédits.
+3. Dans **Limits**, fixez une limite de dépenses mensuelle, par exemple 20 $.
+4. Dans **API Keys**, cliquez **Create Key** et copiez la clé. Elle commence par `sk-ant-`.
+
+## 2. Créer le Worker
+
+1. Dans Cloudflare, ouvrez **Workers & Pages** → **Create** → **Create Worker**.
+2. Nommez-le `laqualia-agent`, puis cliquez **Deploy**.
+3. Cliquez **Edit code**, remplacez tout le contenu par celui du fichier `agent-worker.js` de ce dossier, puis cliquez **Deploy**.
+4. Notez l'adresse du Worker affichée en haut, par exemple `https://laqualia-agent.votre-compte.workers.dev`.
+
+## 3. Ajouter les variables du Worker
+
+Dans le Worker, ouvrez **Settings** → **Variables and Secrets** → **Add** :
+
+| Nom | Type | Valeur |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Secret | la clé `sk-ant-…` |
+| `AGENT_CODE` | Secret | le code d'accès que vous donnerez à l'équipe |
+| `SITE_URL` | Text | `https://tmclellan007-blip.github.io/nc` |
+| `ALLOWED_ORIGINS` | Text | `https://tmclellan007-blip.github.io,https://www.laqualia.com,https://laqualia.com` |
+
+Cliquez **Deploy** pour enregistrer.
+
+## 4. Brancher la page sur le Worker
+
+Dans GitHub, ouvrez `agent/config.json` et mettez l'adresse du Worker dans `apiUrl` :
+
+```json
+"apiUrl": "https://laqualia-agent.votre-compte.workers.dev",
+```
+
+Faites un commit. GitHub Pages republie le site en une à deux minutes.
+
+## Quand le site passera sur laqualia.com
+
+Mettez `SITE_URL` à `https://www.laqualia.com` dans le Worker. `ALLOWED_ORIGINS` accepte déjà laqualia.com.
