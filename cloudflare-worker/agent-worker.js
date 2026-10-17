@@ -22,8 +22,23 @@ const MAX_QUESTION = 2000;
 const MAX_TURN = 6000;
 const MAX_HISTORY = 8;
 const CTX_BUDGET = 60000;
-const MAX_TOKENS = 8000; // inclut la réflexion de Claude (adaptive thinking)
+// Plafonds par requête (réflexion incluse) : bornent le coût maximal d'une question
+const MAX_TOKENS = { quick: 3000, default: 5000, complex: 8000 };
 const EFFORT = { quick: "low", default: "medium", complex: "high" };
+// Garde-fous anti-requête figée
+const TOTAL_TIMEOUT_MS = 120000; // durée maximale d'une réponse
+const IDLE_TIMEOUT_MS = 45000;   // silence maximal du service (réflexion comprise)
+// Limite d'usage par adresse (par instance du relais)
+const RATE_WINDOW_MS = 5 * 60 * 1000;
+const RATE_MAX = 25;
+const hits = new Map();
+function rateLimited(ip) {
+  const now = Date.now();
+  const list = (hits.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  list.push(now); hits.set(ip, list);
+  if (hits.size > 2000) hits.clear();
+  return list.length > RATE_MAX;
+}
 
 let cache = null; // { at, config, chunks }
 
@@ -58,6 +73,10 @@ async function handlePost(request, env, cors) {
     return json(401, { error: "Code d'accès invalide." }, cors);
   }
 
+  if (rateLimited(request.headers.get("cf-connecting-ip") || "?")) {
+    return json(429, { error: "Beaucoup de questions en peu de temps. Attendez quelques minutes, puis réessayez." }, cors);
+  }
+
   let body;
   try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
   const question = String(body?.question || "").trim().slice(0, MAX_QUESTION);
@@ -84,32 +103,43 @@ async function handlePost(request, env, cors) {
   const model = env.AGENT_MODEL || MODELS[tier];
 
   // Claude réfléchit avant de répondre (adaptive thinking) : l'encadré En direct est la synthèse de cette réflexion.
-  // Si le modèle refuse ce réglage, on relance la même demande sans réflexion.
+  // Un seul contrôleur coupe tout : délai total, silence prolongé, ou départ de la personne (onglet fermé, Arrêter).
+  const abort = new AbortController();
+  const total = setTimeout(() => abort.abort("total"), TOTAL_TIMEOUT_MS);
+  request.signal?.addEventListener?.("abort", () => abort.abort("client"));
   const call = (withThinking) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
+    signal: abort.signal,
     headers: {
       "content-type": "application/json",
       "x-api-key": env.ANTHROPIC_API_KEY,
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify(withThinking
-      ? { model, max_tokens: MAX_TOKENS, system, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
+      ? { model, max_tokens: MAX_TOKENS[tier] || 5000, system, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
       : { model, max_tokens: 2000, system, messages, stream: true }),
   });
-  let upstream = await call(env.AGENT_THINKING !== "off");
-  if (upstream.status === 400 && env.AGENT_THINKING !== "off") upstream = await call(false);
-
+  let upstream;
+  try {
+    upstream = await call(env.AGENT_THINKING !== "off");
+    // Un seul nouvel essai, sans réflexion, si le modèle refuse ce réglage ; jamais de boucle
+    if (upstream.status === 400 && env.AGENT_THINKING !== "off") upstream = await call(false);
+  } catch {
+    clearTimeout(total);
+    return json(504, { error: "Le service a mis trop de temps à répondre. Réessayez." }, cors);
+  }
   if (!upstream.ok || !upstream.body) {
     const status = upstream.status;
     const msg = status === 401 ? "La clé API est invalide. Vérifiez ANTHROPIC_API_KEY dans Cloudflare."
       : status === 429 ? "Trop de questions en même temps. Réessayez dans une minute."
       : status === 400 ? "La demande a été refusée par le service. Raccourcissez la question ou commencez une nouvelle conversation."
       : "Le service est momentanément indisponible. Réessayez.";
+    clearTimeout(total);
     return json(status === 401 ? 502 : status, { error: msg }, cors);
   }
 
   const sources = [...new Set(ctx.map((c) => c.title))];
-  return new Response(sseToText(upstream.body), {
+  return new Response(sseToText(upstream.body, abort, total), {
     headers: {
       ...cors,
       "content-type": "text/plain; charset=utf-8",
@@ -138,12 +168,26 @@ function cleanHistory(h) {
   return out;
 }
 
-function sseToText(stream) {
+function sseToText(stream, abort, total) {
   const dec = new TextDecoder();
   const enc = new TextEncoder();
   let buf = "";
+  let out = null;
+  let idle = null;
+  const stop = (msg) => {
+    clearTimeout(idle); clearTimeout(total);
+    try { if (msg) out.enqueue(enc.encode(msg)); out.terminate(); } catch {}
+    abort.abort("stop");
+  };
+  const arm = () => { clearTimeout(idle); idle = setTimeout(() => stop("\n\n_(Délai dépassé : la réponse a été arrêtée pour protéger vos crédits. Réessayez ou posez une question plus précise.)_"), IDLE_TIMEOUT_MS); };
+  abort.signal.addEventListener("abort", () => {
+    if (abort.signal.reason === "total") stop("\n\n_(Réponse trop longue : arrêtée après 2 minutes pour protéger vos crédits.)_");
+  });
+  arm();
   return stream.pipeThrough(new TransformStream({
+    start(c) { out = c; },
     transform(chunk, ctl) {
+      arm();
       buf += dec.decode(chunk, { stream: true });
       const lines = buf.split("\n");
       buf = lines.pop();
@@ -156,6 +200,7 @@ function sseToText(stream) {
         else if (ev.type === "error") ctl.enqueue(enc.encode("\n\n_(La réponse a été interrompue. Réessayez.)_"));
       }
     },
+    flush() { clearTimeout(idle); clearTimeout(total); },
   }));
 }
 

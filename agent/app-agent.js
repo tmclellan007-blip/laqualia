@@ -366,6 +366,13 @@
     let release; running = new Promise((r) => (release = r));
     busy(true);
     let answer = "";
+    // Garde-fou : si plus rien n'arrive pendant 60 s, ou au-delà de 150 s, on coupe (aucune requête figée)
+    let timedOut = false;
+    const myCtl = ctl;
+    const cut = () => { timedOut = true; myCtl.abort(); };
+    const totalTimer = setTimeout(cut, 150000);
+    let idleTimer = setTimeout(cut, 60000);
+    const alive = () => { clearTimeout(idleTimer); idleTimer = setTimeout(cut, 60000); };
     try {
       const res = await fetch(cfg.apiUrl, {
         method: "POST",
@@ -389,6 +396,7 @@
         const { value, done } = await reader.read();
         if (done) break;
         const stick = nearBottom();
+        alive();
         answer += dec.decode(value, { stream: true });
         renderAnswer(body, answer, false);
         if (stick) toBottom();
@@ -399,11 +407,16 @@
       finishAnswer(res, col, answer);
       requestAnimationFrame(() => toTopOf(m));
     } catch (e) {
-      if (e.name === "AbortError") {
+      if (e.name === "AbortError" && timedOut) {
+        if (answer) renderAnswer(body, answer, true); else body.textContent = "";
+        body.insertAdjacentHTML("beforeend", '<p class="err">Délai dépassé : la réponse a été arrêtée. Réessayez ou posez une question plus précise.</p>');
+        if (answer) turns.push({ role: "user", content: q }, { role: "assistant", content: answer });
+      } else if (e.name === "AbortError") {
         if (answer) { renderAnswer(body, answer, true); body.insertAdjacentHTML("beforeend", '<p class="stopped">Réponse arrêtée.</p>'); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); }
         else body.innerHTML = '<p class="stopped">Réflexion arrêtée.</p>';
       } else { if (answer) renderAnswer(body, answer, true); else body.textContent = ""; body.insertAdjacentHTML("beforeend", '<p class="err">La connexion a été interrompue. Vérifiez Internet et réessayez.</p>'); }
     } finally {
+      clearTimeout(totalTimer); clearTimeout(idleTimer);
       ctl = null; busy(false); release();
     }
   }
