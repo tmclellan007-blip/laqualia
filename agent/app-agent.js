@@ -35,6 +35,14 @@
   let tier = store.get("lq-tier") || "";
   let ctl = null;
   let code = store.get("lq-agent-code") || "";
+  let prenom = store.get("lq-prenom") || "";
+  let needsCode = true;
+  const cleanName = (v) => String(v || "").replace(/[^\p{L}\p{M}' -]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
+  function showName() {
+    $("helloName").textContent = prenom ? " " + prenom : "";
+    $("changeName").hidden = !prenom;
+    $("changeName").textContent = prenom ? `${prenom} · changer de prénom` : "";
+  }
   let shown = new Set();
   try { shown = new Set(JSON.parse(store.get("lq-shown") || "[]")); } catch {}
 
@@ -274,7 +282,7 @@
       const res = await fetch(cfg.apiUrl, {
         method: "POST",
         headers: { "content-type": "application/json", "x-agent-code": code },
-        body: JSON.stringify({ question: q, history: turns.slice(-8), tier }),
+        body: JSON.stringify({ question: q, history: turns.slice(-8), tier, prenom }),
         signal: ctl.signal,
       });
       if (!res.ok) {
@@ -357,20 +365,32 @@
   }
 
   /* ---------- code d'accès ---------- */
-  function askCode(invalid) {
+  function askCode(invalid, nameOnly) {
     $("codebox").hidden = false;
     $("codeErr").hidden = !invalid;
     if (invalid) { code = ""; store.del("lq-agent-code"); }
-    setTimeout(() => $("code").focus(), 50);
+    const onlyName = nameOnly || (!needsCode) || (!!code && !invalid);
+    $("code").hidden = onlyName;
+    $("codeIntro").textContent = onlyName
+      ? "Comment vous appelez-vous ? Votre prénom sera retenu sur cet appareil pour personnaliser les réponses."
+      : "Entrez votre prénom et le code d'accès fourni par votre gestionnaire. Ils seront retenus sur cet appareil.";
+    $("prenom").value = prenom;
+    setTimeout(() => (prenom && !onlyName ? $("code") : $("prenom")).focus(), 50);
   }
   $("codeForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    const v = $("code").value.trim(); if (!v) return;
-    code = v; store.set("lq-agent-code", code);
+    const n = cleanName($("prenom").value);
+    if (!n) { $("prenom").focus(); return; }
+    if (!$("code").hidden) {
+      const v = $("code").value.trim(); if (!v) { $("code").focus(); return; }
+      code = v; store.set("lq-agent-code", code);
+    }
+    prenom = n; store.set("lq-prenom", prenom); showName();
     $("codebox").hidden = true; $("code").value = "";
     if ($("q").value.trim()) send();
     else $("q").focus();
   });
+  $("changeName").onclick = () => { closeMenu(); askCode(false, true); };
 
   /* ---------- menu (téléphone) ---------- */
   function openMenu() { $("app").classList.add("open"); }
@@ -393,6 +413,7 @@
   $("shuffleBtn").onclick = () => { renderSideList(); if (!$("empty").hidden) renderWelcomeCards(); };
 
   /* ---------- démarrage ---------- */
+  showName();
   fetch("config.json", { cache: "no-cache" })
     .then((r) => r.json())
     .then((c) => { cfg = { ...cfg, ...c }; })
@@ -404,7 +425,8 @@
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
-        if (s.needsCode && !code) askCode(false);
+        needsCode = !!s.needsCode;
+        if ((needsCode && !code) || !prenom) askCode(false);
       }).catch(() => setStatus("bad", "Service injoignable"));
     });
 })();

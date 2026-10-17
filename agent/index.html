@@ -137,6 +137,10 @@ button{font:inherit;cursor:pointer}
 .model-badge{border:1px solid var(--app-line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12px;font-weight:800;color:var(--purple,#401098);display:flex;gap:6px;align-items:center;white-space:nowrap}
 .model-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8}
 
+.side-me{background:none;border:0;color:#ffffffcc;text-align:left;font-size:12.5px;padding:4px 6px;border-radius:8px;display:flex;align-items:center;gap:8px}
+.side-me:hover{color:#fff;background:#ffffff12}
+.side-me[hidden]{display:none}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -241,6 +245,7 @@ button{font:inherit;cursor:pointer}
     <div class="side-list" id="sideExamples"></div>
     <div class="side-foot">
       <div class="status" id="status"><i></i><span id="kbInfo">Connexion…</span></div>
+      <button type="button" class="side-me" id="changeName"></button>
       <a href="../"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Retour au site La Qualia</a>
     </div>
   </aside>
@@ -262,7 +267,7 @@ button{font:inherit;cursor:pointer}
           <div class="hello-text">
           <img class="hello-av" src="avatar.webp" alt="">
           <p class="eyebrow"><span class="dot"></span>OUTIL DE FORMATION · ÉQUIPE D'ACCUEIL</p>
-          <h1>Bonjour<span class="orange">.</span> Comment puis-je vous aider<span class="orange">?</span></h1>
+          <h1>Bonjour<span id="helloName"></span><span class="orange">.</span> Comment puis-je vous aider<span class="orange">?</span></h1>
           </div>
           <figure class="hero-av"><img src="avatar-hero.webp" width="360" height="478" alt="Votre assistante La Qualia"><figcaption><b>Votre coach d'accueil</b><span>Disponible 24 h sur 24</span></figcaption></figure>
           </div>
@@ -290,8 +295,9 @@ button{font:inherit;cursor:pointer}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
     <img src="../assets/icone-clair.svg" alt="">
     <h2 id="codeTitle">Bienvenue dans l'équipe</h2>
-    <p>Entrez le code d'accès fourni par votre gestionnaire. Il sera retenu sur cet appareil.</p>
+    <p id="codeIntro">Entrez votre prénom et le code d'accès fourni par votre gestionnaire. Ils seront retenus sur cet appareil.</p>
     <form id="codeForm">
+      <input id="prenom" type="text" autocomplete="given-name" autocapitalize="words" maxlength="30" placeholder="Votre prénom" aria-label="Votre prénom" required>
       <input id="code" type="password" autocomplete="off" placeholder="Code d'accès" aria-label="Code d'accès">
       <p class="err" id="codeErr" hidden>Ce code n'est pas valide. Vérifiez-le avec votre gestionnaire.</p>
       <button class="go" type="submit">Entrer</button>
@@ -299,6 +305,6 @@ button{font:inherit;cursor:pointer}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171704"></script>
+<script src="app-agent.js?v=202610171708"></script>
 </body>
 </html>
