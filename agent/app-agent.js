@@ -842,6 +842,23 @@
   renderLevel();
   renderThemes();
 
+  /* ---------- déconnexion : efface prénom, code d'équipe et réglages de cet appareil ---------- */
+  let outTimer = null;
+  $("logout").onclick = () => {
+    const btn = $("logout");
+    if (!btn.classList.contains("confirm")) {
+      btn.classList.add("confirm"); btn.querySelector("span").textContent = "Confirmer la déconnexion";
+      outTimer = setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Se déconnecter"; }, 4000);
+      return;
+    }
+    clearTimeout(outTimer);
+    ctl?.abort();
+    try { stopSim(true); } catch {}
+    try { Object.keys(localStorage).filter((k) => k.startsWith("lq-")).forEach((k) => localStorage.removeItem(k)); } catch {}
+    try { sessionStorage.clear(); } catch {}
+    location.reload();
+  };
+
   /* ---------- démarrage ---------- */
   showName();
   if (store.get("lq-learn") === "1") setLearn(true);

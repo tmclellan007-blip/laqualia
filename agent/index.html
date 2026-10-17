@@ -288,6 +288,10 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
 .side-foot .model-opt span{display:none}
 .side-foot .model-opt[aria-checked="true"]{background:#ffffff26;color:#fff}
 
+.side-out{display:flex;align-items:center;gap:8px;background:none;border:0;color:#ffffffcc;font-size:12.5px;padding:4px 6px;border-radius:8px;text-align:left}
+.side-out:hover{color:#fff;background:#ffffff12}
+.side-out.confirm{background:#dc2626;color:#fff;font-weight:800}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -399,6 +403,7 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
     </div>
       <div class="status" id="status"><i></i><span id="kbInfo">Connexion…</span></div>
       <button type="button" class="side-me" id="changeName"></button>
+      <button type="button" class="side-out" id="logout"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Se déconnecter</span></button>
       <a href="../"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Retour au site La Qualia</a>
     </div>
   </aside>
@@ -504,6 +509,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171825"></script>
+<script src="app-agent.js?v=202610171847"></script>
 </body>
 </html>
