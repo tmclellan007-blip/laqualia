@@ -41,8 +41,8 @@
   const cleanName = (v) => String(v || "").replace(/[^\p{L}\p{M}' -]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
   function showName() {
     $("helloName").textContent = prenom ? " " + prenom : "";
-    $("changeName").hidden = !prenom;
-    $("changeName").textContent = prenom ? `${prenom} · changer de prénom` : "";
+    $("userName").textContent = prenom || "Invité";
+    $("userInitial").textContent = prenom ? prenom.trim()[0] : "?";
   }
   let shown = new Set();
   try { shown = new Set(JSON.parse(store.get("lq-shown") || "[]")); } catch {}
