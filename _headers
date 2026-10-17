@@ -7,3 +7,7 @@
 
 /assets/*
   Cache-Control: public, max-age=86400
+
+/agent/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-cache
