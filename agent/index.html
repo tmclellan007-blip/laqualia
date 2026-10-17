@@ -433,9 +433,11 @@ body.learn .side-user{background:#ffffff1a}
   .under .card{font-size:13px;padding:10px 12px}
   .under-lab,.notice2,.keys{display:none}
   .hello2{gap:14px}
-  .hello2-role{font-size:14px}
-  .hr-sep{display:none}
-  .hr-alt{display:block;padding-left:16px;font-weight:700;color:#6b5aa6}
+  .role-tags{gap:5px;margin-bottom:10px}
+  .rt{font-size:11.5px;padding:4px 8px 4px 7px;gap:5px}
+  .rt svg{width:12px;height:12px}
+  .rt-long{display:none}
+  .hello2-av{width:46px;height:46px}
   .hello2-av{width:56px;height:56px}
   .main.is-empty .box{min-height:62px}
   .main.is-empty .box textarea{font-size:16px}
@@ -549,10 +551,14 @@ body.learn #clear .top-new-l{display:none}
   .cb-end{width:44px;height:44px;padding:0;justify-content:center;border-radius:50%}
 }
 
-.hello2-role{margin:0 0 8px;font-size:clamp(15px,1.6vw,17px);font-weight:800;letter-spacing:.1px;color:#2b0f6e;line-height:1.35}
-.hello2-role .dot{margin:0 8px 0 0;vertical-align:2px}
-.hr-sep{color:#b9a9e6;font-weight:700}
-.hr-alt{color:#401098}
+
+.role-tags{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.rt{display:inline-flex;align-items:center;gap:7px;font-size:13.5px;font-weight:700;color:#2b0f6e;background:#fff;border:1px solid #e4dcf7;border-radius:999px;padding:6px 12px 6px 10px;line-height:1.2}
+.rt svg{width:15px;height:15px;color:#7c5cd6;flex:none}
+.rt-main{background:#401098;border-color:#401098;color:#fff}
+.rt-main svg{color:#e6dcfb}
+.hello2{align-items:flex-start}
+.hello2-av{margin-top:4px}
 
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
@@ -718,7 +724,11 @@ body.learn #clear .top-new-l{display:none}
           <div class="hello2">
             <img class="hello2-av" src="avatar.webp" width="72" height="72" alt="">
             <div class="hello2-txt">
-              <p class="hello2-role"><span class="dot"></span>Agent conversationnel spécialisé<span class="hr-sep"> · </span><span class="hr-alt">Réceptionniste vétérinaire</span></p>
+              <ul class="role-tags" aria-label="Rôles de l'assistant">
+                <li class="rt rt-main"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>Agent conversationnel</li>
+                <li class="rt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>Formation</li>
+                <li class="rt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18.5 14.4c1.8.8 3 2.6 3 5.6"/></svg>Équipe d'accueil<span class="rt-long"> vétérinaire</span></li>
+              </ul>
               <h1>Bonjour<span id="helloName"></span><span class="orange">.</span></h1>
               <p class="hello2-sub">Comment puis-je vous aider aujourd'hui<span class="orange">?</span></p>
             </div>
@@ -803,6 +813,6 @@ body.learn #clear .top-new-l{display:none}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171941"></script>
+<script src="app-agent.js?v=202610171943"></script>
 </body>
 </html>
