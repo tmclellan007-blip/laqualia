@@ -278,6 +278,16 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
 .theme-chips button[aria-pressed="true"]::before{content:"✓";font-weight:800}
 .theme-hint{font-size:12.5px;color:var(--muted,#55565d)}
 
+/* choix du modèle : discret, en bas du menu */
+.side-foot .model-wrap{gap:6px;padding:0 6px 4px;opacity:.85}
+.side-foot .model-wrap:hover,.side-foot .model-wrap:focus-within{opacity:1}
+.model-lab{font-size:10.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#ffffff73}
+.side-foot .model-seg{background:#ffffff0d;border-radius:9px;padding:3px;gap:2px}
+.side-foot .model-opt{padding:5px 2px;border-radius:7px}
+.side-foot .model-opt b{font-size:11px;font-weight:700}
+.side-foot .model-opt span{display:none}
+.side-foot .model-opt[aria-checked="true"]{background:#ffffff26;color:#fff}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -376,10 +386,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
     <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button>
     <button class="side-train normal-only" id="sideTrain" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Me mettre en situation</button>
     <button class="side-learn" id="learnToggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg><span id="learnToggleText">Mode simulation complète</span></button>
-    <div class="model-wrap" id="modelWrap" hidden>
-      <div class="side-label">Modèle de Claude</div>
-      <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
-    </div>
     <div class="side-label normal-only">Pour vous former <button type="button" id="shuffleBtn">Autres ↻</button></div>
     <div class="side-list normal-only" id="sideExamples"></div>
     <div class="side-sim learn-only">
@@ -387,6 +393,10 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
       <p>Appels et données <b>fictifs</b>. Aucune simulation ne passe de vrai appel, ne modifie de dossier ni n'envoie de message à l'équipe.</p>
     </div>
     <div class="side-foot">
+      <div class="model-wrap" id="modelWrap" hidden>
+      <div class="model-lab">Modèle de Claude</div>
+      <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
+    </div>
       <div class="status" id="status"><i></i><span id="kbInfo">Connexion…</span></div>
       <button type="button" class="side-me" id="changeName"></button>
       <a href="../"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Retour au site La Qualia</a>
@@ -494,6 +504,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171820"></script>
+<script src="app-agent.js?v=202610171825"></script>
 </body>
 </html>
