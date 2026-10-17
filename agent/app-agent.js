@@ -576,7 +576,7 @@
     sim.on = on;
     document.body.classList.toggle("learn", on);
     $("learnToggle").setAttribute("aria-pressed", String(on));
-    $("learnToggleText").textContent = on ? "Quitter le mode apprentissage" : "Mode apprentissage";
+    $("learnToggleText").textContent = on ? "Quitter la simulation complète" : "Mode simulation complète";
     store.set("lq-learn", on ? "1" : "0");
     closeMenu();
     if (on) {
@@ -794,7 +794,7 @@
     const a = document.createElement("div"); a.className = "sim-end-actions";
     const again = document.createElement("button"); again.type = "button"; again.className = "qz-next"; again.textContent = "Recevoir un autre appel";
     again.onclick = () => { a.remove(); ringIn(); };
-    const quit = document.createElement("button"); quit.type = "button"; quit.className = "qz-new"; quit.textContent = "Quitter le mode apprentissage";
+    const quit = document.createElement("button"); quit.type = "button"; quit.className = "qz-new"; quit.textContent = "Quitter la simulation complète";
     quit.onclick = () => setLearn(false);
     a.append(again, quit); $("simThread").append(a); toBottom();
     updateSimComposer();

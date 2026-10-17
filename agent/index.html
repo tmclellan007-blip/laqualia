@@ -181,7 +181,7 @@ button{font:inherit;cursor:pointer}
 
 .stopped{color:var(--muted,#55565d);font-size:13px;font-style:italic;margin:8px 0 0}
 
-/* ---------- mode apprentissage ---------- */
+/* ---------- mode simulation complète ---------- */
 .learn-only{display:none!important}
 body.learn .learn-only{display:flex!important}
 body.learn .learn-only[hidden]{display:none!important}
@@ -367,7 +367,7 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
     </div>
     <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button>
     <button class="side-train normal-only" id="sideTrain" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Me mettre en situation</button>
-    <button class="side-learn" id="learnToggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg><span id="learnToggleText">Mode apprentissage</span></button>
+    <button class="side-learn" id="learnToggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg><span id="learnToggleText">Mode simulation complète</span></button>
     <div class="model-wrap" id="modelWrap" hidden>
       <div class="side-label">Modèle de Claude</div>
       <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
@@ -375,7 +375,7 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
     <div class="side-label normal-only">Pour vous former <button type="button" id="shuffleBtn">Autres ↻</button></div>
     <div class="side-list normal-only" id="sideExamples"></div>
     <div class="side-sim learn-only">
-      <div class="side-label">Espace de formation</div>
+      <div class="side-label">Simulation complète</div>
       <p>Appels et données <b>fictifs</b>. Aucune simulation ne passe de vrai appel, ne modifie de dossier ni n'envoie de message à l'équipe.</p>
     </div>
     <div class="side-foot">
@@ -395,9 +395,9 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
       <button class="top-new" id="clear" type="button" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Nouvelle</span></button>
     </header>
     <div class="learn-banner learn-only" id="learnBanner" role="status">
-      <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>Mode apprentissage — Simulation</span>
-      <span class="lb-txt">Appels et données fictifs</span>
-      <button type="button" class="lb-exit" id="learnExit">Quitter et revenir au mode habituel</button>
+      <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg>Mode simulation complète</span>
+      <span class="lb-txt">Simulation · appels et données fictifs</span>
+      <button type="button" class="lb-exit" id="learnExit">Quitter la simulation et revenir au mode habituel</button>
     </div>
     <div class="callbar" id="callBar" hidden>
       <span class="cb-dot" aria-hidden="true"></span><b>Appel fictif en cours</b><span class="cb-time" id="callTimer">00:00</span><span class="cb-level" id="callLevel"></span>
@@ -420,7 +420,7 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
         </section>
         <div class="thread" id="thread"></div>
         <section class="sim-home learn-only" id="simHome">
-          <p class="eyebrow"><span class="dot"></span>ESPACE DE FORMATION · SIMULATEUR D'APPELS</p>
+          <p class="eyebrow"><span class="dot"></span>MODE SIMULATION COMPLÈTE · APPELS FICTIFS</p>
           <h1>Prêt pour un appel<span class="orange">?</span></h1>
           <p class="sim-lead">Un client fictif va vous appeler. Décrochez quand vous êtes prêt : il parle en premier, puis l'échange avance une réplique à la fois selon vos réponses. À la fin, vous recevez une rétroaction.</p>
           <div class="sim-level">
@@ -482,6 +482,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171809"></script>
+<script src="app-agent.js?v=202610171814"></script>
 </body>
 </html>
