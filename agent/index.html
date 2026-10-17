@@ -433,7 +433,9 @@ body.learn .side-user{background:#ffffff1a}
   .under .card{font-size:13px;padding:10px 12px}
   .under-lab,.notice2,.keys{display:none}
   .hello2{gap:14px}
-  .hello2-txt .eyebrow{display:none}
+  .hello2-role{font-size:14px}
+  .hr-sep{display:none}
+  .hr-alt{display:block;padding-left:16px;font-weight:700;color:#6b5aa6}
   .hello2-av{width:56px;height:56px}
   .main.is-empty .box{min-height:62px}
   .main.is-empty .box textarea{font-size:16px}
@@ -546,6 +548,11 @@ body.learn #clear .top-new-l{display:none}
   .cb-end span{display:none}
   .cb-end{width:44px;height:44px;padding:0;justify-content:center;border-radius:50%}
 }
+
+.hello2-role{margin:0 0 8px;font-size:clamp(15px,1.6vw,17px);font-weight:800;letter-spacing:.1px;color:#2b0f6e;line-height:1.35}
+.hello2-role .dot{margin:0 8px 0 0;vertical-align:2px}
+.hr-sep{color:#b9a9e6;font-weight:700}
+.hr-alt{color:#401098}
 
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
@@ -711,7 +718,7 @@ body.learn #clear .top-new-l{display:none}
           <div class="hello2">
             <img class="hello2-av" src="avatar.webp" width="72" height="72" alt="">
             <div class="hello2-txt">
-              <p class="eyebrow"><span class="dot"></span>OUTIL DE FORMATION · ÉQUIPE D'ACCUEIL</p>
+              <p class="hello2-role"><span class="dot"></span>Agent conversationnel spécialisé<span class="hr-sep"> · </span><span class="hr-alt">Réceptionniste vétérinaire</span></p>
               <h1>Bonjour<span id="helloName"></span><span class="orange">.</span></h1>
               <p class="hello2-sub">Comment puis-je vous aider aujourd'hui<span class="orange">?</span></p>
             </div>
@@ -796,6 +803,6 @@ body.learn #clear .top-new-l{display:none}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171915"></script>
+<script src="app-agent.js?v=202610171941"></script>
 </body>
 </html>
