@@ -198,6 +198,11 @@
 
 
   function renderAnswer(body, text, done) {
+    mdDone = !!done;
+    renderAnswerInner(body, text, done);
+    if (done) hydrateQuizzes(body);
+  }
+  function renderAnswerInner(body, text, done) {
     const p = splitAnswer(text, done);
     if (p.pending) return;
     if (p.plain !== undefined) {
@@ -214,20 +219,93 @@
     body.innerHTML = html;
   }
 
+  /* ---------- mini-quiz (mises en situation seulement) ---------- */
+  const QUIZZES = [];
+  let mdDone = true;
+  const unesc = (s) => s.replace(/&quot;/g, '"').replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  function quizHtml(raw, closed) {
+    if (!closed || !mdDone) return '<div class="quiz quiz-wait"><span class="typing"><i></i><i></i><i></i></span> Préparation du quiz…</div>';
+    let data = null;
+    try { data = JSON.parse(unesc(raw)); } catch {}
+    const qs = Array.isArray(data?.questions) ? data.questions.filter((q) => q && q.question) : [];
+    if (!qs.length) return "";
+    QUIZZES.push(qs);
+    return `<div class="quiz" data-quiz="${QUIZZES.length - 1}"></div>`;
+  }
+  function hydrateQuizzes(root) {
+    root.querySelectorAll(".quiz[data-quiz]").forEach((el) => {
+      const qs = QUIZZES[+el.dataset.quiz]; if (!qs) return;
+      el.removeAttribute("data-quiz");
+      const results = new Array(qs.length).fill(null);
+      const head = document.createElement("div"); head.className = "qz-head";
+      head.innerHTML = `<b>Quiz</b><span>${qs.length} question${qs.length > 1 ? "s" : ""} · réponse immédiate</span>`;
+      el.append(head);
+      qs.forEach((q, i) => {
+        const vf = q.type === "vraifaux" || typeof q.bonne === "boolean";
+        const opts = vf ? ["Vrai", "Faux"] : (Array.isArray(q.options) ? q.options.map(String) : []);
+        const good = vf ? (q.bonne === true || q.bonne === "true" ? 0 : 1) : Number(q.bonne);
+        const item = document.createElement("div"); item.className = "qz-item";
+        const tag = document.createElement("span"); tag.className = "qz-tag"; tag.textContent = vf ? "Vrai ou faux" : "Choix de réponse";
+        const qq = document.createElement("p"); qq.className = "qz-q"; qq.textContent = `${i + 1}. ${q.question}`;
+        const box = document.createElement("div"); box.className = "qz-opts" + (vf ? " vf" : "");
+        const fb = document.createElement("div"); fb.className = "qz-fb"; fb.hidden = true;
+        opts.forEach((o, k) => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "qz-opt";
+          b.innerHTML = vf ? "" : `<i>${String.fromCharCode(65 + k)}</i>`;
+          b.append(document.createTextNode(o));
+          b.onclick = () => {
+            const ok = k === good;
+            results[i] = ok;
+            box.querySelectorAll("button").forEach((x, j) => { x.disabled = true; if (j === good) x.classList.add("good"); });
+            if (!ok) b.classList.add("bad");
+            item.classList.add(ok ? "is-good" : "is-bad");
+            fb.hidden = false;
+            fb.innerHTML = `<b>${ok ? "✓ Bonne réponse." : "✗ Pas tout à fait."}</b> `;
+            fb.append(document.createTextNode(String(q.explication || "")));
+            if (results.every((r) => r !== null)) finish();
+          };
+          box.append(b);
+        });
+        item.append(tag, qq, box, fb);
+        el.append(item);
+      });
+      const foot = document.createElement("div"); foot.className = "qz-foot"; foot.hidden = true;
+      el.append(foot);
+      function finish() {
+        const n = results.filter(Boolean).length;
+        foot.hidden = false;
+        foot.innerHTML = `<div class="qz-score"><b>${n} / ${results.length}</b><span>${n === results.length ? "Parfait, bravo !" : n ? "Bon travail, continuez !" : "On révise et on recommence !"}</span></div>`;
+        const go = document.createElement("button"); go.type = "button"; go.className = "qz-next"; go.textContent = "Continuer l'appel";
+        go.onclick = () => {
+          const detail = qs.map((q, i) => `Q${i + 1} ${results[i] ? "réussie" : "manquée"}`).join(", ");
+          send(`Résultats du quiz : ${n}/${results.length} (${detail}). Continue la mise en situation.`, `Continuer l'appel · ${n}/${results.length}`);
+        };
+        const nw = document.createElement("button"); nw.type = "button"; nw.className = "qz-new"; nw.textContent = "Nouvelle mise en situation";
+        nw.onclick = startScenario;
+        foot.append(go, nw);
+        foot.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      }
+    });
+  }
+
   /* ---------- markdown ---------- */
   function md(src) {
     const lines = esc(src).split("\n"); const out = []; let list = null;
     const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>").replace(/(^|\W)_(?!\s)(.+?)_(?=\W|$)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
     const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
-    let fence = null;
-    const flush = () => {
-      const body = fence.join("\n").replace(/→|-&gt;/g, '<b class="arr">→</b>');
-      out.push(`<figure class="schema"><figcaption>Schéma</figcaption><pre>${body}</pre></figure>`);
+    let fence = null, fenceLang = "";
+    const flush = (closed) => {
+      if (fenceLang === "quiz" || /^\s*\{\s*&quot;questions&quot;/.test(fence.join(""))) {
+        out.push(quizHtml(fence.join("\n"), closed));
+      } else {
+        const body = fence.join("\n").replace(/→|-&gt;/g, '<b class="arr">→</b>');
+        out.push(`<figure class="schema"><figcaption>Schéma</figcaption><pre>${body}</pre></figure>`);
+      }
       fence = null;
     };
     for (const l of lines) {
       let m;
-      if (/^\s*```/.test(l)) { if (fence) flush(); else { close(); fence = []; } continue; }
+      if (/^\s*```/.test(l)) { if (fence) flush(true); else { close(); fence = []; fenceLang = l.trim().slice(3).trim().toLowerCase(); } continue; }
       if (fence) { fence.push(l); continue; }
       if ((m = l.match(/^#{1,4}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); }
       else if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
@@ -235,7 +313,7 @@
       else if (!l.trim()) close();
       else { close(); out.push(`<p>${inline(l)}</p>`); }
     }
-    if (fence) flush();
+    if (fence) flush(false);
     close();
     return out.join("");
   }
@@ -268,11 +346,12 @@
     return { m, col, body };
   }
 
-  async function send(text) {
+  async function send(text, display) {
     const q = String(text ?? $("q").value).trim();
     if (!q || ctl) return;
+    if (/^(mets-moi en situation|résultats du quiz)/i.test(q) || /mise en situation/i.test(q)) inScenario = true;
     $("q").value = ""; autosize();
-    const qm = addQuestion(q);
+    const qm = addQuestion(display || q);
     const { m, col, body } = addAnswer();
     if (!cfg.apiUrl) { body.innerHTML = '<p class="err">L\'assistant n\'est pas encore activé.</p>'; return; }
     ctl = new AbortController();
