@@ -1,6 +1,6 @@
 {
   "apiUrl": "https://laqualia-agent.tmclellan007.workers.dev",
-  "etablissement": "Votre établissement vétérinaire",
+  "etablissement": "Nom de votre établissement vétérinaire ICI",
   "name": "Assistant La Qualia",
   "tag": "Le coach de l'équipe d'accueil : clients, équipe clinique et lexique",
   "audience": "telephonistes",
