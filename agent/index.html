@@ -181,6 +181,76 @@ button{font:inherit;cursor:pointer}
 
 .stopped{color:var(--muted,#55565d);font-size:13px;font-style:italic;margin:8px 0 0}
 
+/* ---------- mode apprentissage ---------- */
+.learn-only{display:none!important}
+body.learn .learn-only{display:flex!important}
+body.learn .learn-only[hidden]{display:none!important}
+body.learn .normal-only{display:none!important}
+body.learn #empty,body.learn #thread{display:none!important}
+body.learn{--paper:#f2eefb;background:#f2eefb}
+body.learn .side{background:#1b1147}
+body.learn .topbar{background:#f2eefbeb;border-bottom-color:#ddd2f7}
+body.learn .composer{background:linear-gradient(to top,#f2eefb 70%,transparent)}
+.side-learn{display:flex;align-items:center;gap:10px;width:100%;border:1.5px dashed #ffffff55;border-radius:12px;padding:12px 14px;background:transparent;color:#fff;font-weight:800;font-size:14px}
+.side-learn:hover{border-style:solid;background:#ffffff12}
+.side-learn svg{width:18px;height:18px;flex:none}
+body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
+.side-sim{flex-direction:column;gap:8px}
+.side-sim p{margin:0 6px;font-size:12.5px;line-height:1.5;color:#ffffffbf}
+.side-sim b{color:#fff}
+.learn-banner{align-items:center;gap:10px 14px;flex-wrap:wrap;padding:9px max(20px,env(safe-area-inset-right,0px)) 9px 20px;background:#e6dcfb;border-bottom:1px solid #d3c3f5;color:#2b0f6e;font-size:13px}
+.lb-tag{display:inline-flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.2px;background:#fff;border:1.5px solid #401098;border-radius:999px;padding:5px 12px}
+.lb-tag svg{width:16px;height:16px}
+.lb-txt{font-weight:600}
+.lb-exit{margin-left:auto;border:1.5px solid #401098;background:#401098;color:#fff;border-radius:8px;padding:7px 12px;font-weight:800;font-size:12.5px}
+.lb-exit:hover{background:#2b0f6e}
+.callbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px max(20px,env(safe-area-inset-right,0px)) 9px 20px;background:#0f3d24;color:#fff;font-size:13.5px}
+.callbar[hidden]{display:none}
+.cb-dot{width:9px;height:9px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 4px rgb(74 222 128/.25)}
+.cb-time{font-variant-numeric:tabular-nums;opacity:.85}
+.cb-end{margin-left:auto;display:inline-flex;align-items:center;gap:8px;border:0;background:#dc2626;color:#fff;border-radius:999px;padding:7px 14px;font-weight:800;font-size:13px}
+.cb-end svg{width:18px;height:18px}
+.sim-home{flex-direction:column;gap:16px;padding-top:min(5vh,40px)}
+.sim-home .eyebrow{margin:0}
+.sim-home h1{font-size:clamp(32px,5vw,52px);line-height:1;letter-spacing:-2px;margin:0;font-weight:800}
+.sim-lead{margin:0;font-size:16px;line-height:1.55;color:var(--muted,#55565d);max-width:58ch}
+.sim-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.sim-call{display:inline-flex;align-items:center;gap:10px;border:0;border-radius:14px;padding:16px 22px;background:#15803d;color:#fff;font-weight:800;font-size:16px;box-shadow:0 6px 18px rgb(21 128 61/.25)}
+.sim-call:hover{background:#166534}
+.sim-call:disabled{opacity:.5;cursor:default}
+.sim-call svg{width:20px;height:20px}
+.sim-mute,.ring-mute{border:1.5px solid #d3c3f5;background:#fff;color:#2b0f6e;border-radius:12px;padding:12px 14px;font-weight:700;font-size:13.5px}
+.sim-types{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.sim-types li{font-size:12px;font-weight:700;color:#2b0f6e;background:#fff;border:1px solid #ddd2f7;border-radius:999px;padding:5px 10px}
+.msg.c .qbub{display:none}
+.c-av{width:36px;height:36px;border-radius:50%;background:#e5e7eb;color:#6b7280;display:grid;place-items:center;flex:none}
+.c-av svg{width:20px;height:20px}
+.c-bub{background:#fff;border:1px solid #e4e3dd;border-radius:6px 20px 20px 20px;padding:12px 16px;font-size:15.5px;line-height:1.5;max-width:82%;box-shadow:0 4px 12px rgb(0 0 0/.04)}
+.sim-note{align-self:center;font-size:12.5px;color:#2b0f6e;background:#e6dcfb;border-radius:999px;padding:6px 12px;text-align:center}
+.sim-end-actions{display:flex;flex-wrap:wrap;gap:10px;padding-left:46px}
+.ring{position:fixed;inset:0;z-index:70;background:rgb(10 20 48/.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px}
+.ring[hidden]{display:none}
+.ring-card{background:#fff;border-radius:26px;padding:28px 24px;width:min(380px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;box-shadow:0 30px 60px rgb(0 0 0/.3);border:3px solid #401098}
+.ring-sim{font-size:11px;font-weight:800;letter-spacing:1.6px;color:#401098;background:#e6dcfb;border-radius:999px;padding:4px 10px}
+.ring-icon{width:84px;height:84px;border-radius:50%;background:#15803d;color:#fff;display:grid;place-items:center;margin:8px 0}
+.ring-icon svg{width:38px;height:38px}
+.ring-card h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.6px}
+.ring-card p{margin:0;color:var(--muted,#55565d);font-size:14px}
+.ring-btns{display:flex;gap:12px;width:100%;margin-top:10px}
+.ring-btns button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:14px;font-weight:800;font-size:15px;color:#fff}
+.ring-btns svg{width:20px;height:20px}
+.ring-no{background:#dc2626}
+.ring-yes{background:#15803d}
+.ring-mute{margin-top:6px;font-size:12.5px;padding:8px 12px}
+@media (prefers-reduced-motion:no-preference){
+  .ring-icon{animation:ringpulse 1.2s ease-in-out infinite}
+  .ring-icon svg{animation:ringshake 1.2s ease-in-out infinite}
+  @keyframes ringpulse{0%,100%{box-shadow:0 0 0 0 rgb(21 128 61/.45)}50%{box-shadow:0 0 0 18px rgb(21 128 61/0)}}
+  @keyframes ringshake{0%,40%,100%{transform:rotate(0)}10%,30%{transform:rotate(-14deg)}20%{transform:rotate(14deg)}}
+}
+@media (prefers-reduced-motion:reduce){.ring-card{outline:4px solid #15803d;outline-offset:4px}}
+@media (max-width:860px){.lb-exit{margin-left:0}.sim-end-actions{padding-left:0}}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -277,13 +347,18 @@ button{font:inherit;cursor:pointer}
       <button class="side-close" id="closeMenu" type="button" aria-label="Fermer le menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button>
-    <button class="side-train" id="sideTrain" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Me mettre en situation</button>
+    <button class="side-train normal-only" id="sideTrain" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Me mettre en situation</button>
+    <button class="side-learn" id="learnToggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg><span id="learnToggleText">Mode apprentissage</span></button>
     <div class="model-wrap" id="modelWrap" hidden>
       <div class="side-label">Modèle de Claude</div>
       <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
     </div>
-    <div class="side-label">Pour vous former <button type="button" id="shuffleBtn">Autres ↻</button></div>
-    <div class="side-list" id="sideExamples"></div>
+    <div class="side-label normal-only">Pour vous former <button type="button" id="shuffleBtn">Autres ↻</button></div>
+    <div class="side-list normal-only" id="sideExamples"></div>
+    <div class="side-sim learn-only">
+      <div class="side-label">Espace de formation</div>
+      <p>Appels et données <b>fictifs</b>. Aucune simulation ne passe de vrai appel, ne modifie de dossier ni n'envoie de message à l'équipe.</p>
+    </div>
     <div class="side-foot">
       <div class="status" id="status"><i></i><span id="kbInfo">Connexion…</span></div>
       <button type="button" class="side-me" id="changeName"></button>
@@ -300,6 +375,15 @@ button{font:inherit;cursor:pointer}
       <button class="model-badge" id="modelBadge" type="button" hidden aria-label="Changer de modèle"></button>
       <button class="top-new" id="clear" type="button" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg><span>Nouvelle</span></button>
     </header>
+    <div class="learn-banner learn-only" id="learnBanner" role="status">
+      <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>Mode apprentissage — Simulation</span>
+      <span class="lb-txt">Appels et données fictifs</span>
+      <button type="button" class="lb-exit" id="learnExit">Quitter et revenir au mode habituel</button>
+    </div>
+    <div class="callbar" id="callBar" hidden>
+      <span class="cb-dot" aria-hidden="true"></span><b>Appel fictif en cours</b><span class="cb-time" id="callTimer">00:00</span>
+      <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg>Terminer l'appel</button>
+    </div>
 
     <div class="scroller" id="scroller">
       <div class="col">
@@ -316,6 +400,17 @@ button{font:inherit;cursor:pointer}
           <div class="cards" id="examples"></div>
         </section>
         <div class="thread" id="thread"></div>
+        <section class="sim-home learn-only" id="simHome">
+          <p class="eyebrow"><span class="dot"></span>ESPACE DE FORMATION · SIMULATEUR D'APPELS</p>
+          <h1>Prêt pour un appel<span class="orange">?</span></h1>
+          <p class="sim-lead">Un client fictif va vous appeler. Décrochez quand vous êtes prêt : il parle en premier, puis l'échange avance une réplique à la fois selon vos réponses. À la fin, vous recevez une rétroaction.</p>
+          <div class="sim-actions">
+            <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
+            <button type="button" class="sim-mute" id="muteBtn" aria-pressed="false"></button>
+          </div>
+          <ul class="sim-types"><li>Rendez-vous</li><li>Facturation</li><li>Plainte</li><li>Client inquiet</li><li>Deuil</li><li>Urgence potentielle</li></ul>
+        </section>
+        <div class="thread" id="simThread" hidden></div>
       </div>
     </div>
 
@@ -332,6 +427,20 @@ button{font:inherit;cursor:pointer}
   </main>
 </div>
 
+<div class="ring" id="ringPanel" hidden>
+  <div class="ring-card" role="alertdialog" aria-modal="true" aria-labelledby="ringTitle" aria-describedby="ringSub">
+    <span class="ring-sim">SIMULATION</span>
+    <div class="ring-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
+    <h2 id="ringTitle">Appel fictif entrant</h2>
+    <p id="ringSub">Client fictif · numéro de simulation</p>
+    <div class="ring-btns">
+      <button type="button" class="ring-no" id="ringDecline"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg>Refuser</button>
+      <button type="button" class="ring-yes" id="ringAnswer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Répondre</button>
+    </div>
+    <button type="button" class="ring-mute" id="ringMute" aria-pressed="false"></button>
+  </div>
+</div>
+
 <div class="modal" id="codebox" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
     <img src="../assets/icone-clair.svg" alt="">
@@ -346,6 +455,6 @@ button{font:inherit;cursor:pointer}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171746"></script>
+<script src="app-agent.js?v=202610171804"></script>
 </body>
 </html>

@@ -40,6 +40,10 @@ function rateLimited(ip) {
   return list.length > RATE_MAX;
 }
 
+// Simulateur d'appels (mode apprentissage) : textes par défaut, remplaçables dans agent/config.json
+const SIM_CLIENT_DEFAULT = "Tu joues UN client fictif qui appelle un établissement vétérinaire au Québec. Tu es le client, pas l'assistant. Parle seulement en tant que client, à la première personne, en français québécois naturel. Une seule réplique à la fois (1 à 3 phrases), puis tu attends la réponse de la réceptionniste. Ne donne jamais de conseil, d'indice, d'évaluation ni la bonne réponse. Pas de titres ni de listes ; une courte indication entre parenthèses est permise, ex. (soupir). Réagis de façon réaliste : si la réceptionniste est claire et empathique, tu te calmes ; si elle est vague ou maladroite, tu insistes ou tu t'inquiètes. Invente des détails cohérents (ton nom, l'animal, son âge, la situation) et garde-les jusqu'à la fin. Pour une urgence potentielle, donne les signes progressivement, comme un vrai client, sans dire que c'est une urgence. Quand la situation est réglée ou que tu raccroches, termine ta réplique par la ligne [FIN D'APPEL]. Toutes les données sont fictives.";
+const SIM_BILAN_DEFAULT = "Tu es formateur pour les téléphonistes et réceptionnistes d'un établissement vétérinaire. On te donne la transcription d'un appel SIMULÉ entre un client fictif et l'apprenant. Rédige une rétroaction concise et bienveillante en Markdown, avec exactement ces sections : ### Points forts (2 à 4 puces), ### À améliorer (2 à 4 puces), ### Formulation modèle (la meilleure réponse, entre guillemets, pour le moment clé de l'appel). Si l'apprenant a manqué une urgence potentielle, ou a dépassé le rôle de l'accueil (conseil médical, dose, diagnostic, promesse commerciale), commence par une ligne en gras : **⚠️ Urgence manquée : ...** ou **⚠️ Hors du rôle de l'accueil : ...**. 200 mots maximum.";
+
 let cache = null; // { at, config, chunks }
 
 export default {
@@ -79,9 +83,11 @@ async function handlePost(request, env, cors) {
 
   let body;
   try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
-  const question = String(body?.question || "").trim().slice(0, MAX_QUESTION);
+  const isSim = body?.mode === "simulation";
+  const simPhase = isSim && body?.phase === "bilan" ? "bilan" : "client";
+  const question = String(body?.question || "").trim().slice(0, isSim && simPhase === "bilan" ? 12000 : MAX_QUESTION);
   if (!question) return json(400, { error: "La question est vide." }, cors);
-  const history = cleanHistory(body?.history);
+  const history = cleanHistory(body?.history, isSim ? 16 : MAX_HISTORY);
 
   const { config, chunks } = await loadKnowledge(request, env);
   const ctx = retrieve(chunks, question);
@@ -95,7 +101,20 @@ async function handlePost(request, env, cors) {
   const userContent = ctxText
     ? `EXTRAITS DES PROCÉDURES DE LA CLINIQUE (à appliquer en priorité)\n\n${ctxText}\n\n---\nQUESTION\n${question}`
     : question;
-  const messages = [...history, { role: "user", content: userContent }];
+  let messages = [...history, { role: "user", content: userContent }];
+  let simSystem = "";
+  if (isSim) {
+    const scenario = String(body?.scenario || "").replace(/[\r\n]+/g, " ").slice(0, 300);
+    if (simPhase === "client") {
+      simSystem = `${config.simulationClient || SIM_CLIENT_DEFAULT}\n\nScénario de cet appel : ${scenario || "au choix, réaliste"}.`;
+      messages = [...history, { role: "user", content: question }];
+    } else {
+      const coach = prenom ? `\nL'apprenant s'appelle ${prenom} : adresse-toi à lui ou elle par son prénom au début.` : "";
+      const proc = ctxText ? `\n\nProcédures de la clinique à respecter :\n${ctxText}` : "";
+      simSystem = `${config.simulationBilan || SIM_BILAN_DEFAULT}${coach}${proc}`;
+      messages = [{ role: "user", content: `TRANSCRIPTION DE L'APPEL SIMULÉ\n\n${question}` }];
+    }
+  }
   // Modèle : celui choisi dans l'interface s'il est permis par la configuration, sinon celui par défaut
   const allowed = Array.isArray(config.modelesProposes) && config.modelesProposes.length ? config.modelesProposes.filter((t) => MODELS[t]) : Object.keys(MODELS);
   const asked = String(body?.tier || "");
@@ -113,12 +132,13 @@ async function handlePost(request, env, cors) {
   const LIVE_TASK = "\n\nTÂCHE POUR CETTE RÉPONSE : écris UNIQUEMENT le contenu de la partie [EN DIRECT], sans le marqueur, sans titre, sans liste numérotée. Analyse d'abord toute la situation, puis donne la meilleure réponse en 2 à 4 phrases au total : la phrase exacte à dire au client entre guillemets, puis l'action concrète à faire maintenant. 80 mots maximum.";
   const LEARN_TASK = "\n\nTÂCHE POUR CETTE RÉPONSE : écris UNIQUEMENT le contenu de la partie [APPRENTISSAGE], sans le marqueur. La réponse courte « En direct » est déjà donnée à la personne séparément : ne la recopie pas, explique-la et approfondis (étapes, pourquoi, pièges, variantes de formulation, schéma si utile, ligne « À retenir »).";
 
+  const effort = isSim && simPhase === "client" ? "low" : (EFFORT[tier] || "medium");
   const call = (sys, maxTokens, withThinking) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     signal: abort.signal,
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify(withThinking
-      ? { model, max_tokens: maxTokens, system: sys, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
+      ? { model, max_tokens: maxTokens, system: sys, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort } }
       : { model, max_tokens: Math.min(maxTokens, 2000), system: sys, messages, stream: true }),
   });
   // Un seul nouvel essai, sans réflexion, si le modèle refuse ce réglage ; jamais de boucle
@@ -132,7 +152,9 @@ async function handlePost(request, env, cors) {
   const cap = MAX_TOKENS[tier] || 5000;
   let parts;
   try {
-    parts = isScene
+    parts = isSim
+      ? [await callSafe(simSystem, simPhase === "client" ? 2000 : cap)]
+      : isScene
       ? [await callSafe(system, cap)]
       : await Promise.all([callSafe(system + LIVE_TASK, Math.min(cap, 3000)), callSafe(system + LEARN_TASK, cap)]);
   } catch {
@@ -151,7 +173,7 @@ async function handlePost(request, env, cors) {
     return json(status === 401 ? 502 : status, { error: msg }, cors);
   }
 
-  const segments = isScene
+  const segments = isScene || isSim
     ? [{ body: parts[0].body }]
     : [{ prefix: "[EN DIRECT]\n", body: parts[0].body }, { prefix: "\n\n[APPRENTISSAGE]\n", body: parts[1].body }];
   const sources = [...new Set(ctx.map((c) => c.title))];
@@ -171,12 +193,12 @@ function json(status, data, cors) {
   return new Response(JSON.stringify(data), { status, headers: { ...cors, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 }
 
-function cleanHistory(h) {
+function cleanHistory(h, max = MAX_HISTORY) {
   if (!Array.isArray(h)) return [];
   const turns = h
     .filter((t) => t && (t.role === "user" || t.role === "assistant") && typeof t.content === "string" && t.content.trim())
     .map((t) => ({ role: t.role, content: t.content.slice(0, MAX_TURN) }))
-    .slice(-MAX_HISTORY);
+    .slice(-max);
   while (turns.length && turns[0].role !== "user") turns.shift();
   const out = [];
   for (const t of turns) { if (out.length && out[out.length - 1].role === t.role) out[out.length - 1] = t; else out.push(t); }

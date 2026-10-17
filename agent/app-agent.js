@@ -453,7 +453,7 @@
   // Pendant une réponse : bouton Arrêter visible ; si on tape une nouvelle question, Envoyer réapparaît et la remplace
   function busy(on) { updateSend(); }
   function updateSend() {
-    const has = !!$("q").value.trim();
+    const has = !!$("q").value.trim() && !$("q").disabled;
     $("stop").hidden = !ctl;
     $("send").hidden = !!ctl && !has;
     $("send").disabled = !has;
@@ -461,6 +461,7 @@
   }
 
   function resetConversation() {
+    if (sim.on) { stopSim(true); closeMenu(); return; }
     ctl?.abort(); turns = []; inScenario = false;
     $("thread").textContent = "";
     $("empty").hidden = false;
@@ -505,21 +506,288 @@
   $("modelBadge").onclick = () => { if (matchMedia("(max-width:860px)").matches) openMenu(); else $("modelSeg").querySelector('[aria-checked="true"]')?.focus(); };
   $("closeMenu").onclick = closeMenu;
   $("scrim").onclick = closeMenu;
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if ($("app").classList.contains("open")) closeMenu(); else ctl?.abort(); } });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if ($("app").classList.contains("open")) closeMenu(); else if (sim.ringing) declineCall(); else ctl?.abort(); } });
 
   /* ---------- branchements ---------- */
   function autosize() { const t = $("q"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 180) + "px"; updateSend(); }
   $("q").addEventListener("input", autosize);
-  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
-  $("form").addEventListener("submit", (e) => { e.preventDefault(); send(); });
+  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sim.on ? simReply() : send(); } });
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); sim.on ? simReply() : send(); });
   $("stop").onclick = () => ctl?.abort();
   $("sideTrain").onclick = startScenario;
   $("sideNew").onclick = resetConversation;
   $("clear").onclick = resetConversation;
   $("shuffleBtn").onclick = () => { renderSideList(); if (!$("empty").hidden) renderWelcomeCards(); };
 
+
+  /* =====================================================================
+     MODE APPRENTISSAGE — simulateur d'appels (tout est fictif : aucun vrai
+     appel, aucun dossier modifié, aucun message envoyé à l'équipe)
+     ===================================================================== */
+  const SIM_TYPES = [
+    ["Rendez-vous", "prise ou changement de rendez-vous ; horaire chargé, client pressé ou exigeant"],
+    ["Facturation", "question ou contestation d'une facture, d'un dépôt ou d'un estimé"],
+    ["Plainte", "plainte sur un service, une attente ou un membre de l'équipe"],
+    ["Client inquiet", "propriétaire inquiet pour un symptôme léger à modéré de son animal"],
+    ["Deuil", "fin de vie, euthanasie à planifier ou décès récent d'un animal"],
+    ["Urgence potentielle", "symptômes qui cachent une vraie urgence, que le client minimise au début"],
+  ];
+  const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>';
+  const sim = { on: false, active: false, ended: false, turns: [], log: [], type: null, ctl: null, timer: null, start: 0, ringing: false, ringTimeout: null };
+  let muted = store.get("lq-mute") === "1";
+  let audio = null, ringLoop = null;
+
+  function muteLabel() {
+    const t = muted ? "🔇 Son coupé (signal visuel seulement)" : "🔔 Son de sonnerie activé";
+    $("muteBtn").textContent = t; $("ringMute").textContent = muted ? "🔇 Son coupé — réactiver" : "🔔 Couper le son";
+    $("muteBtn").setAttribute("aria-pressed", String(muted)); $("ringMute").setAttribute("aria-pressed", String(muted));
+  }
+  function toggleMute() {
+    muted = !muted; store.set("lq-mute", muted ? "1" : "0"); muteLabel();
+    if (sim.ringing) { if (muted) stopSound(); else startSound(); }
+  }
+
+  // Sonnerie générée (deux tons 440 + 480 Hz, 2 s sur 4 s), aucun fichier externe
+  function ringOnce() {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const g = audio.createGain(); g.gain.value = 0; g.connect(audio.destination);
+    [440, 480].forEach((f) => { const o = audio.createOscillator(); o.frequency.value = f; o.connect(g); o.start(t); o.stop(t + 2.05); });
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12, t + 0.03);
+    g.gain.setValueAtTime(0.12, t + 1.95); g.gain.linearRampToValueAtTime(0, t + 2.05);
+  }
+  function startSound() {
+    stopSound();
+    try { audio = new (window.AudioContext || window.webkitAudioContext)(); audio.resume?.(); ringOnce(); ringLoop = setInterval(ringOnce, 4000); } catch { audio = null; }
+  }
+  function stopSound() {
+    clearInterval(ringLoop); ringLoop = null;
+    try { audio?.close(); } catch {}
+    audio = null;
+  }
+
+  function setLearn(on) {
+    sim.on = on;
+    document.body.classList.toggle("learn", on);
+    $("learnToggle").setAttribute("aria-pressed", String(on));
+    $("learnToggleText").textContent = on ? "Quitter le mode apprentissage" : "Mode apprentissage";
+    store.set("lq-learn", on ? "1" : "0");
+    closeMenu();
+    if (on) {
+      ctl?.abort();
+      $("simHome").hidden = false;
+      $("q").placeholder = "Recevez un appel pour commencer…";
+      updateSimComposer();
+    } else {
+      stopSim(true);
+      $("q").placeholder = "Écrivez votre question…";
+      $("q").disabled = false;
+    }
+    scroller.scrollTop = 0;
+  }
+
+  function updateSimComposer() {
+    if (!sim.on) return;
+    const can = sim.active && !sim.ended;
+    $("q").disabled = !can;
+    $("q").placeholder = can ? "Répondez au client…" : "Recevez un appel pour commencer…";
+    updateSend();
+  }
+
+  function ringIn() {
+    if (sim.ringing || sim.active) return;
+    sim.ringing = true;
+    $("simCall").disabled = true;
+    $("ringPanel").hidden = false;
+    $("ringSub").textContent = "Client fictif · numéro de simulation";
+    if (!muted) startSound();
+    setTimeout(() => $("ringAnswer").focus(), 50);
+    // Sans réponse après 40 s : appel manqué, la sonnerie s'arrête
+    sim.ringTimeout = setTimeout(() => { stopRing(); simNote("Appel manqué : personne n'a décroché. Recevez un autre appel quand vous êtes prêt."); }, 40000);
+  }
+  function stopRing() {
+    sim.ringing = false;
+    clearTimeout(sim.ringTimeout);
+    stopSound();
+    $("ringPanel").hidden = true;
+    $("simCall").disabled = false;
+  }
+  function declineCall() {
+    stopRing();
+    simNote("Appel refusé. Aucune simulation n'a été lancée.");
+  }
+
+  function simNote(text) {
+    $("simThread").hidden = false;
+    const n = document.createElement("div"); n.className = "sim-note"; n.textContent = text;
+    $("simThread").append(n); toBottom();
+  }
+  function clientBubble() {
+    const m = document.createElement("div"); m.className = "msg a sim-c";
+    const av = document.createElement("div"); av.className = "c-av"; av.innerHTML = ICON_PERSON;
+    const col = document.createElement("div"); col.className = "a-col";
+    const who = document.createElement("div"); who.className = "who"; who.textContent = "Client (fictif)";
+    const b = document.createElement("div"); b.className = "c-bub";
+    b.innerHTML = '<span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Le client parle…</span>';
+    col.append(who, b); m.append(av, col); $("simThread").append(m); toBottom();
+    return b;
+  }
+  function learnerBubble(text) {
+    const m = document.createElement("div"); m.className = "msg q";
+    const b = document.createElement("div"); b.className = "qbub"; b.textContent = text;
+    m.append(b); $("simThread").append(m); toBottom();
+  }
+
+  function answerCall() {
+    stopRing();
+    const pick = SIM_TYPES.filter(([k]) => k !== store.get("lq-last-sim"));
+    sim.type = pick[Math.floor(Math.random() * pick.length)];
+    store.set("lq-last-sim", sim.type[0]);
+    sim.active = true; sim.ended = false; sim.turns = []; sim.log = [];
+    $("simHome").hidden = true;
+    $("simThread").textContent = ""; $("simThread").hidden = false;
+    $("callBar").hidden = false;
+    sim.start = Date.now();
+    const tick = () => { const s = Math.floor((Date.now() - sim.start) / 1000); $("callTimer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
+    tick(); sim.timer = setInterval(tick, 1000);
+    simNote("Vous avez décroché. Le client parle en premier ; répondez-lui comme au téléphone.");
+    updateSimComposer();
+    simTurn("L'appel commence : la réceptionniste vient de décrocher. Dis ta première réplique de client.");
+  }
+
+  async function simAsk(payload, onText, signal) {
+    if (!cfg.apiUrl) throw new Error("L'assistant n'est pas encore activé.");
+    const res = await fetch(cfg.apiUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-agent-code": code },
+      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom }),
+      signal,
+    });
+    if (!res.ok) {
+      let msg = "La simulation n'a pas pu continuer. Réessayez.";
+      try { msg = (await res.json()).error || msg; } catch {}
+      if (res.status === 401) askCode(true);
+      throw new Error(msg);
+    }
+    const reader = res.body.getReader(); const dec = new TextDecoder();
+    let text = "";
+    let idle = setTimeout(() => sim.ctl?.abort(), 60000);
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        clearTimeout(idle); idle = setTimeout(() => sim.ctl?.abort(), 60000);
+        text += dec.decode(value, { stream: true });
+        onText(text);
+      }
+    } finally { clearTimeout(idle); }
+    return text;
+  }
+
+  async function simTurn(learnerText) {
+    if (!sim.active || sim.ended) return;
+    sim.ctl?.abort();
+    sim.ctl = new AbortController();
+    const myCtl = sim.ctl;
+    const b = clientBubble();
+    const histForCall = sim.turns.slice(-16);
+    try {
+      const raw = await simAsk({ phase: "client", scenario: `${sim.type[0]} — ${sim.type[1]}`, question: learnerText, history: histForCall },
+        (t) => { const clean = t.replace(/\[\s*FIN D['’]APPEL\s*\]/gi, "").trim(); if (clean) b.textContent = clean; if (nearBottom()) toBottom(); }, myCtl.signal);
+      if (myCtl !== sim.ctl) return;
+      const hungUp = /\[\s*FIN D['’]APPEL\s*\]/i.test(raw);
+      const clean = raw.replace(/\[\s*FIN D['’]APPEL\s*\]/gi, "").trim();
+      b.textContent = clean || "…";
+      sim.turns.push({ role: "user", content: learnerText }, { role: "assistant", content: clean });
+      sim.log.push({ who: "Client", text: clean });
+      if (hungUp) { simNote("Le client a raccroché."); endCall(); }
+    } catch (e) {
+      if (myCtl !== sim.ctl) return;
+      b.textContent = e.name === "AbortError" ? "(le client n'a pas répondu à temps)" : e.message;
+      b.classList.add("err");
+    } finally {
+      if (myCtl === sim.ctl) sim.ctl = null;
+      updateSimComposer();
+      if (sim.active && !sim.ended) $("q").focus();
+    }
+  }
+
+  function simReply() {
+    const t = $("q").value.trim();
+    if (!t || !sim.active || sim.ended) return;
+    $("q").value = ""; autosize();
+    learnerBubble(t);
+    sim.log.push({ who: "Apprenant", text: t });
+    simTurn(t);
+  }
+
+  function endCall() {
+    if (!sim.active || sim.ended) return;
+    sim.ended = true;
+    sim.ctl?.abort(); sim.ctl = null;
+    clearInterval(sim.timer); $("callBar").hidden = true;
+    updateSimComposer();
+    const answered = sim.log.some((l) => l.who === "Apprenant");
+    if (!answered) { simNote("Appel terminé avant votre première réponse : pas de rétroaction cette fois."); simEndActions(); return; }
+    simFeedback();
+  }
+
+  async function simFeedback() {
+    const m = document.createElement("div"); m.className = "msg a";
+    const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${ICON}" alt="">`;
+    const col = document.createElement("div"); col.className = "a-col";
+    const who = document.createElement("div"); who.className = "who"; who.textContent = "Rétroaction";
+    const box = document.createElement("section"); box.className = "box-learn";
+    box.innerHTML = `<div class="box-head">${SVG_BOOK}Rétroaction · scénario « ${esc(sim.type[0])} »</div><div class="box-body"><span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Analyse de votre appel…</span></div>`;
+    col.append(who, box); m.append(av, col); $("simThread").append(m); toBottom();
+    const body = box.querySelector(".box-body");
+    const transcript = `Scénario : ${sim.type[0]} (${sim.type[1]})\n\n` + sim.log.map((l) => `${l.who} : ${l.text}`).join("\n");
+    sim.ctl = new AbortController();
+    const myCtl = sim.ctl;
+    try {
+      const t = await simAsk({ phase: "bilan", question: transcript }, (x) => { body.innerHTML = md(x); }, myCtl.signal);
+      body.innerHTML = md(t);
+    } catch (e) {
+      if (myCtl === sim.ctl) body.innerHTML = `<p class="err">${esc(e.name === "AbortError" ? "Rétroaction interrompue." : e.message)}</p>`;
+    } finally {
+      if (myCtl === sim.ctl) { sim.ctl = null; simEndActions(); requestAnimationFrame(() => toTopOf(m)); }
+    }
+  }
+
+  function simEndActions() {
+    sim.active = false;
+    const a = document.createElement("div"); a.className = "sim-end-actions";
+    const again = document.createElement("button"); again.type = "button"; again.className = "qz-next"; again.textContent = "Recevoir un autre appel";
+    again.onclick = () => { a.remove(); ringIn(); };
+    const quit = document.createElement("button"); quit.type = "button"; quit.className = "qz-new"; quit.textContent = "Quitter le mode apprentissage";
+    quit.onclick = () => setLearn(false);
+    a.append(again, quit); $("simThread").append(a); toBottom();
+    updateSimComposer();
+  }
+
+  // Arrête tout : sonnerie, requête en cours, minuterie, conversation fictive
+  function stopSim(clear) {
+    stopRing();
+    sim.ctl?.abort(); sim.ctl = null;
+    clearInterval(sim.timer);
+    sim.active = false; sim.ended = false; sim.turns = []; sim.log = [];
+    $("callBar").hidden = true;
+    if (clear) { $("simThread").textContent = ""; $("simThread").hidden = true; $("simHome").hidden = false; }
+  }
+
+  $("learnToggle").onclick = () => setLearn(!sim.on);
+  $("learnExit").onclick = () => setLearn(false);
+  $("simCall").onclick = ringIn;
+  $("ringAnswer").onclick = answerCall;
+  $("ringDecline").onclick = declineCall;
+  $("muteBtn").onclick = toggleMute;
+  $("ringMute").onclick = toggleMute;
+  $("hangup").onclick = () => { simNote("Vous avez terminé l'appel."); endCall(); };
+  muteLabel();
+
   /* ---------- démarrage ---------- */
   showName();
+  if (store.get("lq-learn") === "1") setLearn(true);
   fetch("config.json", { cache: "no-cache" })
     .then((r) => r.json())
     .then((c) => { cfg = { ...cfg, ...c }; })
