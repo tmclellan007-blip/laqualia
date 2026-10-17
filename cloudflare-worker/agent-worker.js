@@ -22,7 +22,8 @@ const MAX_QUESTION = 2000;
 const MAX_TURN = 6000;
 const MAX_HISTORY = 8;
 const CTX_BUDGET = 60000;
-const MAX_TOKENS = 1600;
+const MAX_TOKENS = 8000; // inclut la réflexion de Claude (adaptive thinking)
+const EFFORT = { quick: "low", default: "medium", complex: "high" };
 
 let cache = null; // { at, config, chunks }
 
@@ -82,15 +83,21 @@ async function handlePost(request, env, cors) {
   const tier = allowed.includes(asked) ? asked : (MODELS[config.tier] ? config.tier : "default");
   const model = env.AGENT_MODEL || MODELS[tier];
 
-  const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+  // Claude réfléchit avant de répondre (adaptive thinking) : l'encadré En direct est la synthèse de cette réflexion.
+  // Si le modèle refuse ce réglage, on relance la même demande sans réflexion.
+  const call = (withThinking) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-api-key": env.ANTHROPIC_API_KEY,
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({ model, max_tokens: MAX_TOKENS, system, messages, stream: true }),
+    body: JSON.stringify(withThinking
+      ? { model, max_tokens: MAX_TOKENS, system, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
+      : { model, max_tokens: 2000, system, messages, stream: true }),
   });
+  let upstream = await call(env.AGENT_THINKING !== "off");
+  if (upstream.status === 400 && env.AGENT_THINKING !== "off") upstream = await call(false);
 
   if (!upstream.ok || !upstream.body) {
     const status = upstream.status;

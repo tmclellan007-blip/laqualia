@@ -166,35 +166,6 @@
     }
     let out = kept.join("\n\n");
     let l = learn;
-    // Le vert reste court : 1er paragraphe (max ~380 caractères) ; le surplus passe en tête de l'Apprentissage
-    const LIVE_MAX = 380;
-    if (out) {
-      const paras = out.split(/\n\s*\n/);
-      let head = paras[0].replace(/^\s*(\*\*[^*]+\*\*\s*:?\s*)$/m, "").trim() || paras[0];
-      let rest = paras.slice(1);
-      if (/^\s*([-*•]|\d+[.)])\s/m.test(head) && head.split("\n").length > 2) {
-        const lines = head.split("\n"); head = lines.slice(0, 2).join("\n"); rest.unshift(lines.slice(2).join("\n"));
-      }
-      if (head.length > LIVE_MAX) {
-        const cut = head.slice(0, LIVE_MAX).search(/[.!?»](?=[^.!?»]*$)/);
-        if (cut > 80) { rest.unshift(head.slice(cut + 1).trim()); head = head.slice(0, cut + 1); }
-      }
-      // Le vert doit contenir la phrase à dire : si elle est plus bas, on la remonte
-      if (!/«/.test(head)) {
-        const all = rest.join("\n").split("\n");
-        const k = all.findIndex((x) => /«[^»]{8,220}»/.test(x));
-        if (k !== -1) {
-          head += "\n\n" + all[k].replace(/^\s*([-*•]|\d+[.)])\s*/, "").trim();
-          all.splice(k, 1);
-          rest = [all.join("\n")];
-        }
-      }
-      if (rest.join("").trim()) {
-        out = head.trim();
-        if (l !== null) l = rest.join("\n\n").trim() + (l ? "\n\n" + l : "");
-        else l = rest.join("\n\n").trim();
-      }
-    }
     // Si le vert est vide après nettoyage, on reprend l'essentiel du début de l'Apprentissage
     if (!out && l) {
       const first = l.split(/\n\s*\n/).map((x) => x.replace(/^\s*#{1,4}\s+/gm, "").trim()).find((x) => x && !DOC_RE.test(x));
@@ -375,7 +346,7 @@
     const col = document.createElement("div"); col.className = "a-col";
     const who = document.createElement("div"); who.className = "who"; who.textContent = cfg.name || "Assistant";
     const body = document.createElement("div"); body.className = "body";
-    body.innerHTML = '<span class="typing" aria-label="L\'assistant écrit"><i></i><i></i><i></i></span>';
+    body.innerHTML = '<span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Analyse de la situation…</span>';
     col.append(who, body); m.append(av, col); $("thread").append(m); toBottom();
     return { m, col, body };
   }
