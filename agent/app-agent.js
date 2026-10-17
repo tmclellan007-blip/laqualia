@@ -231,6 +231,11 @@
   const scroller = $("scroller");
   const nearBottom = () => scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 140;
   const toBottom = () => { scroller.scrollTop = scroller.scrollHeight; };
+  // Une fois la réponse terminée, on remonte au début de la réponse
+  const toTopOf = (el) => {
+    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 12;
+    scroller.scrollTo({ top: Math.max(0, top), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  };
 
   function addQuestion(text) {
     $("empty").hidden = true;
@@ -291,6 +296,7 @@
       if (!answer.trim()) { body.innerHTML = '<p class="err">Aucune réponse reçue. Réessayez.</p>'; return; }
       turns.push({ role: "user", content: q }, { role: "assistant", content: answer });
       finishAnswer(res, col, answer);
+      requestAnimationFrame(() => toTopOf(m));
     } catch (e) {
       if (e.name === "AbortError") {
         if (answer) { renderAnswer(body, answer, true); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); }
