@@ -105,6 +105,7 @@
   /* ---------- config ---------- */
   function applyCfg() {
     $("agentName").textContent = cfg.name || "Assistant La Qualia";
+    $("orgName").textContent = cfg.etablissement || "Votre établissement vétérinaire";
     $("agentTag").textContent = cfg.tag || "";
     $("disclaimerText").textContent = cfg.disclaimer || "";
     $("disclaimer").hidden = !cfg.disclaimer;
