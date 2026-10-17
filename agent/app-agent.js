@@ -137,7 +137,7 @@
   const SVG_PHONE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>';
   const SVG_BOOK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>';
   // Phrases qui parlent de la documentation ou renvoient au responsable « par défaut » : jamais dans le vert
-  const DOC_RE = /(consigne|procédure|politique|information|document|documentation|directive)s?\s+(interne|de la clinique|fourni|disponible|trouvée|indiquée)|aucune?\s+(consigne|procédure|information|politique|directive)|documentation (fournie|de référence)|conseils? généraux|en cas de doute/i;
+  const DOC_RE = /\bdocument(ation)?s?\b|consignes? internes?|procédures? (interne|de la clinique|de l'établissement)|politique (interne|de la clinique)|règles? (précise|interne)|aucune? (consigne|procédure|information|politique|directive|règle)|repères? généra|conseils? généra|en cas de doute|vérifie[rz]? avec (votre|le|la|vos)\s+(responsable|gestionnaire|superviseur|supérieur|vétérinaire)|^\s*(\*\*)?à noter\b/i;
   const isHeadingOnly = (p) => /^\s*(#{1,4}\s+.*|\*\*[^*]+\*\*\s*:?)\s*$/.test(p.trim());
   function cleanLive(live, learn) {
     const notes = [];
@@ -153,7 +153,12 @@
     }
     let out = kept.join("\n\n");
     let l = learn;
-    if (notes.length && l !== null) l = (l ? l + "\n\n" : "") + "_Note : " + notes.join(" ") + "_";
+    // Si le vert est vide après nettoyage, on reprend l'essentiel du début de l'Apprentissage
+    if (!out && l) {
+      const first = l.split(/\n\s*\n/).map((x) => x.replace(/^\s*#{1,4}\s+/gm, "").trim()).find((x) => x && !DOC_RE.test(x));
+      if (first) out = first.split("\n").slice(0, 3).join("\n");
+    }
+    if (notes.length && l !== null) l = (l ? l + "\n\n" : "") + "_Note : " + notes.join(" ").replace(/\*\*/g, "").replace(/^à noter\s*:\s*/i, "") + "_";
     return { live: out, learn: l };
   }
   function splitAnswer(text, done) {
