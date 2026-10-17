@@ -132,7 +132,18 @@
     $("modelWrap").hidden = list.length < 2;
     const badge = $("modelBadge");
     badge.hidden = list.length < 2;
-    badge.textContent = MODEL_LABELS[tier][1];
+    badge.textContent = MODEL_LABELS[tier][0];
+    badge.setAttribute("aria-label", `Modèle de réponse : ${MODEL_LABELS[tier][0]} (${MODEL_LABELS[tier][1]}). Changer`);
+    const pop = $("modelPop"); pop.textContent = "";
+    const lab = document.createElement("div"); lab.className = "mp-lab"; lab.textContent = "Modèle de réponse"; pop.append(lab);
+    const DESC = { quick: "Le plus vif, idéal pendant un appel", default: "Équilibre vitesse et profondeur", complex: "Le plus réfléchi, un peu plus lent" };
+    list.forEach((t) => {
+      const o = document.createElement("button"); o.type = "button"; o.className = "mp-opt"; o.setAttribute("role", "menuitemradio");
+      o.setAttribute("aria-checked", String(t === tier));
+      o.innerHTML = `<span class="mp-t"><b>${MODEL_LABELS[t][0]} · ${MODEL_LABELS[t][1]}</b><small>${DESC[t]}</small></span><span class="mp-ck" aria-hidden="true"></span>`;
+      o.onclick = () => { tier = t; store.set("lq-tier", t); renderModels(); closePop(); $("modelBadge").focus(); };
+      pop.append(o);
+    });
   }
   function setStatus(kind, text) {
     $("status").className = "status " + kind;
@@ -520,7 +531,11 @@
   function openMenu() { $("app").classList.add("open"); }
   function closeMenu() { $("app").classList.remove("open"); }
   $("menuBtn").onclick = openMenu;
-  $("modelBadge").onclick = () => { if (matchMedia("(max-width:860px)").matches) openMenu(); else $("modelSeg").querySelector('[aria-checked="true"]')?.focus(); };
+  function openPop() { $("modelPop").hidden = false; $("modelBadge").setAttribute("aria-expanded", "true"); $("modelPop").querySelector('[aria-checked="true"]')?.focus(); }
+  function closePop() { $("modelPop").hidden = true; $("modelBadge").setAttribute("aria-expanded", "false"); }
+  $("modelBadge").onclick = (e) => { e.stopPropagation(); $("modelPop").hidden ? openPop() : closePop(); };
+  document.addEventListener("click", (e) => { if (!e.target.closest(".mp-wrap")) closePop(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("modelPop").hidden) { closePop(); $("modelBadge").focus(); } });
   $("closeMenu").onclick = closeMenu;
   $("scrim").onclick = closeMenu;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if ($("app").classList.contains("open")) closeMenu(); else if (sim.ringing) declineCall(); else ctl?.abort(); } });
@@ -897,6 +912,19 @@
       setTimeout(() => { sp.textContent = "Copier"; t.classList.remove("ok"); }, 2000);
     }
   });
+
+  /* ---------- en-tête : titre de la conversation et mode ---------- */
+  function setConvTitle() {
+    const learn = document.body.classList.contains("learn");
+    $("modeChip").textContent = learn ? "Simulation" : "Assistant d'accueil";
+    if (learn) { $("convTitle").textContent = "Simulation complète · appels fictifs"; return; }
+    const first = $("thread").querySelector(".msg.q .qbub");
+    const t = first ? first.textContent.replace(/\s+/g, " ").trim() : "";
+    $("convTitle").textContent = t ? (t.length > 70 ? t.slice(0, 68) + "…" : t) : "Nouvelle conversation";
+  }
+  new MutationObserver(setConvTitle).observe($("thread"), { childList: true });
+  new MutationObserver(setConvTitle).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  setConvTitle();
 
   /* ---------- état vide : accueil + saisie centrés, suggestions sous la saisie ---------- */
   const mainEl = document.querySelector(".main");
