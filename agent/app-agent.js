@@ -31,6 +31,7 @@
   let cfg = { name: "Assistant La Qualia", examples: [] };
   let turns = [];
   let inScenario = false;
+  let running = Promise.resolve();
   const MODEL_LABELS = { quick: ["Rapide", "Haiku"], default: ["Standard", "Sonnet"], complex: ["Approfondi", "Opus"] };
   let tier = store.get("lq-tier") || "";
   let ctl = null;
@@ -353,13 +354,16 @@
 
   async function send(text, display) {
     const q = String(text ?? $("q").value).trim();
-    if (!q || ctl) return;
+    if (!q) return;
+    // Changement d'idée : on arrête la réponse en cours et on passe à la nouvelle question
+    if (ctl) { ctl.abort(); await running; }
     if (/^(mets-moi en situation|résultats du quiz)/i.test(q) || /mise en situation/i.test(q)) inScenario = true;
     $("q").value = ""; autosize();
     const qm = addQuestion(display || q);
     const { m, col, body } = addAnswer();
     if (!cfg.apiUrl) { body.innerHTML = '<p class="err">L\'assistant n\'est pas encore activé.</p>'; return; }
     ctl = new AbortController();
+    let release; running = new Promise((r) => (release = r));
     busy(true);
     let answer = "";
     try {
@@ -396,11 +400,11 @@
       requestAnimationFrame(() => toTopOf(m));
     } catch (e) {
       if (e.name === "AbortError") {
-        if (answer) { renderAnswer(body, answer, true); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); }
-        else body.innerHTML = '<p class="err">Réponse arrêtée.</p>';
+        if (answer) { renderAnswer(body, answer, true); body.insertAdjacentHTML("beforeend", '<p class="stopped">Réponse arrêtée.</p>'); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); }
+        else body.innerHTML = '<p class="stopped">Réflexion arrêtée.</p>';
       } else { if (answer) renderAnswer(body, answer, true); else body.textContent = ""; body.insertAdjacentHTML("beforeend", '<p class="err">La connexion a été interrompue. Vérifiez Internet et réessayez.</p>'); }
     } finally {
-      ctl = null; busy(false);
+      ctl = null; busy(false); release();
     }
   }
 
@@ -432,11 +436,15 @@
     nx.append(lab, ch); $("thread").append(nx);
   }
 
-  function busy(on) {
-    $("send").hidden = on; $("stop").hidden = !on;
-    if (!on) updateSend();
+  // Pendant une réponse : bouton Arrêter visible ; si on tape une nouvelle question, Envoyer réapparaît et la remplace
+  function busy(on) { updateSend(); }
+  function updateSend() {
+    const has = !!$("q").value.trim();
+    $("stop").hidden = !ctl;
+    $("send").hidden = !!ctl && !has;
+    $("send").disabled = !has;
+    $("send").title = ctl && has ? "Arrêter et envoyer cette question" : "Envoyer";
   }
-  function updateSend() { $("send").disabled = !$("q").value.trim(); }
 
   function resetConversation() {
     ctl?.abort(); turns = []; inScenario = false;
@@ -483,7 +491,7 @@
   $("modelBadge").onclick = () => { if (matchMedia("(max-width:860px)").matches) openMenu(); else $("modelSeg").querySelector('[aria-checked="true"]')?.focus(); };
   $("closeMenu").onclick = closeMenu;
   $("scrim").onclick = closeMenu;
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") { if ($("app").classList.contains("open")) closeMenu(); else ctl?.abort(); } });
 
   /* ---------- branchements ---------- */
   function autosize() { const t = $("q"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 180) + "px"; updateSend(); }
