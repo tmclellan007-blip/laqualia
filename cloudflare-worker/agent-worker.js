@@ -102,44 +102,60 @@ async function handlePost(request, env, cors) {
   const tier = allowed.includes(asked) ? asked : (MODELS[config.tier] ? config.tier : "default");
   const model = env.AGENT_MODEL || MODELS[tier];
 
-  // Claude réfléchit avant de répondre (adaptive thinking) : l'encadré En direct est la synthèse de cette réflexion.
-  // Un seul contrôleur coupe tout : délai total, silence prolongé, ou départ de la personne (onglet fermé, Arrêter).
+  // Mise en situation (quiz) : une seule demande, format libre.
+  // Question normale : deux demandes en parallèle, l'une pour « En direct » (courte, plafonnée),
+  // l'autre pour « Apprentissage » ; le relais les assemble dans cet ordre. Le vert ne peut pas s'emballer.
+  const isScene = /^(mets-moi en situation|résultats du quiz)/i.test(question) || /format mise en situation/i.test(question);
   const abort = new AbortController();
   const total = setTimeout(() => abort.abort("total"), TOTAL_TIMEOUT_MS);
   request.signal?.addEventListener?.("abort", () => abort.abort("client"));
-  const call = (withThinking) => fetch("https://api.anthropic.com/v1/messages", {
+
+  const LIVE_TASK = "\n\nTÂCHE POUR CETTE RÉPONSE : écris UNIQUEMENT le contenu de la partie [EN DIRECT], sans le marqueur, sans titre, sans liste numérotée. Analyse d'abord toute la situation, puis donne la meilleure réponse en 2 à 4 phrases au total : la phrase exacte à dire au client entre guillemets, puis l'action concrète à faire maintenant. 80 mots maximum.";
+  const LEARN_TASK = "\n\nTÂCHE POUR CETTE RÉPONSE : écris UNIQUEMENT le contenu de la partie [APPRENTISSAGE], sans le marqueur. La réponse courte « En direct » est déjà donnée à la personne séparément : ne la recopie pas, explique-la et approfondis (étapes, pourquoi, pièges, variantes de formulation, schéma si utile, ligne « À retenir »).";
+
+  const call = (sys, maxTokens, withThinking) => fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     signal: abort.signal,
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify(withThinking
-      ? { model, max_tokens: MAX_TOKENS[tier] || 5000, system, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
-      : { model, max_tokens: 2000, system, messages, stream: true }),
+      ? { model, max_tokens: maxTokens, system: sys, messages, stream: true, thinking: { type: "adaptive" }, output_config: { effort: EFFORT[tier] || "medium" } }
+      : { model, max_tokens: Math.min(maxTokens, 2000), system: sys, messages, stream: true }),
   });
-  let upstream;
+  // Un seul nouvel essai, sans réflexion, si le modèle refuse ce réglage ; jamais de boucle
+  const callSafe = async (sys, maxTokens) => {
+    const think = env.AGENT_THINKING !== "off";
+    let r = await call(sys, maxTokens, think);
+    if (r.status === 400 && think) r = await call(sys, maxTokens, false);
+    return r;
+  };
+
+  const cap = MAX_TOKENS[tier] || 5000;
+  let parts;
   try {
-    upstream = await call(env.AGENT_THINKING !== "off");
-    // Un seul nouvel essai, sans réflexion, si le modèle refuse ce réglage ; jamais de boucle
-    if (upstream.status === 400 && env.AGENT_THINKING !== "off") upstream = await call(false);
+    parts = isScene
+      ? [await callSafe(system, cap)]
+      : await Promise.all([callSafe(system + LIVE_TASK, Math.min(cap, 3000)), callSafe(system + LEARN_TASK, cap)]);
   } catch {
     clearTimeout(total);
     return json(504, { error: "Le service a mis trop de temps à répondre. Réessayez." }, cors);
   }
-  if (!upstream.ok || !upstream.body) {
-    const status = upstream.status;
+  const bad = parts.find((r) => !r.ok || !r.body);
+  if (bad) {
+    parts.forEach((r) => { try { r.body?.cancel().catch(() => {}); } catch {} });
+    clearTimeout(total);
+    const status = bad.status;
     const msg = status === 401 ? "La clé API est invalide. Vérifiez ANTHROPIC_API_KEY dans Cloudflare."
       : status === 429 ? "Trop de questions en même temps. Réessayez dans une minute."
       : status === 400 ? "La demande a été refusée par le service. Raccourcissez la question ou commencez une nouvelle conversation."
       : "Le service est momentanément indisponible. Réessayez.";
-    clearTimeout(total);
     return json(status === 401 ? 502 : status, { error: msg }, cors);
   }
 
+  const segments = isScene
+    ? [{ body: parts[0].body }]
+    : [{ prefix: "[EN DIRECT]\n", body: parts[0].body }, { prefix: "\n\n[APPRENTISSAGE]\n", body: parts[1].body }];
   const sources = [...new Set(ctx.map((c) => c.title))];
-  return new Response(sseToText(upstream.body, abort, total), {
+  return new Response(streamSegments(segments, abort, total), {
     headers: {
       ...cors,
       "content-type": "text/plain; charset=utf-8",
@@ -168,40 +184,58 @@ function cleanHistory(h) {
   return out;
 }
 
-function sseToText(stream, abort, total) {
-  const dec = new TextDecoder();
+// Lit les flux de Claude l'un après l'autre (le 2e est déjà en route pendant le 1er) et n'en garde que le texte.
+function streamSegments(segments, abort, total) {
   const enc = new TextEncoder();
-  let buf = "";
-  let out = null;
   let idle = null;
-  const stop = (msg) => {
+  let out = null;
+  let done = false;
+  const finish = (msg) => {
+    if (done) return; done = true;
     clearTimeout(idle); clearTimeout(total);
-    try { if (msg) out.enqueue(enc.encode(msg)); out.terminate(); } catch {}
+    try { if (msg) out.enqueue(enc.encode(msg)); out.close(); } catch {}
+    segments.forEach((sg) => { try { (sg.reader || sg.body).cancel().catch(() => {}); } catch {} });
     abort.abort("stop");
   };
-  const arm = () => { clearTimeout(idle); idle = setTimeout(() => stop("\n\n_(Délai dépassé : la réponse a été arrêtée pour protéger vos crédits. Réessayez ou posez une question plus précise.)_"), IDLE_TIMEOUT_MS); };
+  const arm = () => { clearTimeout(idle); idle = setTimeout(() => finish("\n\n_(Délai dépassé : la réponse a été arrêtée pour protéger vos crédits. Réessayez ou posez une question plus précise.)_"), IDLE_TIMEOUT_MS); };
   abort.signal.addEventListener("abort", () => {
-    if (abort.signal.reason === "total") stop("\n\n_(Réponse trop longue : arrêtée après 2 minutes pour protéger vos crédits.)_");
+    if (abort.signal.reason === "total") finish("\n\n_(Réponse trop longue : arrêtée après 2 minutes pour protéger vos crédits.)_");
   });
-  arm();
-  return stream.pipeThrough(new TransformStream({
-    start(c) { out = c; },
-    transform(chunk, ctl) {
+  return new ReadableStream({
+    async start(c) {
+      out = c;
       arm();
-      buf += dec.decode(chunk, { stream: true });
-      const lines = buf.split("\n");
-      buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        let ev;
-        try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
-        if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") ctl.enqueue(enc.encode(ev.delta.text));
-        else if (ev.type === "message_delta" && ev.delta?.stop_reason === "max_tokens") ctl.enqueue(enc.encode("\n\n_(Réponse coupée : demandez la suite.)_"));
-        else if (ev.type === "error") ctl.enqueue(enc.encode("\n\n_(La réponse a été interrompue. Réessayez.)_"));
+      const dec = new TextDecoder();
+      try {
+        for (const sg of segments) {
+          if (done) return;
+          if (sg.prefix) c.enqueue(enc.encode(sg.prefix));
+          const reader = sg.reader = sg.body.getReader();
+          let buf = "";
+          for (;;) {
+            const { value, done: end } = await reader.read();
+            if (end || done) break;
+            arm();
+            buf += dec.decode(value, { stream: true });
+            const lines = buf.split("\n");
+            buf = lines.pop();
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+              let ev;
+              try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
+              if (ev.type === "content_block_delta" && ev.delta?.type === "text_delta") c.enqueue(enc.encode(ev.delta.text));
+              else if (ev.type === "message_delta" && ev.delta?.stop_reason === "max_tokens") c.enqueue(enc.encode("\n\n_(Réponse coupée : demandez la suite.)_"));
+              else if (ev.type === "error") c.enqueue(enc.encode("\n\n_(La réponse a été interrompue. Réessayez.)_"));
+            }
+          }
+        }
+        finish("");
+      } catch {
+        finish("");
       }
     },
-    flush() { clearTimeout(idle); clearTimeout(total); },
-  }));
+    cancel() { finish(""); },
+  });
 }
 
 async function asset(request, env, path) {
