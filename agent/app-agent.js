@@ -31,6 +31,8 @@
   let cfg = { name: "Assistant La Qualia", examples: [] };
   let turns = [];
   let inScenario = false;
+  const MODEL_LABELS = { quick: ["Rapide", "Haiku"], default: ["Standard", "Sonnet"], complex: ["Approfondi", "Opus"] };
+  let tier = store.get("lq-tier") || "";
   let ctl = null;
   let code = store.get("lq-agent-code") || "";
   let shown = new Set();
@@ -98,6 +100,28 @@
     if (cfg.name) document.title = cfg.name;
     renderWelcomeCards();
     renderSideList();
+    renderModels();
+  }
+  function allowedTiers() {
+    const list = Array.isArray(cfg.modelesProposes) ? cfg.modelesProposes.filter((t) => MODEL_LABELS[t]) : [];
+    return list.length ? list : [MODEL_LABELS[cfg.tier] ? cfg.tier : "default"];
+  }
+  function renderModels() {
+    const list = allowedTiers();
+    if (!list.includes(tier)) tier = list.includes(cfg.tier) ? cfg.tier : list[0];
+    const seg = $("modelSeg"); seg.textContent = ""; seg.style.setProperty("--n", list.length);
+    list.forEach((t) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "model-opt"; b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", String(t === tier));
+      b.innerHTML = `<b>${MODEL_LABELS[t][0]}</b><span>${MODEL_LABELS[t][1]}</span>`;
+      b.onclick = () => { tier = t; store.set("lq-tier", t); renderModels(); };
+      seg.append(b);
+    });
+    $("modelWrap").hidden = list.length < 2;
+    const badge = $("modelBadge");
+    badge.hidden = list.length < 2;
+    badge.textContent = MODEL_LABELS[tier][1];
   }
   function setStatus(kind, text) {
     $("status").className = "status " + kind;
@@ -240,7 +264,7 @@
       const res = await fetch(cfg.apiUrl, {
         method: "POST",
         headers: { "content-type": "application/json", "x-agent-code": code },
-        body: JSON.stringify({ question: q, history: turns.slice(-8) }),
+        body: JSON.stringify({ question: q, history: turns.slice(-8), tier }),
         signal: ctl.signal,
       });
       if (!res.ok) {
@@ -341,6 +365,7 @@
   function openMenu() { $("app").classList.add("open"); }
   function closeMenu() { $("app").classList.remove("open"); }
   $("menuBtn").onclick = openMenu;
+  $("modelBadge").onclick = () => { if (matchMedia("(max-width:860px)").matches) openMenu(); else $("modelSeg").querySelector('[aria-checked="true"]')?.focus(); };
   $("closeMenu").onclick = closeMenu;
   $("scrim").onclick = closeMenu;
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });

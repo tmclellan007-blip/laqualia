@@ -4,6 +4,11 @@
   "tag": "Le coach de l'équipe d'accueil : clients, équipe clinique et lexique",
   "audience": "telephonistes",
   "tier": "default",
+  "modelesProposes": [
+    "quick",
+    "default",
+    "complex"
+  ],
   "disclaimer": "Outil interne pour l'équipe d'accueil. Il ne remplace pas le jugement d'un technicien ou d'un vétérinaire : au moindre doute sur l'état d'un animal, transférez l'appel au personnel clinique.",
   "examples": [
     "Un client en colère conteste sa facture, comment je réponds ?",
