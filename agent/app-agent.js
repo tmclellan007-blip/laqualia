@@ -219,10 +219,26 @@
       return;
     }
     body.dataset.live = p.live;
-    let html = `<section class="box-live"><div class="box-head">${SVG_BOLT}En direct</div><div class="box-body">${md(p.live) || '<span class="typing"><i></i><i></i><i></i></span>'}</div></section>`;
-    if (p.learn !== null && (p.learn || !done)) html += `<section class="box-learn"><div class="box-head">${SVG_BOOK}Apprentissage</div><div class="box-body">${md(p.learn) || '<span class="typing"><i></i><i></i><i></i></span>'}</div></section>`;
-    else if (!done) html += `<section class="box-learn waiting"><div class="box-head">${SVG_BOOK}Apprentissage</div><div class="box-body"><span class="typing"><i></i><i></i><i></i></span></div></section>`;
+    const collapsed = body.dataset.collapsed === "1";
+    const skel = '<span class="skel"></span><span class="skel short"></span>';
+    const liveHtml = p.live ? enhance(md(p.live)) : skel;
+    const copyBtn = done && p.live ? `<button type="button" class="bh-act" data-act="copy-live">${SVG_COPY}<span>Copier</span></button>` : "";
+    let html = `<section class="box-live" aria-label="Réponse en direct"><div class="box-head"><span class="bh-l">${SVG_BOLT}En direct</span><span class="bh-hint">À dire maintenant</span>${copyBtn}</div><div class="box-body">${liveHtml}</div></section>`;
+    if (p.learn !== null && (p.learn || !done)) {
+      const words = (p.learn || "").split(/\s+/).filter(Boolean).length;
+      const meta = done && words ? `≈ ${Math.max(1, Math.round(words / 200))} min de lecture` : (p.learn ? "Rédaction…" : "En préparation…");
+      html += `<section class="box-learn${collapsed ? " is-collapsed" : ""}" aria-label="Apprentissage"><button type="button" class="box-head bh-toggle" data-act="toggle-learn" aria-expanded="${!collapsed}"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">${meta}</span><svg class="bh-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="box-body">${p.learn ? enhance(md(p.learn)) : skel + skel}</div></section>`;
+    } else if (!done) {
+      html += `<section class="box-learn waiting"><div class="box-head"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">En préparation…</span></div><div class="box-body">${skel}${skel}</div></section>`;
+    }
     body.innerHTML = html;
+  }
+  // Mise en valeur : phrases à dire (« … ») et ligne « À retenir »
+  function enhance(html) {
+    return html
+      .replace(/«([^»<]{3,400})»/g, '<q class="say">«$1»</q>')
+      .replace(/<p>(<strong>)?\s*À retenir\s*(<\/strong>)?\s*:?\s*/g, '<p class="keep"><span class="keep-l">À retenir</span> ')
+      .replace(/<p><em>Note : /g, '<p class="note"><em>Note : ');
   }
 
   /* ---------- mini-quiz (mises en situation seulement) ---------- */
@@ -345,7 +361,9 @@
     const m = document.createElement("div"); m.className = "msg a";
     const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${ICON}" alt="">`;
     const col = document.createElement("div"); col.className = "a-col";
-    const who = document.createElement("div"); who.className = "who"; who.textContent = cfg.name || "Assistant";
+    const who = document.createElement("div"); who.className = "who";
+    who.innerHTML = `<span></span><time>${new Date().toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}</time>`;
+    who.firstChild.textContent = cfg.name || "Assistant";
     const body = document.createElement("div"); body.className = "body";
     body.innerHTML = '<span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Analyse de la situation…</span>';
     col.append(who, body); m.append(av, col); $("thread").append(m); toBottom();
@@ -426,18 +444,18 @@
     try { sources = JSON.parse(decodeURIComponent(res.headers.get("x-agent-sources") || "[]")); } catch {}
     const cited = sources.filter((t) => answer.includes(t));
     if (cited.length) {
-      const s = document.createElement("div"); s.className = "srcs"; s.textContent = "Sources : ";
+      const s = document.createElement("div"); s.className = "srcs"; s.textContent = "Sources de la clinique : ";
       cited.forEach((t) => { const c = document.createElement("span"); c.className = "src"; c.textContent = t; s.append(c); });
-      col.append(s);
+      (col.querySelector(".box-learn") || col).append(s);
     }
     const acts = document.createElement("div"); acts.className = "actions";
-    const cp = document.createElement("button"); cp.type = "button"; cp.className = "act"; const label = () => (col.querySelector(".body")?.dataset.live ? "Copier la réponse en direct" : "Copier");
-    cp.innerHTML = SVG_COPY + "<span></span>"; cp.querySelector("span").textContent = label();
+    const cp = document.createElement("button"); cp.type = "button"; cp.className = "act";
+    cp.innerHTML = SVG_COPY + "<span>Copier toute la réponse</span>";
     cp.onclick = async () => {
-      const live = col.querySelector(".body")?.dataset.live;
-      try { await navigator.clipboard.writeText(live || answer); cp.querySelector("span").textContent = "Copié"; }
+      const txt = col.querySelector(".body")?.innerText || answer;
+      try { await navigator.clipboard.writeText(txt); cp.querySelector("span").textContent = "Copié ✓"; }
       catch { cp.querySelector("span").textContent = "Copie impossible"; }
-      setTimeout(() => { cp.querySelector("span").textContent = label(); }, 2000);
+      setTimeout(() => { cp.querySelector("span").textContent = "Copier toute la réponse"; }, 2000);
     };
     acts.append(cp); col.append(acts);
 
@@ -859,6 +877,26 @@
     try { sessionStorage.clear(); } catch {}
     location.reload();
   };
+
+  /* ---------- actions dans les réponses ---------- */
+  document.addEventListener("click", async (e) => {
+    const t = e.target.closest("[data-act]");
+    if (!t) return;
+    const body = t.closest(".body");
+    if (t.dataset.act === "toggle-learn" && body) {
+      const sec = t.closest(".box-learn");
+      const c = !sec.classList.contains("is-collapsed");
+      sec.classList.toggle("is-collapsed", c);
+      t.setAttribute("aria-expanded", String(!c));
+      body.dataset.collapsed = c ? "1" : "";
+    }
+    if (t.dataset.act === "copy-live" && body) {
+      const sp = t.querySelector("span");
+      try { await navigator.clipboard.writeText(body.dataset.live || ""); sp.textContent = "Copié ✓"; t.classList.add("ok"); }
+      catch { sp.textContent = "Copie impossible"; }
+      setTimeout(() => { sp.textContent = "Copier"; t.classList.remove("ok"); }, 2000);
+    }
+  });
 
   /* ---------- démarrage ---------- */
   showName();

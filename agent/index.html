@@ -341,6 +341,46 @@ body.learn .side-user{background:#ffffff1a}
 .side-out svg{flex:none}
 @media (max-height:700px){.side{gap:12px}.ni-txt small{display:none}.nav-item{padding:7px 10px}.ni-ico{width:30px;height:30px}}
 
+/* ======== Réponse : En direct + Apprentissage ======== */
+.msg.a .who{display:flex;align-items:baseline;gap:8px}
+.msg.a .who time{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:#8a8b92}
+.box-live,.box-learn{border-radius:18px;padding:0;overflow:hidden;gap:0}
+.box-head{display:flex;align-items:center;gap:10px;padding:12px 16px 0;font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;min-height:34px}
+.bh-l{display:inline-flex;align-items:center;gap:7px}
+.bh-hint{font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:#2f7a4a;opacity:.8}
+.bh-act{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:1.5px solid #9fdfb3;background:#fff;color:#14532d;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:800;letter-spacing:0;text-transform:none}
+.bh-act svg{width:14px;height:14px}
+.bh-act:hover{border-color:#15803d}
+.bh-act.ok{background:#15803d;border-color:#15803d;color:#fff}
+.box-live .box-body{padding:8px 16px 16px;font-size:17.5px;line-height:1.55;font-weight:600;color:#0f2e1a}
+.box-live .box-body p{margin:0 0 8px}
+.say{quotes:none;display:inline;background:linear-gradient(transparent 58%,#bbf7d0 58%);font-weight:700;color:#052e16;padding:0 2px;border-radius:2px}
+.box-learn{background:#f6f3fe;border:1.5px solid #ddd2f7;margin-top:12px}
+.bh-toggle{width:100%;border:0;background:transparent;text-align:left;color:var(--purple,#401098);cursor:pointer;padding-bottom:12px}
+.bh-toggle:hover{background:#efe9fd}
+.bh-meta{font-size:11.5px;font-weight:600;letter-spacing:0;text-transform:none;color:#6b5aa6}
+.bh-chev{width:18px;height:18px;margin-left:auto;transition:transform .2s}
+.box-learn.is-collapsed .bh-chev{transform:rotate(-90deg)}
+.box-learn.is-collapsed .box-body,.box-learn.is-collapsed .srcs{display:none}
+.box-learn .box-body{padding:2px 18px 18px;font-size:15px;line-height:1.65;color:#1f1640}
+.box-learn .box-body h3{font-size:15.5px;font-weight:800;color:#2b0f6e;margin:18px 0 6px;padding-top:14px;border-top:1px solid #e7defb}
+.box-learn .box-body > h3:first-child{margin-top:4px;padding-top:0;border-top:0}
+.box-learn .box-body ul,.box-learn .box-body ol{padding-left:1.25em}
+.box-learn .box-body li{margin:5px 0}
+.box-learn .box-body li::marker{color:#7c5cd6}
+.box-learn .say{background:linear-gradient(transparent 60%,#e1d5fb 60%);color:#1f1640}
+.keep{margin:12px 0 0;background:#fff;border:1.5px solid #ddd2f7;border-radius:12px;padding:10px 12px;font-weight:600}
+.keep-l{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#fff;background:var(--purple,#401098);border-radius:6px;padding:2px 7px;margin-right:6px;vertical-align:1px}
+.note{font-size:13px;color:#6b6780}
+.box-learn .srcs{padding:0 18px 14px}
+.box-learn .schema{background:#fff;margin-bottom:12px}
+.box-learn.waiting .box-head{padding-bottom:4px}
+.skel{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#00000010 25%,#00000020 50%,#00000010 75%);background-size:200% 100%;margin:6px 0 10px;width:92%}
+.skel.short{width:64%}
+@media (prefers-reduced-motion:no-preference){.skel{animation:shimmer 1.3s linear infinite}@keyframes shimmer{to{background-position:-200% 0}}}
+.actions{padding-top:2px}
+@media (max-width:860px){.msg.a > .av{display:none}.box-live .box-body{font-size:16.5px}.bh-hint{display:none}}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -571,6 +611,6 @@ body.learn .side-user{background:#ffffff1a}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171853"></script>
+<script src="app-agent.js?v=202610171857"></script>
 </body>
 </html>
