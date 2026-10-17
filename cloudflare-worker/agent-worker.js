@@ -154,13 +154,13 @@ function sseToText(stream) {
 
 async function asset(request, env, path) {
   const base = String(env.SITE_URL || "").replace(/\/$/, "");
-  const res = await fetch(base + path, { cf: { cacheTtl: 120 } });
+  const res = await fetch(base + path, { cf: { cacheTtl: 30 } });
   if (!res.ok) throw new Error(path);
   return res;
 }
 
 async function loadKnowledge(request, env) {
-  if (cache && Date.now() - cache.at < 5 * 60 * 1000) return cache;
+  if (cache && Date.now() - cache.at < 60 * 1000) return cache;
   let config = {};
   try { config = await (await asset(request, env, "/agent/config.json")).json(); } catch {}
   if (!config.instructions) config.instructions = "Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire. Réponds en français.";

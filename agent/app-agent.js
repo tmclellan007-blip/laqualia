@@ -92,11 +92,13 @@
       el.append(b);
     });
   }
+  const SCENE_FORMAT = "\n\n(Format MISE EN SITUATION : contexte en 2-3 phrases, réplique du client entre guillemets, puis un bloc ```quiz en JSON valide avec 2 ou 3 questions de type \"choix\" ou \"vraifaux\", chacune avec \"bonne\" et \"explication\". N'utilise pas [EN DIRECT] ni [APPRENTISSAGE].)";
   function startScenario() {
     closeMenu();
     inScenario = true;
     const sc = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
-    send(`Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`);
+    const label = `Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`;
+    send(label + SCENE_FORMAT, label);
   }
 
   /* ---------- config ---------- */
@@ -152,15 +154,47 @@
     const kept = [];
     for (const para of live.split(/\n\s*\n/)) {
       const lines = para.split("\n").filter((l) => !/^\s*#{1,4}\s+/.test(l));
-      const txt = lines.join("\n").trim();
-      if (!txt) continue;
-      const sentences = txt.split(/(?<=[.!?…»])\s+/);
-      const ok = sentences.filter((x) => !DOC_RE.test(x));
-      sentences.filter((x) => DOC_RE.test(x)).forEach((x) => notes.push(x.trim()));
-      if (ok.join(" ").trim()) kept.push(ok.join(" ").trim());
+      const keptLines = [];
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const sentences = line.split(/(?<=[.!?…»])\s+(?=\S)/);
+        sentences.filter((x) => DOC_RE.test(x)).forEach((x) => notes.push(x.trim()));
+        const ok = sentences.filter((x) => !DOC_RE.test(x)).join(" ").trim();
+        if (ok && !/^\s*([-*•]|\d+[.)])\s*$/.test(ok)) keptLines.push(ok);
+      }
+      if (keptLines.length) kept.push(keptLines.join("\n"));
     }
     let out = kept.join("\n\n");
     let l = learn;
+    // Le vert reste court : 1er paragraphe (max ~380 caractères) ; le surplus passe en tête de l'Apprentissage
+    const LIVE_MAX = 380;
+    if (out) {
+      const paras = out.split(/\n\s*\n/);
+      let head = paras[0].replace(/^\s*(\*\*[^*]+\*\*\s*:?\s*)$/m, "").trim() || paras[0];
+      let rest = paras.slice(1);
+      if (/^\s*([-*•]|\d+[.)])\s/m.test(head) && head.split("\n").length > 2) {
+        const lines = head.split("\n"); head = lines.slice(0, 2).join("\n"); rest.unshift(lines.slice(2).join("\n"));
+      }
+      if (head.length > LIVE_MAX) {
+        const cut = head.slice(0, LIVE_MAX).search(/[.!?»](?=[^.!?»]*$)/);
+        if (cut > 80) { rest.unshift(head.slice(cut + 1).trim()); head = head.slice(0, cut + 1); }
+      }
+      // Le vert doit contenir la phrase à dire : si elle est plus bas, on la remonte
+      if (!/«/.test(head)) {
+        const all = rest.join("\n").split("\n");
+        const k = all.findIndex((x) => /«[^»]{8,220}»/.test(x));
+        if (k !== -1) {
+          head += "\n\n" + all[k].replace(/^\s*([-*•]|\d+[.)])\s*/, "").trim();
+          all.splice(k, 1);
+          rest = [all.join("\n")];
+        }
+      }
+      if (rest.join("").trim()) {
+        out = head.trim();
+        if (l !== null) l = rest.join("\n\n").trim() + (l ? "\n\n" + l : "");
+        else l = rest.join("\n\n").trim();
+      }
+    }
     // Si le vert est vide après nettoyage, on reprend l'essentiel du début de l'Apprentissage
     if (!out && l) {
       const first = l.split(/\n\s*\n/).map((x) => x.replace(/^\s*#{1,4}\s+/gm, "").trim()).find((x) => x && !DOC_RE.test(x));
@@ -278,7 +312,7 @@
         const go = document.createElement("button"); go.type = "button"; go.className = "qz-next"; go.textContent = "Continuer l'appel";
         go.onclick = () => {
           const detail = qs.map((q, i) => `Q${i + 1} ${results[i] ? "réussie" : "manquée"}`).join(", ");
-          send(`Résultats du quiz : ${n}/${results.length} (${detail}). Continue la mise en situation.`, `Continuer l'appel · ${n}/${results.length}`);
+          send(`Résultats du quiz : ${n}/${results.length} (${detail}). Continue la mise en situation.` + SCENE_FORMAT, `Continuer l'appel · ${n}/${results.length}`);
         };
         const nw = document.createElement("button"); nw.type = "button"; nw.className = "qz-new"; nw.textContent = "Nouvelle mise en situation";
         nw.onclick = startScenario;
