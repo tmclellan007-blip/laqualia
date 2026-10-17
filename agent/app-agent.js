@@ -218,6 +218,15 @@
     mdDone = !!done;
     renderAnswerInner(body, text, done);
     if (done) hydrateQuizzes(body);
+    fitPreview(body);
+  }
+  // Aperçu de l'Apprentissage : on montre le début, la suite se déroule sur demande
+  function fitPreview(body) {
+    const sec = body.querySelector(".box-learn:not(.waiting)"); if (!sec) return;
+    const bd = sec.querySelector(".box-body"); const more = sec.querySelector(".more"); if (!bd || !more) return;
+    const long = sec.classList.contains("is-open") || bd.scrollHeight > bd.clientHeight + 8;
+    more.hidden = !long;
+    sec.classList.toggle("is-short", !long);
   }
   function renderAnswerInner(body, text, done) {
     const p = splitAnswer(text, done);
@@ -230,7 +239,7 @@
       return;
     }
     body.dataset.live = p.live;
-    const collapsed = body.dataset.collapsed === "1";
+    const open = body.dataset.open === "1";
     const skel = '<span class="skel"></span><span class="skel short"></span>';
     const liveHtml = p.live ? enhance(md(p.live)) : skel;
     const copyBtn = done && p.live ? `<button type="button" class="bh-act" data-act="copy-live">${SVG_COPY}<span>Copier</span></button>` : "";
@@ -238,7 +247,7 @@
     if (p.learn !== null && (p.learn || !done)) {
       const words = (p.learn || "").split(/\s+/).filter(Boolean).length;
       const meta = done && words ? `≈ ${Math.max(1, Math.round(words / 200))} min de lecture` : (p.learn ? "Rédaction…" : "En préparation…");
-      html += `<section class="box-learn${collapsed ? " is-collapsed" : ""}" aria-label="Apprentissage"><button type="button" class="box-head bh-toggle" data-act="toggle-learn" aria-expanded="${!collapsed}"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">${meta}</span><svg class="bh-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="box-body">${p.learn ? enhance(md(p.learn)) : skel + skel}</div></section>`;
+      html += `<section class="box-learn pv${open ? " is-open" : ""}" aria-label="Apprentissage"><button type="button" class="box-head bh-toggle" data-act="toggle-learn" aria-expanded="${open}"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">${meta}</span><svg class="bh-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="box-body">${p.learn ? enhance(md(p.learn)) : skel + skel}</div><button type="button" class="more" data-act="toggle-learn" hidden><span>${open ? "Réduire" : "Lire l'explication complète"}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></section>`;
     } else if (!done) {
       html += `<section class="box-learn waiting"><div class="box-head"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">En préparation…</span></div><div class="box-body">${skel}${skel}</div></section>`;
     }
@@ -424,11 +433,11 @@
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
-        const stick = nearBottom();
         alive();
+        const first = !answer;
         answer += dec.decode(value, { stream: true });
         renderAnswer(body, answer, false);
-        if (stick) toBottom();
+        if (first) toTopOf(m); // on montre le début de la réponse, sans faire défiler tout le texte
       }
       renderAnswer(body, answer, true);
       if (!answer.trim()) { body.innerHTML = '<p class="err">Aucune réponse reçue. Réessayez.</p>'; return; }
@@ -900,10 +909,13 @@
     const body = t.closest(".body");
     if (t.dataset.act === "toggle-learn" && body) {
       const sec = t.closest(".box-learn");
-      const c = !sec.classList.contains("is-collapsed");
-      sec.classList.toggle("is-collapsed", c);
-      t.setAttribute("aria-expanded", String(!c));
-      body.dataset.collapsed = c ? "1" : "";
+      const open = !sec.classList.contains("is-open");
+      sec.classList.toggle("is-open", open);
+      body.dataset.open = open ? "1" : "";
+      sec.querySelectorAll('[data-act="toggle-learn"]').forEach((x) => x.setAttribute("aria-expanded", String(open)));
+      const lbl = sec.querySelector(".more span"); if (lbl) lbl.textContent = open ? "Réduire" : "Lire l'explication complète";
+      if (!open) toTopOf(sec);
+      fitPreview(body);
     }
     if (t.dataset.act === "copy-live" && body) {
       const sp = t.querySelector("span");
