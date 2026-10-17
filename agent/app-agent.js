@@ -42,7 +42,6 @@
   function showName() {
     $("helloName").textContent = prenom ? " " + prenom : "";
     $("userName").textContent = prenom || "Invité";
-    $("userInitial").textContent = prenom ? prenom.trim()[0] : "?";
   }
   let shown = new Set();
   try { shown = new Set(JSON.parse(store.get("lq-shown") || "[]")); } catch {}
