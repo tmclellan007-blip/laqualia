@@ -604,9 +604,10 @@
   let audio = null, ringLoop = null;
 
   function muteLabel() {
-    const t = muted ? "🔇 Son coupé (signal visuel seulement)" : "🔔 Son de sonnerie activé";
-    $("muteBtn").textContent = t; $("ringMute").textContent = muted ? "🔇 Son coupé — réactiver" : "🔔 Couper le son";
-    $("muteBtn").setAttribute("aria-pressed", String(muted)); $("ringMute").setAttribute("aria-pressed", String(muted));
+    $("muteBtn").setAttribute("aria-checked", String(!muted));
+    $("muteBtn").title = muted ? "Sonnerie coupée : signal visuel seulement" : "Sonnerie activée";
+    $("ringMute").textContent = muted ? "🔇 Son coupé — réactiver" : "🔔 Couper le son";
+    $("ringMute").setAttribute("aria-pressed", String(muted));
   }
   function toggleMute() {
     muted = !muted; store.set("lq-mute", muted ? "1" : "0"); muteLabel();
@@ -716,7 +717,8 @@
     $("simHome").hidden = true;
     $("simThread").textContent = ""; $("simThread").hidden = false;
     $("callBar").hidden = false;
-    $("callLevel").textContent = "Niveau " + LEVEL_NAMES[level];
+    document.body.classList.add("in-call");
+    $("callLevel").textContent = LEVEL_NAMES[level];
     sim.level = level;
     sim.start = Date.now();
     const tick = () => { const s = Math.floor((Date.now() - sim.start) / 1000); $("callTimer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
@@ -824,6 +826,7 @@
     sim.ended = true;
     sim.ctl?.abort(); sim.ctl = null;
     clearInterval(sim.timer); $("callBar").hidden = true;
+    document.body.classList.remove("in-call");
     updateSimComposer();
     const answered = sim.log.some((l) => l.who === "Apprenant");
     if (!answered) { simNote("Appel terminé avant votre première réponse : pas de rétroaction cette fois."); simEndActions(); return; }
@@ -845,6 +848,11 @@
     try {
       const t = await simAsk({ phase: "bilan", question: transcript }, (x) => { body.innerHTML = md(x); }, myCtl.signal);
       body.innerHTML = md(t);
+      body.querySelectorAll("p").forEach((p) => { if (/⚠️/.test(p.textContent)) p.classList.add("fb-alert"); });
+      body.querySelectorAll("h3").forEach((h) => {
+        const x = h.textContent.toLowerCase();
+        h.classList.add(/fort/.test(x) ? "fb-good" : /amélior/.test(x) ? "fb-improve" : /modèle/.test(x) ? "fb-model" : "fb");
+      });
     } catch (e) {
       if (myCtl === sim.ctl) body.innerHTML = `<p class="err">${esc(e.name === "AbortError" ? "Rétroaction interrompue." : e.message)}</p>`;
     } finally {
@@ -857,9 +865,11 @@
     const a = document.createElement("div"); a.className = "sim-end-actions";
     const again = document.createElement("button"); again.type = "button"; again.className = "qz-next"; again.textContent = "Recevoir un autre appel";
     again.onclick = () => { a.remove(); ringIn(); };
-    const quit = document.createElement("button"); quit.type = "button"; quit.className = "qz-new"; quit.textContent = "Quitter la simulation complète";
+    const setup = document.createElement("button"); setup.type = "button"; setup.className = "ghost"; setup.textContent = "Changer le niveau ou le type d'appel";
+    setup.onclick = () => stopSim(true);
+    const quit = document.createElement("button"); quit.type = "button"; quit.className = "ghost"; quit.textContent = "Quitter la simulation";
     quit.onclick = () => setLearn(false);
-    a.append(again, quit); $("simThread").append(a); toBottom();
+    a.append(again, setup, quit); $("simThread").append(a);
     updateSimComposer();
   }
 
@@ -870,6 +880,7 @@
     clearInterval(sim.timer);
     sim.active = false; sim.ended = false; sim.turns = []; sim.log = [];
     $("callBar").hidden = true;
+    document.body.classList.remove("in-call");
     if (clear) { $("simThread").textContent = ""; $("simThread").hidden = true; $("simHome").hidden = false; }
   }
 

@@ -467,8 +467,85 @@ body.learn .top-title .tt-mode{background:#401098;color:#fff}
 .top-new{border:0;background:var(--ink,#101010);color:#fff;border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700}
 .top-new:hover{background:#2a2a2e;border-color:transparent}
 .top-new svg{width:15px;height:15px}
-@media (max-width:1100px){.top-new span{display:none}.top-new{padding:9px 11px}}
+.top-new-sim{display:none}
+body.learn .top-new-sim{display:inline}
+@media (max-width:1100px){.top-new span,body.learn .top-new-sim{display:none}.top-new{padding:9px 11px}}
 @media (max-width:860px){.topbar{min-height:58px;gap:10px}.top-title .tt-mode{display:none}.top-title .tt-sub{font-size:12px}.model-badge{padding:7px 9px;font-size:12px}.model-badge::after{display:none}}
+
+/* ======== Simulation complète : finitions ======== */
+body.learn .composer{display:none}
+body.learn.in-call .composer{display:block}
+.sim-hint{display:none;font-size:11.5px;color:#5b4a8a}
+body.learn .composer-meta .fine{display:none}
+body.learn .composer-meta .sim-hint{display:inline}
+body.learn #clear .top-new-l{display:none}
+.lb-x-short{display:none}
+.lb-exit{display:inline-flex;align-items:center;gap:6px}
+.learn-banner{padding-top:8px;padding-bottom:8px}
+.sim-home{gap:22px;padding-top:min(4vh,32px)}
+.sh-head{display:flex;align-items:center;gap:16px}
+.sh-ico{width:60px;height:60px;border-radius:18px;background:#15803d;color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 8px 20px rgb(21 128 61/.25)}
+.sh-ico svg{width:28px;height:28px}
+.sim-home h1{font-size:clamp(28px,4vw,42px);letter-spacing:-1.6px}
+.sim-lead{font-size:15px;margin-top:6px}
+.sim-setup{background:#fff;border:1px solid #e4dcf7;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:20px;box-shadow:0 10px 30px rgb(43 15 110/.06)}
+.ss-step{display:flex;flex-direction:column;gap:10px}
+.ss-lab{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:800;color:#1f1640}
+.ss-n{width:24px;height:24px;border-radius:50%;background:#ede5ff;color:#401098;display:grid;place-items:center;font-size:12.5px;font-weight:800;flex:none}
+.sim-setup .level-seg{max-width:none}
+.ss-go{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:16px;border-top:1px solid #efe9fb}
+.sim-call{flex:1;justify-content:center;min-width:240px;padding:16px 22px;font-size:16.5px}
+.sim-mute{display:inline-flex;align-items:center;gap:10px;border:0;background:none;padding:8px 4px;color:#1f1640;font-weight:700;font-size:14px}
+.sw{width:42px;height:24px;border-radius:999px;background:#d6d0e6;position:relative;transition:background .2s;flex:none}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgb(0 0 0/.25);transition:transform .2s}
+.sim-mute[aria-checked="true"] .sw{background:#15803d}
+.sim-mute[aria-checked="true"] .sw::after{transform:translateX(18px)}
+/* barre d'appel façon téléphone */
+.callbar{gap:12px;padding-top:10px;padding-bottom:10px;background:#0b2a1a}
+.cb-av{width:40px;height:40px;border-radius:50%;background:#1f4d33;color:#bbf7d0;display:grid;place-items:center;position:relative;flex:none}
+.cb-av svg{width:22px;height:22px}
+.cb-av i{position:absolute;right:-1px;bottom:-1px;width:12px;height:12px;border-radius:50%;background:#4ade80;border:2px solid #0b2a1a}
+@media (prefers-reduced-motion:no-preference){.cb-av i{animation:livepulse 1.6s ease-in-out infinite}@keyframes livepulse{50%{box-shadow:0 0 0 5px rgb(74 222 128/.25)}}}
+.cb-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.cb-txt b{font-size:15px;font-weight:800}
+.cb-txt > span{font-size:12.5px;color:#bbf7d0cc}
+.cb-live{color:#86efac;font-weight:700}
+.cb-time{font-variant-numeric:tabular-nums}
+.cb-end{padding:10px 16px;font-size:13.5px;box-shadow:0 4px 12px rgb(220 38 38/.35)}
+.cb-end:hover{background:#b91c1c}
+.cb-dot,.cb-level{display:none}
+/* fil de l'appel */
+#simThread{gap:16px}
+.c-bub{border-radius:4px 18px 18px 18px}
+.sim-choices{gap:8px}
+.sim-choice{background:#fff}
+/* rétroaction */
+.fb-alert{display:flex;gap:10px;align-items:flex-start;background:#fff1f2;border:1.5px solid #fecdd3;color:#9f1239;border-radius:12px;padding:11px 13px;margin:2px 0 6px;font-size:14.5px}
+.fb-alert strong{color:#9f1239}
+.box-learn .box-body h3.fb-good{color:#15803d}
+.box-learn .box-body h3.fb-improve{color:#c2410c}
+.box-learn .box-body h3.fb-model{color:#401098}
+.sim-end-actions{gap:10px}
+.sim-end-actions .ghost{border:1.5px solid #d3c3f5;background:#fff;color:#2b0f6e;border-radius:10px;padding:10px 14px;font-weight:800;font-size:13.5px}
+@media (max-width:860px){
+  .lb-txt,.lb-x-long{display:none}
+  .lb-x-short{display:inline}
+  .learn-banner{flex-wrap:nowrap}
+  .lb-exit{margin-left:auto;padding:6px 10px}
+  .sim-home{padding-top:8px;gap:16px}
+  .sh-ico{display:none}
+  .level-seg button b{font-size:13px}
+  .ss-go{flex-direction:column;align-items:stretch}
+  .sim-mute{justify-content:center}
+  .sim-setup{padding:14px;border-radius:16px;gap:16px}
+  .level-seg{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .level-seg button{padding:10px;align-items:center;text-align:center}
+  .level-seg button span{display:none}
+  .sim-call{min-width:0;width:100%}
+  .ss-go{gap:8px}
+  .cb-end span{display:none}
+  .cb-end{width:44px;height:44px;padding:0;justify-content:center;border-radius:50%}
+}
 
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
@@ -614,17 +691,18 @@ body.learn .top-title .tt-mode{background:#401098;color:#fff}
           <button class="model-badge" id="modelBadge" type="button" hidden aria-haspopup="true" aria-expanded="false" aria-controls="modelPop"></button>
           <div class="model-pop" id="modelPop" role="menu" hidden></div>
         </div>
-        <button class="top-new" id="clear" type="button" aria-label="Nouvelle conversation" title="Nouvelle conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Nouvelle conversation</span></button>
+        <button class="top-new" id="clear" type="button" aria-label="Nouvelle conversation" title="Nouvelle conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="top-new-l">Nouvelle conversation</span><span class="top-new-sim">Nouvel appel</span></button>
       </div>
     </header>
     <div class="learn-banner learn-only" id="learnBanner" role="status">
       <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg>Mode simulation complète</span>
-      <span class="lb-txt">Simulation · appels et données fictifs</span>
-      <button type="button" class="lb-exit" id="learnExit">Quitter la simulation et revenir au mode habituel</button>
+      <span class="lb-txt">Appels et données fictifs — rien n'est envoyé à l'équipe</span>
+      <button type="button" class="lb-exit" id="learnExit"><span class="lb-x-long">Quitter la simulation</span><span class="lb-x-short">Quitter</span></button>
     </div>
     <div class="callbar" id="callBar" hidden>
-      <span class="cb-dot" aria-hidden="true"></span><b>Appel fictif en cours</b><span class="cb-time" id="callTimer">00:00</span><span class="cb-level" id="callLevel"></span>
-      <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg>Terminer l'appel</button>
+      <div class="cb-av" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg><i></i></div>
+      <div class="cb-txt"><b>Client fictif</b><span><span class="cb-live">Appel en cours</span> · <span class="cb-time" id="callTimer">00:00</span> · <span id="callLevel"></span></span></div>
+      <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg><span>Raccrocher</span></button>
     </div>
 
     <div class="scroller" id="scroller">
@@ -641,25 +719,31 @@ body.learn .top-title .tt-mode{background:#401098;color:#fff}
         </section>
         <div class="thread" id="thread"></div>
         <section class="sim-home learn-only" id="simHome">
-          <p class="eyebrow"><span class="dot"></span>MODE SIMULATION COMPLÈTE · APPELS FICTIFS</p>
-          <h1>Prêt pour un appel<span class="orange">?</span></h1>
-          <p class="sim-lead">Un client fictif va vous appeler. Décrochez quand vous êtes prêt : il parle en premier, puis l'échange avance une réplique à la fois selon vos réponses. À la fin, vous recevez une rétroaction.</p>
-          <div class="sim-level">
-            <span class="sim-level-lab" id="levelLab">Niveau</span>
-            <div class="level-seg" id="levelSeg" role="radiogroup" aria-labelledby="levelLab">
-              <button type="button" role="radio" data-level="debutant"><b>Débutant</b><span>Choix de réponse proposés</span></button>
-              <button type="button" role="radio" data-level="intermediaire"><b>Intermédiaire</b><span>Réponse libre, client réaliste</span></button>
-              <button type="button" role="radio" data-level="expert"><b>Expert</b><span>Client exigeant, urgences discrètes</span></button>
+          <div class="sh-head">
+            <div class="sh-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
+            <div>
+              <h1>Prêt pour un appel<span class="orange">?</span></h1>
+              <p class="sim-lead">Un client fictif vous appelle. Il parle en premier ; vous répondez une réplique à la fois. Rétroaction à la fin.</p>
             </div>
           </div>
-          <div class="sim-theme">
-            <span class="sim-level-lab" id="themeLab">Thématiques d'appel</span>
-            <div class="theme-chips" id="themeChips" role="group" aria-labelledby="themeLab"></div>
-            <span class="theme-hint" id="themeHint"></span>
-          </div>
-          <div class="sim-actions">
-            <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
-            <button type="button" class="sim-mute" id="muteBtn" aria-pressed="false"></button>
+          <div class="sim-setup">
+            <div class="ss-step">
+              <div class="ss-lab"><span class="ss-n">1</span><span id="levelLab">Votre niveau</span></div>
+              <div class="level-seg" id="levelSeg" role="radiogroup" aria-labelledby="levelLab">
+                <button type="button" role="radio" data-level="debutant"><b>Débutant</b><span>Choix de réponse proposés</span></button>
+                <button type="button" role="radio" data-level="intermediaire"><b>Intermédiaire</b><span>Réponse libre, client réaliste</span></button>
+                <button type="button" role="radio" data-level="expert"><b>Expert</b><span>Client exigeant, urgences discrètes</span></button>
+              </div>
+            </div>
+            <div class="ss-step">
+              <div class="ss-lab"><span class="ss-n">2</span><span id="themeLab">Type d'appel</span></div>
+              <div class="theme-chips" id="themeChips" role="group" aria-labelledby="themeLab"></div>
+              <span class="theme-hint" id="themeHint"></span>
+            </div>
+            <div class="ss-go">
+              <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
+              <button type="button" class="sim-mute" id="muteBtn" role="switch" aria-checked="true"><span class="sw" aria-hidden="true"></span><span class="sw-l">Sonnerie</span></button>
+            </div>
           </div>
         </section>
         <div class="thread" id="simThread" hidden></div>
@@ -673,7 +757,7 @@ body.learn .top-title .tt-mode{background:#401098;color:#fff}
           <button class="send" id="send" type="submit" aria-label="Envoyer" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           <button class="stop" id="stop" type="button" aria-label="Arrêter la réponse" hidden><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
         </form>
-        <div class="composer-meta"><span class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</span><span class="keys"><kbd>Entrée</kbd> envoyer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> nouvelle ligne</span></div>
+        <div class="composer-meta"><span class="sim-hint">Parlez comme au téléphone · vos réponses restent fictives</span><span class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</span><span class="keys"><kbd>Entrée</kbd> envoyer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> nouvelle ligne</span></div>
         <div class="under" id="under">
           <div class="under-lab">Suggestions</div>
           <div class="cards" id="examples"></div>
@@ -712,6 +796,6 @@ body.learn .top-title .tt-mode{background:#401098;color:#fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171914"></script>
+<script src="app-agent.js?v=202610171915"></script>
 </body>
 </html>
