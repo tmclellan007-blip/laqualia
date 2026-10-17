@@ -270,6 +270,14 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
 .sim-choice.picked{opacity:1;border-color:#401098;background:#ede5ff}
 @media (max-width:620px){.level-seg{grid-template-columns:1fr}.sim-choices{max-width:100%}}
 
+.sim-theme{display:flex;flex-direction:column;gap:8px}
+.theme-chips{display:flex;flex-wrap:wrap;gap:7px}
+.theme-chips button{border:1.5px solid #ddd2f7;background:#fff;color:#2b0f6e;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.theme-chips button:hover{border-color:#401098}
+.theme-chips button[aria-pressed="true"]{background:#401098;border-color:#401098;color:#fff}
+.theme-chips button[aria-pressed="true"]::before{content:"✓";font-weight:800}
+.theme-hint{font-size:12.5px;color:var(--muted,#55565d)}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -431,11 +439,15 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
               <button type="button" role="radio" data-level="expert"><b>Expert</b><span>Client exigeant, urgences discrètes</span></button>
             </div>
           </div>
+          <div class="sim-theme">
+            <span class="sim-level-lab" id="themeLab">Thématiques d'appel</span>
+            <div class="theme-chips" id="themeChips" role="group" aria-labelledby="themeLab"></div>
+            <span class="theme-hint" id="themeHint"></span>
+          </div>
           <div class="sim-actions">
             <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
             <button type="button" class="sim-mute" id="muteBtn" aria-pressed="false"></button>
           </div>
-          <ul class="sim-types"><li>Rendez-vous</li><li>Facturation</li><li>Plainte</li><li>Client inquiet</li><li>Deuil</li><li>Urgence potentielle</li></ul>
         </section>
         <div class="thread" id="simThread" hidden></div>
       </div>
@@ -482,6 +494,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171814"></script>
+<script src="app-agent.js?v=202610171820"></script>
 </body>
 </html>

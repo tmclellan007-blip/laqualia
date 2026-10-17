@@ -537,6 +537,25 @@
   let muted = store.get("lq-mute") === "1";
   const LEVEL_NAMES = { debutant: "Débutant", intermediaire: "Intermédiaire", expert: "Expert" };
   let level = LEVEL_NAMES[store.get("lq-level")] ? store.get("lq-level") : "intermediaire";
+  // Thématiques : aucune choisie = aléatoire parmi toutes
+  let themes = []; try { themes = JSON.parse(store.get("lq-themes") || "[]").filter((k) => SIM_TYPES.some(([n]) => n === k)); } catch {}
+  function renderThemes() {
+    const box = $("themeChips"); box.textContent = "";
+    const rand = document.createElement("button"); rand.type = "button"; rand.textContent = "Aléatoire";
+    rand.setAttribute("aria-pressed", String(!themes.length));
+    rand.onclick = () => { themes = []; saveThemes(); };
+    box.append(rand);
+    SIM_TYPES.forEach(([name]) => {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = name;
+      b.setAttribute("aria-pressed", String(themes.includes(name)));
+      b.onclick = () => { themes = themes.includes(name) ? themes.filter((x) => x !== name) : [...themes, name]; saveThemes(); };
+      box.append(b);
+    });
+    $("themeHint").textContent = !themes.length ? "Un thème au hasard parmi les six, sans répéter le précédent."
+      : themes.length === 1 ? `Tous les appels porteront sur : ${themes[0]}.`
+      : `Un thème au hasard parmi vos ${themes.length} choix.`;
+  }
+  function saveThemes() { store.set("lq-themes", JSON.stringify(themes)); renderThemes(); }
   function renderLevel() {
     document.querySelectorAll("#levelSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.level === level)));
   }
@@ -646,7 +665,8 @@
 
   function answerCall() {
     stopRing();
-    const pick = SIM_TYPES.filter(([k]) => k !== store.get("lq-last-sim"));
+    const pool = themes.length ? SIM_TYPES.filter(([k]) => themes.includes(k)) : SIM_TYPES;
+    const pick = pool.length > 1 ? pool.filter(([k]) => k !== store.get("lq-last-sim")) : pool;
     sim.type = pick[Math.floor(Math.random() * pick.length)];
     store.set("lq-last-sim", sim.type[0]);
     sim.active = true; sim.ended = false; sim.turns = []; sim.log = [];
@@ -820,6 +840,7 @@
   $("hangup").onclick = () => { simNote("Vous avez terminé l'appel."); endCall(); };
   muteLabel();
   renderLevel();
+  renderThemes();
 
   /* ---------- démarrage ---------- */
   showName();
