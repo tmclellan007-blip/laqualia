@@ -182,14 +182,23 @@
     const lines = esc(src).split("\n"); const out = []; let list = null;
     const inline = (s) => s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/(^|[^*])\*(?!\s)(.+?)\*/g, "$1<em>$2</em>").replace(/(^|\W)_(?!\s)(.+?)_(?=\W|$)/g, "$1<em>$2</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
     const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    let fence = null;
+    const flush = () => {
+      const body = fence.join("\n").replace(/→|-&gt;/g, '<b class="arr">→</b>');
+      out.push(`<figure class="schema"><figcaption>Schéma</figcaption><pre>${body}</pre></figure>`);
+      fence = null;
+    };
     for (const l of lines) {
       let m;
+      if (/^\s*```/.test(l)) { if (fence) flush(); else { close(); fence = []; } continue; }
+      if (fence) { fence.push(l); continue; }
       if ((m = l.match(/^#{1,4}\s+(.*)/))) { close(); out.push(`<h3>${inline(m[1])}</h3>`); }
       else if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); }
       else if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); }
       else if (!l.trim()) close();
       else { close(); out.push(`<p>${inline(l)}</p>`); }
     }
+    if (fence) flush();
     close();
     return out.join("");
   }
