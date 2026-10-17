@@ -243,13 +243,13 @@
     const skel = '<span class="skel"></span><span class="skel short"></span>';
     const liveHtml = p.live ? enhance(md(p.live)) : skel;
     const copyBtn = done && p.live ? `<button type="button" class="bh-act" data-act="copy-live">${SVG_COPY}<span>Copier</span></button>` : "";
-    let html = `<section class="box-live" aria-label="Réponse en direct"><div class="box-head"><span class="bh-l">${SVG_BOLT}En direct</span><span class="bh-hint">À dire maintenant</span>${copyBtn}</div><div class="box-body">${liveHtml}</div></section>`;
+    let html = `<section class="box-live" aria-label="Réponse courte"><div class="box-head"><span class="bh-l">${SVG_BOLT}Réponse courte</span><span class="bh-hint">À dire maintenant</span>${copyBtn}</div><div class="box-body">${liveHtml}</div></section>`;
     if (p.learn !== null && (p.learn || !done)) {
       const words = (p.learn || "").split(/\s+/).filter(Boolean).length;
       const meta = done && words ? `≈ ${Math.max(1, Math.round(words / 200))} min de lecture` : (p.learn ? "Rédaction…" : "En préparation…");
-      html += `<section class="box-learn pv${open ? " is-open" : ""}" aria-label="Apprentissage"><button type="button" class="box-head bh-toggle" data-act="toggle-learn" aria-expanded="${open}"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">${meta}</span><svg class="bh-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="box-body">${p.learn ? enhance(md(p.learn)) : skel + skel}</div><button type="button" class="more" data-act="toggle-learn" hidden><span>${open ? "Réduire" : "Lire l'explication complète"}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></section>`;
+      html += `<section class="box-learn pv${open ? " is-open" : ""}" aria-label="Réponse complète (apprentissage)"><button type="button" class="box-head bh-toggle" data-act="toggle-learn" aria-expanded="${open}"><span class="bh-l">${SVG_BOOK}Réponse complète <span class="bh-sub">(apprentissage)</span></span><span class="bh-meta">${meta}</span><svg class="bh-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="box-body">${p.learn ? enhance(md(p.learn)) : skel + skel}</div><button type="button" class="more" data-act="toggle-learn" hidden><span>${open ? "Réduire" : "Lire la réponse complète"}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></section>`;
     } else if (!done) {
-      html += `<section class="box-learn waiting"><div class="box-head"><span class="bh-l">${SVG_BOOK}Apprentissage</span><span class="bh-meta">En préparation…</span></div><div class="box-body">${skel}${skel}</div></section>`;
+      html += `<section class="box-learn waiting"><div class="box-head"><span class="bh-l">${SVG_BOOK}Réponse complète <span class="bh-sub">(apprentissage)</span></span><span class="bh-meta">En préparation…</span></div><div class="box-body">${skel}${skel}</div></section>`;
     }
     body.innerHTML = html;
   }
@@ -913,7 +913,7 @@
       sec.classList.toggle("is-open", open);
       body.dataset.open = open ? "1" : "";
       sec.querySelectorAll('[data-act="toggle-learn"]').forEach((x) => x.setAttribute("aria-expanded", String(open)));
-      const lbl = sec.querySelector(".more span"); if (lbl) lbl.textContent = open ? "Réduire" : "Lire l'explication complète";
+      const lbl = sec.querySelector(".more span"); if (lbl) lbl.textContent = open ? "Réduire" : "Lire la réponse complète";
       if (!open) toTopOf(sec);
       fitPreview(body);
     }
