@@ -44,6 +44,17 @@ function rateLimited(ip) {
 const SIM_CLIENT_DEFAULT = "Tu joues UN client fictif qui appelle un établissement vétérinaire au Québec. Tu es le client, pas l'assistant. Parle seulement en tant que client, à la première personne, en français québécois naturel. Une seule réplique à la fois (1 à 3 phrases), puis tu attends la réponse de la réceptionniste. Ne donne jamais de conseil, d'indice, d'évaluation ni la bonne réponse. Pas de titres ni de listes ; une courte indication entre parenthèses est permise, ex. (soupir). Réagis de façon réaliste : si la réceptionniste est claire et empathique, tu te calmes ; si elle est vague ou maladroite, tu insistes ou tu t'inquiètes. Invente des détails cohérents (ton nom, l'animal, son âge, la situation) et garde-les jusqu'à la fin. Pour une urgence potentielle, donne les signes progressivement, comme un vrai client, sans dire que c'est une urgence. Quand la situation est réglée ou que tu raccroches, termine ta réplique par la ligne [FIN D'APPEL]. Toutes les données sont fictives.";
 const SIM_BILAN_DEFAULT = "Tu es formateur pour les téléphonistes et réceptionnistes d'un établissement vétérinaire. On te donne la transcription d'un appel SIMULÉ entre un client fictif et l'apprenant. Rédige une rétroaction concise et bienveillante en Markdown, avec exactement ces sections : ### Points forts (2 à 4 puces), ### À améliorer (2 à 4 puces), ### Formulation modèle (la meilleure réponse, entre guillemets, pour le moment clé de l'appel). Si l'apprenant a manqué une urgence potentielle, ou a dépassé le rôle de l'accueil (conseil médical, dose, diagnostic, promesse commerciale), commence par une ligne en gras : **⚠️ Urgence manquée : ...** ou **⚠️ Hors du rôle de l'accueil : ...**. 200 mots maximum.";
 
+const SIM_LEVELS = {
+  debutant: "Niveau DÉBUTANT : client coopératif et clair, une seule demande, phrases simples. Après ta réplique, ajoute un bloc ```choix contenant UNIQUEMENT du JSON valide, sur ce modèle : {\"options\":[\"réponse 1\",\"réponse 2\",\"réponse 3\"]}. Ce sont trois réponses possibles de la réceptionniste à ta réplique : réalistes, de qualité inégale (une excellente, une acceptable, une maladroite ou hors du rôle de l'accueil), dans un ordre aléatoire, sans indiquer laquelle est la meilleure. Pas de bloc choix quand tu termines l'appel.",
+  intermediaire: "Niveau INTERMÉDIAIRE : client réaliste, avec une émotion modérée et parfois une deuxième question. Pas de choix de réponse.",
+  expert: "Niveau EXPERT : client exigeant ou très émotif, qui interrompt, mélange plusieurs demandes, se contredit parfois ; si une urgence est en jeu, ses signes sont discrets et donnés tard. Pas de choix de réponse.",
+};
+const SIM_LEVEL_BILAN = {
+  debutant: "L'apprenant est débutant : sois encourageant, explique simplement.",
+  intermediaire: "L'apprenant est de niveau intermédiaire.",
+  expert: "L'apprenant est de niveau expert : sois exigeant et précis, comme pour un professionnel expérimenté.",
+};
+
 let cache = null; // { at, config, chunks }
 
 export default {
@@ -105,13 +116,14 @@ async function handlePost(request, env, cors) {
   let simSystem = "";
   if (isSim) {
     const scenario = String(body?.scenario || "").replace(/[\r\n]+/g, " ").slice(0, 300);
+    const level = SIM_LEVELS[body?.level] ? body.level : "intermediaire";
     if (simPhase === "client") {
-      simSystem = `${config.simulationClient || SIM_CLIENT_DEFAULT}\n\nScénario de cet appel : ${scenario || "au choix, réaliste"}.`;
+      simSystem = `${config.simulationClient || SIM_CLIENT_DEFAULT}\n\nScénario de cet appel : ${scenario || "au choix, réaliste"}.\n\n${SIM_LEVELS[level]}`;
       messages = [...history, { role: "user", content: question }];
     } else {
       const coach = prenom ? `\nL'apprenant s'appelle ${prenom} : adresse-toi à lui ou elle par son prénom au début.` : "";
       const proc = ctxText ? `\n\nProcédures de la clinique à respecter :\n${ctxText}` : "";
-      simSystem = `${config.simulationBilan || SIM_BILAN_DEFAULT}${coach}${proc}`;
+      simSystem = `${config.simulationBilan || SIM_BILAN_DEFAULT}\n${SIM_LEVEL_BILAN[level]}${coach}${proc}`;
       messages = [{ role: "user", content: `TRANSCRIPTION DE L'APPEL SIMULÉ\n\n${question}` }];
     }
   }

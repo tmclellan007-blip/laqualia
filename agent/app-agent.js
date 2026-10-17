@@ -535,6 +535,12 @@
   const ICON_PERSON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg>';
   const sim = { on: false, active: false, ended: false, turns: [], log: [], type: null, ctl: null, timer: null, start: 0, ringing: false, ringTimeout: null };
   let muted = store.get("lq-mute") === "1";
+  const LEVEL_NAMES = { debutant: "Débutant", intermediaire: "Intermédiaire", expert: "Expert" };
+  let level = LEVEL_NAMES[store.get("lq-level")] ? store.get("lq-level") : "intermediaire";
+  function renderLevel() {
+    document.querySelectorAll("#levelSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.level === level)));
+  }
+  document.querySelectorAll("#levelSeg button").forEach((b) => { b.onclick = () => { if (sim.active) return; level = b.dataset.level; store.set("lq-level", level); renderLevel(); }; });
   let audio = null, ringLoop = null;
 
   function muteLabel() {
@@ -647,6 +653,8 @@
     $("simHome").hidden = true;
     $("simThread").textContent = ""; $("simThread").hidden = false;
     $("callBar").hidden = false;
+    $("callLevel").textContent = "Niveau " + LEVEL_NAMES[level];
+    sim.level = level;
     sim.start = Date.now();
     const tick = () => { const s = Math.floor((Date.now() - sim.start) / 1000); $("callTimer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
     tick(); sim.timer = setInterval(tick, 1000);
@@ -660,7 +668,7 @@
     const res = await fetch(cfg.apiUrl, {
       method: "POST",
       headers: { "content-type": "application/json", "x-agent-code": code },
-      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom }),
+      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom, level }),
       signal,
     });
     if (!res.ok) {
@@ -684,6 +692,30 @@
     return text;
   }
 
+  // Ce que dit le client : sans le bloc de choix ni le signal de fin d'appel
+  const speech = (t) => t.replace(/```[\s\S]*?(```|$)/g, "").replace(/\{\s*"options"[\s\S]*$/, "").replace(/\[\s*FIN D['’]APPEL\s*\]/gi, "").trim();
+  function parseChoices(raw) {
+    const m = raw.match(/```\s*choix\s*([\s\S]*?)```/i) || raw.match(/(\{\s*"options"[\s\S]*\})/);
+    if (!m) return [];
+    try { const o = JSON.parse(m[1]); return Array.isArray(o.options) ? o.options.map(String).filter(Boolean).slice(0, 4) : []; } catch { return []; }
+  }
+  function showChoices(bubble, options) {
+    document.querySelectorAll(".sim-choices").forEach((x) => x.querySelectorAll("button").forEach((y) => (y.disabled = true)));
+    const box = document.createElement("div"); box.className = "sim-choices";
+    const lab = document.createElement("div"); lab.className = "sim-choices-lab"; lab.textContent = "Choisissez votre réponse (ou écrivez la vôtre)";
+    box.append(lab);
+    options.forEach((o, k) => {
+      const btn = document.createElement("button"); btn.type = "button"; btn.className = "sim-choice";
+      btn.innerHTML = `<i>${String.fromCharCode(65 + k)}</i>`; btn.append(document.createTextNode(o));
+      btn.onclick = () => {
+        box.querySelectorAll("button").forEach((y) => (y.disabled = true)); btn.classList.add("picked");
+        $("q").value = o; simReply();
+      };
+      box.append(btn);
+    });
+    bubble.parentElement.append(box); toBottom();
+  }
+
   async function simTurn(learnerText) {
     if (!sim.active || sim.ended) return;
     sim.ctl?.abort();
@@ -693,14 +725,16 @@
     const histForCall = sim.turns.slice(-16);
     try {
       const raw = await simAsk({ phase: "client", scenario: `${sim.type[0]} — ${sim.type[1]}`, question: learnerText, history: histForCall },
-        (t) => { const clean = t.replace(/\[\s*FIN D['’]APPEL\s*\]/gi, "").trim(); if (clean) b.textContent = clean; if (nearBottom()) toBottom(); }, myCtl.signal);
+        (t) => { const clean = speech(t); if (clean) b.textContent = clean; if (nearBottom()) toBottom(); }, myCtl.signal);
       if (myCtl !== sim.ctl) return;
       const hungUp = /\[\s*FIN D['’]APPEL\s*\]/i.test(raw);
-      const clean = raw.replace(/\[\s*FIN D['’]APPEL\s*\]/gi, "").trim();
+      const clean = speech(raw);
+      const choices = hungUp ? [] : parseChoices(raw);
       b.textContent = clean || "…";
       sim.turns.push({ role: "user", content: learnerText }, { role: "assistant", content: clean });
       sim.log.push({ who: "Client", text: clean });
       if (hungUp) { simNote("Le client a raccroché."); endCall(); }
+      else if (choices.length) showChoices(b, choices);
     } catch (e) {
       if (myCtl !== sim.ctl) return;
       b.textContent = e.name === "AbortError" ? "(le client n'a pas répondu à temps)" : e.message;
@@ -716,6 +750,7 @@
     const t = $("q").value.trim();
     if (!t || !sim.active || sim.ended) return;
     $("q").value = ""; autosize();
+    document.querySelectorAll(".sim-choices button").forEach((y) => (y.disabled = true));
     learnerBubble(t);
     sim.log.push({ who: "Apprenant", text: t });
     simTurn(t);
@@ -741,7 +776,7 @@
     box.innerHTML = `<div class="box-head">${SVG_BOOK}Rétroaction · scénario « ${esc(sim.type[0])} »</div><div class="box-body"><span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Analyse de votre appel…</span></div>`;
     col.append(who, box); m.append(av, col); $("simThread").append(m); toBottom();
     const body = box.querySelector(".box-body");
-    const transcript = `Scénario : ${sim.type[0]} (${sim.type[1]})\n\n` + sim.log.map((l) => `${l.who} : ${l.text}`).join("\n");
+    const transcript = `Scénario : ${sim.type[0]} (${sim.type[1]})\nNiveau : ${LEVEL_NAMES[sim.level || level]}\n\n` + sim.log.map((l) => `${l.who} : ${l.text}`).join("\n");
     sim.ctl = new AbortController();
     const myCtl = sim.ctl;
     try {
@@ -784,6 +819,7 @@
   $("ringMute").onclick = toggleMute;
   $("hangup").onclick = () => { simNote("Vous avez terminé l'appel."); endCall(); };
   muteLabel();
+  renderLevel();
 
   /* ---------- démarrage ---------- */
   showName();

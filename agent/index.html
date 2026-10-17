@@ -251,6 +251,25 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
 @media (prefers-reduced-motion:reduce){.ring-card{outline:4px solid #15803d;outline-offset:4px}}
 @media (max-width:860px){.lb-exit{margin-left:0}.sim-end-actions{padding-left:0}}
 
+.sim-level{display:flex;flex-direction:column;gap:8px}
+.sim-level-lab{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#2b0f6e}
+.level-seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:640px}
+.level-seg button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;border:1.5px solid #ddd2f7;background:#fff;border-radius:14px;padding:12px 14px;color:var(--ink,#101010)}
+.level-seg button b{font-size:15px;font-weight:800}
+.level-seg button span{font-size:12.5px;color:var(--muted,#55565d);line-height:1.35}
+.level-seg button:hover{border-color:#401098}
+.level-seg button[aria-checked="true"]{border-color:#401098;background:#401098;color:#fff;box-shadow:0 6px 16px rgb(64 16 152/.2)}
+.level-seg button[aria-checked="true"] span{color:#e6dcfb}
+.cb-level{font-size:12px;font-weight:800;background:#ffffff26;border-radius:999px;padding:3px 9px}
+.sim-choices{display:flex;flex-direction:column;gap:7px;max-width:82%}
+.sim-choices-lab{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#2b0f6e}
+.sim-choice{display:flex;gap:10px;align-items:flex-start;text-align:left;border:1.5px solid #ddd2f7;background:#faf8ff;border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:600;line-height:1.4;color:var(--ink,#101010)}
+.sim-choice i{font-style:normal;width:22px;height:22px;border-radius:7px;border:1.5px solid #d3c3f5;display:grid;place-items:center;font-size:12px;font-weight:800;color:#401098;flex:none;background:#fff}
+.sim-choice:not(:disabled):hover{border-color:#401098}
+.sim-choice:disabled{opacity:.5;cursor:default}
+.sim-choice.picked{opacity:1;border-color:#401098;background:#ede5ff}
+@media (max-width:620px){.level-seg{grid-template-columns:1fr}.sim-choices{max-width:100%}}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -381,7 +400,7 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
       <button type="button" class="lb-exit" id="learnExit">Quitter et revenir au mode habituel</button>
     </div>
     <div class="callbar" id="callBar" hidden>
-      <span class="cb-dot" aria-hidden="true"></span><b>Appel fictif en cours</b><span class="cb-time" id="callTimer">00:00</span>
+      <span class="cb-dot" aria-hidden="true"></span><b>Appel fictif en cours</b><span class="cb-time" id="callTimer">00:00</span><span class="cb-level" id="callLevel"></span>
       <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg>Terminer l'appel</button>
     </div>
 
@@ -404,6 +423,14 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
           <p class="eyebrow"><span class="dot"></span>ESPACE DE FORMATION · SIMULATEUR D'APPELS</p>
           <h1>Prêt pour un appel<span class="orange">?</span></h1>
           <p class="sim-lead">Un client fictif va vous appeler. Décrochez quand vous êtes prêt : il parle en premier, puis l'échange avance une réplique à la fois selon vos réponses. À la fin, vous recevez une rétroaction.</p>
+          <div class="sim-level">
+            <span class="sim-level-lab" id="levelLab">Niveau</span>
+            <div class="level-seg" id="levelSeg" role="radiogroup" aria-labelledby="levelLab">
+              <button type="button" role="radio" data-level="debutant"><b>Débutant</b><span>Choix de réponse proposés</span></button>
+              <button type="button" role="radio" data-level="intermediaire"><b>Intermédiaire</b><span>Réponse libre, client réaliste</span></button>
+              <button type="button" role="radio" data-level="expert"><b>Expert</b><span>Client exigeant, urgences discrètes</span></button>
+            </div>
+          </div>
           <div class="sim-actions">
             <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
             <button type="button" class="sim-mute" id="muteBtn" aria-pressed="false"></button>
@@ -455,6 +482,6 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171804"></script>
+<script src="app-agent.js?v=202610171809"></script>
 </body>
 </html>
