@@ -210,7 +210,11 @@
       const lm = after.match(LEARN_RE);
       r = lm ? { live: after.slice(0, lm.index).trim(), learn: after.slice(lm.index + lm[0].length).trim() } : { live: after.trim(), learn: null };
     }
-    return cleanLive(r.live, r.learn);
+    const out = cleanLive(r.live, r.learn);
+    // Hors périmètre ou question de clarification : pas de réponse complète
+    if (out.learn !== null && /^\s*\[?\s*SANS APPRENTISSAGE\s*\]?/i.test(out.learn)) { out.learn = null; out.noLearn = true; }
+    else if (out.learn && out.learn.trim().length < 22 && "[SANS APPRENTISSAGE]".startsWith(out.learn.trim().toUpperCase())) { out.learn = ""; if (done) { out.learn = null; out.noLearn = true; } }
+    return out;
   }
 
 
@@ -244,6 +248,7 @@
     const liveHtml = p.live ? enhance(md(p.live)) : skel;
     const copyBtn = done && p.live ? `<button type="button" class="bh-act" data-act="copy-live">${SVG_COPY}<span>Copier</span></button>` : "";
     let html = `<section class="box-live" aria-label="Réponse courte"><div class="box-head"><span class="bh-l">${SVG_BOLT}Réponse courte</span><span class="bh-hint">À dire maintenant</span>${copyBtn}</div><div class="box-body">${liveHtml}</div></section>`;
+    if (p.noLearn || p.pendingFlag) { body.innerHTML = html.replace('<span class="bh-hint">À dire maintenant</span>', ""); body.classList.add("scope-only"); return; }
     if (p.learn !== null && (p.learn || !done)) {
       const words = (p.learn || "").split(/\s+/).filter(Boolean).length;
       const meta = done && words ? `≈ ${Math.max(1, Math.round(words / 200))} min de lecture` : (p.learn ? "Rédaction…" : "En préparation…");
