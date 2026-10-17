@@ -302,6 +302,45 @@ body.learn .side-learn{background:#fff;color:#1b1147;border:1.5px solid #fff}
 .su-edit:hover{background:#ffffff1a;color:#fff}
 body.learn .side-user{background:#ffffff1a}
 
+/* ======== Menu de gauche : hiérarchie claire ======== */
+.side{gap:16px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#ffffff33 transparent}
+.side :focus-visible{outline:2px solid #fff;outline-offset:2px}
+.side-brand{padding:2px 4px 0}
+.side-brand img{width:138px}
+.side-user{padding:10px 8px 10px 14px;border-radius:12px}
+.su-txt b{font-size:15px}
+.side-new{justify-content:flex-start;gap:10px;padding:12px 14px;font-size:14px;border-radius:12px;box-shadow:0 2px 0 rgb(0 0 0/.25),0 8px 20px rgb(64 16 152/.35)}
+.side-new svg{width:17px;height:17px}
+.side-group{display:flex;flex-direction:column;gap:4px;min-height:0}
+.side-label{margin:0 0 4px;padding:0 8px;text-align:left;font-size:10.5px;font-weight:800;letter-spacing:1.4px;color:#ffffff80;display:flex;align-items:center;justify-content:space-between;min-height:24px}
+.nav-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;border-radius:11px;padding:9px 10px;color:#fff;transition:background .15s}
+.nav-item:hover{background:#ffffff14}
+.ni-ico{width:34px;height:34px;border-radius:10px;background:#ffffff14;display:grid;place-items:center;flex:none;color:#e6dcfb}
+.ni-ico svg{width:18px;height:18px}
+.ni-txt{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.ni-txt b{font-size:14px;font-weight:700;line-height:1.25}
+.ni-txt small{font-size:12px;color:#ffffff99;line-height:1.3}
+.ni-badge{display:none;font-style:normal;font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;background:#4ade80;color:#052e16;border-radius:999px;padding:3px 8px;flex:none}
+.nav-item[aria-pressed="true"]{background:#fff;color:#1b1147}
+.nav-item[aria-pressed="true"] .ni-ico{background:#ede5ff;color:#401098}
+.nav-item[aria-pressed="true"] .ni-txt small{color:#55565d}
+.nav-item[aria-pressed="true"] .ni-badge{display:inline-block}
+.side-faq{flex:1;min-height:140px}
+.side-shuffle{background:none;border:0;color:#ffffffa6;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;padding:0;letter-spacing:0}
+.side-shuffle:hover{background:#ffffff1a;color:#fff}
+.side-faq .side-list{flex:1;overflow-y:auto;min-height:0;gap:2px;margin:0;padding:0;-webkit-mask-image:linear-gradient(#000 85%,transparent);mask-image:linear-gradient(#000 85%,transparent);padding-bottom:18px}
+.side-item{flex:none;padding:8px 10px;font-size:13px;line-height:1.38;color:#ffffffcc;border-radius:9px;display:block;position:relative;padding-left:24px}
+.side-item .bullet{position:absolute;left:10px;top:14px;width:5px;height:5px;margin:0}
+.side-item:hover{background:#ffffff12;color:#fff}
+.side-sim{background:#ffffff0f;border:1px solid #ffffff1f;border-radius:12px;padding:12px 10px}
+.side-sim .side-label{padding:0 2px}
+.side-sim p{margin:0 2px}
+.side-foot{margin-top:auto;gap:12px;padding-top:14px}
+.side-foot .model-wrap{padding:0 4px}
+.side-out{padding:8px 10px;font-size:13px;border-radius:10px;width:100%}
+.side-out svg{flex:none}
+@media (max-height:700px){.side{gap:12px}.ni-txt small{display:none}.nav-item{padding:7px 10px}.ni-ico{width:30px;height:30px}}
+
 /* messages */
 .thread{display:flex;flex-direction:column;gap:22px}
 .msg{display:flex;gap:12px;min-width:0}
@@ -404,15 +443,24 @@ body.learn .side-user{background:#ffffff1a}
       </div>
       <button type="button" class="su-edit" id="changeName" aria-label="Changer de prénom" title="Changer de prénom"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     </div>
-    <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button>
-    <button class="side-train normal-only" id="sideTrain" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Me mettre en situation</button>
-    <button class="side-learn" id="learnToggle" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg><span id="learnToggleText">Mode simulation complète</span></button>
-    <div class="side-label normal-only">Pour vous former <button type="button" id="shuffleBtn">Autres ↻</button></div>
-    <div class="side-list normal-only" id="sideExamples"></div>
-    <div class="side-sim learn-only">
-      <div class="side-label">Simulation complète</div>
-      <p>Appels et données <b>fictifs</b>. Aucune simulation ne passe de vrai appel, ne modifie de dossier ni n'envoie de message à l'équipe.</p>
+    <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button>
+
+    <div class="side-group" role="group" aria-labelledby="navTrainLab">
+      <div class="side-label" id="navTrainLab">S'entraîner</div>
+      <button class="nav-item normal-only" id="sideTrain" type="button"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="ni-txt"><b>Mise en situation</b><small>Un appel court, avec quiz</small></span></button>
+      <button class="nav-item" id="learnToggle" type="button" aria-pressed="false"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg></span><span class="ni-txt"><b id="learnToggleText">Simulation complète</b><small id="learnToggleSub">Appel fictif avec sonnerie</small></span><em class="ni-badge" aria-hidden="true">Actif</em></button>
     </div>
+
+    <section class="side-group side-faq normal-only" aria-labelledby="faqLab">
+      <div class="side-label" id="faqLab">Questions fréquentes <button type="button" class="side-shuffle" id="shuffleBtn" aria-label="Afficher d'autres questions" title="Autres questions"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button></div>
+      <div class="side-list" id="sideExamples"></div>
+    </section>
+
+    <div class="side-sim learn-only">
+      <div class="side-label">En simulation</div>
+      <p>Appels et données <b>fictifs</b> : aucun vrai appel, aucun dossier modifié, aucun message envoyé à l'équipe.</p>
+    </div>
+
     <div class="side-foot">
       <div class="model-wrap" id="modelWrap" hidden>
       <div class="model-lab">Modèle de Claude</div>
@@ -523,6 +571,6 @@ body.learn .side-user{background:#ffffff1a}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171850"></script>
+<script src="app-agent.js?v=202610171853"></script>
 </body>
 </html>

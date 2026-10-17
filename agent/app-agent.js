@@ -594,7 +594,9 @@
     sim.on = on;
     document.body.classList.toggle("learn", on);
     $("learnToggle").setAttribute("aria-pressed", String(on));
-    $("learnToggleText").textContent = on ? "Quitter la simulation complète" : "Mode simulation complète";
+    $("learnToggleText").textContent = on ? "Simulation complète" : "Simulation complète";
+    $("learnToggleSub").textContent = on ? "Cliquer pour revenir au mode habituel" : "Appel fictif avec sonnerie";
+    $("learnToggle").title = on ? "Quitter la simulation complète" : "Lancer la simulation complète";
     store.set("lq-learn", on ? "1" : "0");
     closeMenu();
     if (on) {
