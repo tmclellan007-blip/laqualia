@@ -1272,7 +1272,9 @@ body.tsa #sideJourney[aria-pressed="true"]{color:#0b3b37}
   .jr-sims li{grid-template-columns:52px 1fr;row-gap:4px}
   .jr-res{grid-column:2;justify-content:flex-start}
 }
-.ni-demo{font-style:normal;font-size:10.5px;font-weight:800;letter-spacing:.3px;background:#fff4e0;color:#8a4b00;border:1px solid #f6c56b;border-radius:99px;padding:1px 7px;margin-left:4px;vertical-align:2px;white-space:nowrap}
+.ni-demo{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;background:#ffffff1f;color:#ffffffd9;border-radius:5px;padding:1px 5px;margin-right:6px;vertical-align:1px;display:inline-block;line-height:1.5}
+.nav-item[aria-pressed="true"] .ni-demo{background:var(--role-soft);color:var(--role)}
+body.side-mini .ni-demo{display:none}
 /* ===== Grands écrans : tout est agrandi proportionnellement pour rester lisible ===== */
 @media (min-width:1560px) and (min-height:800px){:root{--z:1.1}body{zoom:1.1}}
 @media (min-width:1840px) and (min-height:920px){:root{--z:1.2}body{zoom:1.2}}
@@ -1315,7 +1317,7 @@ body.tsa #sideJourney[aria-pressed="true"]{color:#0b3b37}
       <div class="side-label" id="navTrainLab">S'entraîner</div>
       <button class="nav-item normal-only" id="sideTrain" type="button" title="Mise en situation"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="ni-txt"><b>Mise en situation</b><small id="sideTrainSub">Un appel court, avec quiz</small></span></button>
       <button class="nav-item" id="learnToggle" type="button" aria-pressed="false" title="Simulation complète"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg></span><span class="ni-txt"><b id="learnToggleText">Simulation complète</b><small id="learnToggleSub">Appel fictif avec sonnerie</small></span><em class="ni-badge" aria-hidden="true">Actif</em></button>
-      <button class="nav-item" id="sideJourney" type="button" aria-pressed="false" title="Parcours de l'apprenant"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.8"/></svg></span><span class="ni-txt"><b>Parcours de l'apprenant <em class="ni-demo">Démo</em></b><small>Progression et compétences</small></span></button>
+      <button class="nav-item" id="sideJourney" type="button" aria-pressed="false" title="Parcours de l'apprenant"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.8"/></svg></span><span class="ni-txt"><b>Parcours de l'apprenant</b><small><em class="ni-demo">Démo</em>Progression et compétences</small></span></button>
     </div>
 
     <section class="side-group side-faq normal-only">
