@@ -838,7 +838,8 @@
     store.set("lq-role", role);
     applyRole();
     closeMenu();
-    if (opts.silent || !prev.length) return; // rien à reprendre : pas de bandeau
+    // Chaque espace repart à neuf ; la conversation précédente reste dans les Récents de son espace
+    if (opts.silent || !prev.length || true) return;
     $("carryTitle").textContent = `Votre conversation de l'espace ${prevLabel} n'a pas été transférée ici`;
     $("carryText").textContent = prev.length
       ? `Elle reste dans les Récents de l'espace ${prevLabel}. Pour continuer sur le même sujet ici, reprenez-en un résumé : il s'affichera dans la zone de saisie pour que vous le vérifiiez avant l'envoi.`
