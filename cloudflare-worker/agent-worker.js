@@ -62,8 +62,12 @@ export default {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
     if (!cors) return json(403, { error: "Origine non autorisée." }, {});
-    if (request.method === "GET") return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE }, cors);
-    if (request.method === "POST") return handlePost(request, env, cors);
+    if (request.method === "GET") return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env) }, cors);
+    if (request.method === "POST") {
+      const sp = request.headers.get("x-agent-mode");
+      if (sp === "tts" || sp === "stt") return handleSpeech(sp, request, env, cors);
+      return handlePost(request, env, cors);
+    }
     return json(405, { error: "Méthode non permise." }, cors);
   },
 };
@@ -75,7 +79,7 @@ function corsHeaders(request, env) {
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
-    "access-control-allow-headers": "content-type, x-agent-code",
+    "access-control-allow-headers": "content-type, x-agent-code, x-agent-mode",
     "access-control-expose-headers": "x-agent-sources, x-agent-model",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -118,7 +122,10 @@ async function handlePost(request, env, cors) {
     const scenario = String(body?.scenario || "").replace(/[\r\n]+/g, " ").slice(0, 300);
     const level = SIM_LEVELS[body?.level] ? body.level : "intermediaire";
     if (simPhase === "client") {
-      simSystem = `${config.simulationClient || SIM_CLIENT_DEFAULT}\n\nScénario de cet appel : ${scenario || "au choix, réaliste"}.\n\n${SIM_LEVELS[level]}`;
+      const genre = body?.genre === "f" ? "\n\nTu es une FEMME (prénom féminin, accords au féminin) : ta voix au téléphone est féminine."
+        : body?.genre === "m" ? "\n\nTu es un HOMME (prénom masculin, accords au masculin) : ta voix au téléphone est masculine." : "";
+      const oral = body?.voix || body?.genre ? "\nL'appel est à la voix : écris comme on parle au téléphone (phrases courtes, ponctuation naturelle, hésitations légères permises comme « euh » ou « ben »), sans abréviations ni symboles." : "";
+      simSystem = `${config.simulationClient || SIM_CLIENT_DEFAULT}\n\nScénario de cet appel : ${scenario || "au choix, réaliste"}.\n\n${SIM_LEVELS[level]}${genre}${oral}`;
       messages = [...history, { role: "user", content: question }];
     } else {
       const coach = prenom ? `\nL'apprenant s'appelle ${prenom} : adresse-toi à lui ou elle par son prénom au début.` : "";
@@ -320,4 +327,77 @@ function retrieve(chunks, question) {
   const out = []; let used = 0;
   for (const { c } of scored) { if (used + c.text.length > CTX_BUDGET) break; out.push(c); used += c.text.length; }
   return out;
+}
+
+
+/* =====================================================================
+   VOIX (Microsoft Azure Speech) — voix neuronales québécoises et dictée,
+   identiques dans tous les navigateurs. Variables du Worker :
+     AZURE_SPEECH_KEY     (Secret) clé de la ressource Speech
+     AZURE_SPEECH_REGION  (Text)   région, ex. canadacentral
+   ===================================================================== */
+const VOICES = {
+  sylvie: "fr-CA-SylvieNeural",
+  antoine: "fr-CA-AntoineNeural",
+  jean: "fr-CA-JeanNeural",
+  thierry: "fr-CA-ThierryNeural",
+};
+const SPEECH_MAX = 150; // requêtes de voix par 5 minutes et par adresse
+const speechHits = new Map();
+function speechReady(env) { return !!(env.AZURE_SPEECH_KEY && env.AZURE_SPEECH_REGION); }
+function speechLimited(ip) {
+  const now = Date.now();
+  const list = (speechHits.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  list.push(now); speechHits.set(ip, list);
+  if (speechHits.size > 2000) speechHits.clear();
+  return list.length > SPEECH_MAX;
+}
+const xml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+
+async function handleSpeech(kind, request, env, cors) {
+  if (env.AGENT_CODE && request.headers.get("x-agent-code") !== env.AGENT_CODE) return json(401, { error: "Code d'accès invalide." }, cors);
+  if (!speechReady(env)) return json(503, { error: "La voix Azure n'est pas configurée." }, cors);
+  if (speechLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop de requêtes de voix. Attendez un peu." }, cors);
+  const region = String(env.AZURE_SPEECH_REGION).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  const key = env.AZURE_SPEECH_KEY;
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 20000);
+  try {
+    if (kind === "tts") {
+      let body; try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
+      const text = String(body?.text || "").replace(/\s+/g, " ").trim().slice(0, 1200);
+      if (!text) return json(400, { error: "Texte vide." }, cors);
+      const voice = VOICES[body?.voice] || VOICES.sylvie;
+      const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="fr-CA"><voice name="${voice}">${xml(text)}</voice></speak>`;
+      const r = await fetch(`https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`, {
+        method: "POST", signal: ctl.signal,
+        headers: {
+          "Ocp-Apim-Subscription-Key": key,
+          "Content-Type": "application/ssml+xml",
+          "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
+          "User-Agent": "laqualia-agent",
+        },
+        body: ssml,
+      });
+      if (!r.ok) return json(r.status === 401 || r.status === 403 ? 502 : 503, { error: r.status === 401 || r.status === 403 ? "Clé Azure invalide ou mauvaise région." : "Voix momentanément indisponible." }, cors);
+      return new Response(r.body, { headers: { ...cors, "content-type": "audio/mpeg", "cache-control": "no-store" } });
+    }
+    // Dictée : audio WAV 16 kHz mono envoyé par la page, 60 s au maximum
+    const len = Number(request.headers.get("content-length") || 0);
+    if (len > 2_200_000) return json(413, { error: "Réplique trop longue (60 secondes maximum)." }, cors);
+    const audio = await request.arrayBuffer();
+    if (!audio.byteLength || audio.byteLength > 2_200_000) return json(400, { error: "Audio invalide." }, cors);
+    const r = await fetch(`https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=fr-CA&format=simple&profanity=raw`, {
+      method: "POST", signal: ctl.signal,
+      headers: { "Ocp-Apim-Subscription-Key": key, "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000", Accept: "application/json" },
+      body: audio,
+    });
+    if (!r.ok) return json(r.status === 401 || r.status === 403 ? 502 : 503, { error: r.status === 401 || r.status === 403 ? "Clé Azure invalide ou mauvaise région." : "Dictée momentanément indisponible." }, cors);
+    const out = await r.json().catch(() => ({}));
+    return json(200, { text: out.RecognitionStatus === "Success" ? String(out.DisplayText || "") : "", status: out.RecognitionStatus || "" }, cors);
+  } catch {
+    return json(504, { error: "Le service de voix a mis trop de temps à répondre." }, cors);
+  } finally {
+    clearTimeout(t);
+  }
 }

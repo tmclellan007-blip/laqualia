@@ -741,7 +741,7 @@
     const res = await fetch(cfg.apiUrl, {
       method: "POST",
       headers: { "content-type": "application/json", "x-agent-code": code },
-      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom, level }),
+      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom, level, voix: sim.voice || undefined, genre: sim.voice && sim.genre ? sim.genre : undefined }),
       signal,
     });
     if (!res.ok) {
@@ -907,44 +907,58 @@
 
 
   /* =====================================================================
-     SIMULATION À LA VOIX — le client parle (synthèse vocale du navigateur),
-     la réceptionniste répond à voix haute (dictée du navigateur).
-     Rien n'est enregistré : l'audio reste dans le navigateur.
+     SIMULATION À LA VOIX — le client parle, la réceptionniste répond à voix haute.
+     • Si le relais a une clé Microsoft Azure Speech : voix neuronales québécoises
+       et dictée Azure, identiques dans tous les navigateurs.
+     • Sinon : voix et dictée du navigateur (repli automatique).
+     Rien n'est conservé : l'audio sert seulement à produire la voix et le texte.
      ===================================================================== */
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   const TTS = "speechSynthesis" in window ? window.speechSynthesis : null;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  const AZ_VOICES = [["sylvie", "Sylvie", "f"], ["antoine", "Antoine", "m"], ["jean", "Jean", "m"], ["thierry", "Thierry", "m"]];
   const vc = {
-    ttsOK: !!TTS, micOK: !!SR, denied: false,
-    voice: null, pitch: 1, spoken: 0, pending: 0, utts: [], after: null,
-    rec: null, listening: false, want: false, silence: null, base: "", restarts: 0,
+    azure: false, ttsOK: false, micOK: false, denied: false,
+    voice: null, azVoice: "sylvie", spoken: 0, pending: 0, utts: [], after: null,
+    gen: 0, chain: Promise.resolve(), playing: null, ttsAbort: new AbortController(),
+    rec: null, recStop: null, listening: false, transcribing: false, want: false, silence: null, base: "", restarts: 0,
+    ctx: null, stream: null, sttAbort: null,
   };
-  let inputMode = vc.ttsOK && store.get("lq-input") === "voix" ? "voix" : "clavier";
+  function caps() {
+    vc.ttsOK = vc.azure ? !!AC : !!TTS;
+    vc.micOK = vc.azure ? !!(AC && navigator.mediaDevices?.getUserMedia) : !!SR;
+  }
+  caps();
+  function setVoiceService(on) { vc.azure = !!on && !!AC; caps(); renderInput(); }
+  let inputMode = store.get("lq-input") === "voix" ? "voix" : "clavier";
   try { TTS?.getVoices(); TTS?.addEventListener?.("voiceschanged", () => TTS.getVoices()); } catch {}
 
   function renderInput() {
     try { renderVoiceSel(); } catch {}
     document.querySelectorAll("#inputSeg button").forEach((b) => {
-      b.setAttribute("aria-checked", String(b.dataset.input === inputMode));
-      if (b.dataset.input === "voix" && !vc.ttsOK) { b.disabled = true; b.title = "Non disponible dans ce navigateur"; }
+      b.setAttribute("aria-checked", String(b.dataset.input === inputMode && (b.dataset.input !== "voix" || vc.ttsOK)));
+      if (b.dataset.input === "voix") { b.disabled = !vc.ttsOK; b.title = vc.ttsOK ? "" : "Non disponible dans ce navigateur"; }
     });
-    $("inputHint").textContent = !vc.ttsOK ? "La voix n'est pas disponible dans ce navigateur. Essayez Chrome, Edge ou Safari."
+    if (inputMode === "voix" && !vc.ttsOK) document.querySelector('#inputSeg [data-input="clavier"]')?.setAttribute("aria-checked", "true");
+    $("inputHint").textContent = !vc.ttsOK ? "La voix n'est pas disponible dans ce navigateur."
       : inputMode === "clavier" ? "Vous lisez le client et tapez vos réponses."
+      : vc.azure ? "Voix québécoises naturelles. Le navigateur vous demandera l'accès au micro ; des écouteurs évitent l'écho. Rien n'est conservé."
       : vc.micOK ? "Le navigateur vous demandera l'accès au micro. Utilisez des écouteurs si possible ; rien n'est enregistré."
-      : "Le client parlera, mais ce navigateur n'offre pas la dictée : vous répondrez au clavier. Chrome, Edge ou Safari permettent de répondre à la voix.";
+      : "Le client parlera, mais ce navigateur n'offre pas la dictée : vous répondrez au clavier.";
   }
   document.querySelectorAll("#inputSeg button").forEach((b) => {
     b.onclick = () => { if (sim.active || b.disabled) return; inputMode = b.dataset.input; store.set("lq-input", inputMode); renderInput(); };
   });
 
-  // Classe les voix françaises de l'appareil, des plus naturelles aux plus « robot »
+  // ---- voix du navigateur (repli) : classement des plus naturelles aux plus « robot »
   function voiceScore(v) {
     const n = v.name;
     let sc = 0;
-    if (/natural|neural/i.test(n)) sc += 60;          // Edge : voix neuronales (Sylvie, Antoine, Jean, Thierry…)
+    if (/natural|neural/i.test(n)) sc += 60;
     else if (/online/i.test(n)) sc += 45;
-    if (/premium|enhanced|amélior|siri/i.test(n)) sc += 40; // Safari / macOS / iOS : voix téléchargées de qualité
+    if (/premium|enhanced|amélior|siri/i.test(n)) sc += 40;
     if (/google/i.test(n)) sc += 20;
-    if (/CA/i.test(v.lang)) sc += 15;                   // accent québécois en priorité
+    if (/CA/i.test(v.lang)) sc += 15;
     if (/espeak|compact|eloquence|robot|novelty|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy/i.test(n)) sc -= 50;
     if (!v.localService) sc += 5;
     return sc;
@@ -958,68 +972,98 @@
     const reg = /CA/i.test(v.lang) ? "Québec" : /FR/i.test(v.lang) ? "France" : /BE/i.test(v.lang) ? "Belgique" : /CH/i.test(v.lang) ? "Suisse" : v.lang;
     return `${nm} · ${reg}${sc >= 55 ? " · très naturelle" : sc >= 35 ? " · naturelle" : ""}`;
   }
-  function pickVoice() {
+  function pickBrowserVoice() {
     const all = frVoices();
     if (!all.length) return null;
     const chosen = store.get("lq-voice-name");
     if (chosen) { const v = all.find((x) => x.name === chosen); if (v) return v; }
-    // Automatique : une des meilleures voix, différente d'un appel à l'autre quand il y en a plusieurs
     const top = voiceScore(all[0]);
     const best = all.filter((v) => voiceScore(v) >= top - 10);
     return best[Math.floor(Math.random() * best.length)];
   }
+  function pickAzVoice() {
+    const chosen = store.get("lq-az-voice");
+    const v = AZ_VOICES.find(([k]) => k === chosen);
+    if (v) return v;
+    // Automatique : femme ou homme à parts égales, pour varier les clients
+    return Math.random() < 0.5 ? AZ_VOICES[0] : AZ_VOICES[1 + Math.floor(Math.random() * 3)];
+  }
   function renderVoiceSel() {
     const box = $("voicePick"), sel = $("voiceSel");
     box.hidden = inputMode !== "voix" || !vc.ttsOK;
+    sel.textContent = "";
+    if (vc.azure) {
+      sel.append(new Option("Automatique · une voix différente à chaque appel", ""));
+      AZ_VOICES.forEach(([k, n, g]) => sel.append(new Option(`${n} · ${g === "f" ? "femme" : "homme"} · Québec`, k)));
+      const cur = store.get("lq-az-voice") || "";
+      sel.value = AZ_VOICES.some(([k]) => k === cur) ? cur : "";
+      $("voiceTip").hidden = true;
+      return;
+    }
     const all = frVoices();
     const cur = store.get("lq-voice-name") || "";
-    sel.textContent = "";
     sel.append(new Option(all.length ? "Automatique · la plus naturelle disponible" : "Voix française par défaut", ""));
     all.forEach((v) => sel.append(new Option(voiceLabel(v), v.name)));
     sel.value = all.some((v) => v.name === cur) ? cur : "";
-    const top = all[0] ? voiceScore(all[0]) : 0;
-    $("voiceTip").hidden = top >= 55;
+    $("voiceTip").hidden = (all[0] ? voiceScore(all[0]) : 0) >= 55;
   }
-  $("voiceSel").onchange = () => { store.set("lq-voice-name", $("voiceSel").value); };
+  $("voiceSel").onchange = () => { store.set(vc.azure ? "lq-az-voice" : "lq-voice-name", $("voiceSel").value); };
+  const SAMPLE = { f: "Oui, bonjour! Je vous appelle pour mon chien, Max. Il boite depuis hier, pis là je commence à être pas mal inquiète.",
+    m: "Oui, bonjour! Je vous appelle pour mon chien, Max. Il boite depuis hier, pis là je commence à être pas mal inquiet." };
   $("voiceTest").onclick = () => {
-    if (!TTS) return;
-    try { TTS.cancel(); } catch {}
-    vc.voice = pickVoice();
-    const u = new SpeechSynthesisUtterance("Oui, bonjour! Je vous appelle pour mon chien, Max. Il boite depuis hier, pis là je commence à être pas mal inquiète.");
-    if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
-    u.rate = 1; u.pitch = 1;
-    TTS.speak(u);
+    hushSpeech();
+    ensureCtx();
+    if (vc.azure) { const v = pickAzVoice(); vc.azVoice = v[0]; sayRaw(SAMPLE[v[2]], true); }
+    else { vc.voice = pickBrowserVoice(); sayRaw(SAMPLE.f, true); }
   };
-  try { TTS?.addEventListener?.("voiceschanged", renderVoiceSel); } catch {}
+  try { TTS?.addEventListener?.("voiceschanged", () => { if (!vc.azure) renderVoiceSel(); }); } catch {}
+
+  // Contexte audio créé dans un geste (Répondre / Écouter) : exigé par Safari et iOS
+  function ensureCtx() {
+    if (!AC) return null;
+    if (!vc.ctx || vc.ctx.state === "closed") { try { vc.ctx = new AC(); } catch { vc.ctx = null; } }
+    try { vc.ctx?.resume?.(); } catch {}
+    return vc.ctx;
+  }
+  async function getMic() {
+    if (vc.stream && vc.stream.getTracks().some((t) => t.readyState === "live")) return vc.stream;
+    vc.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 } });
+    return vc.stream;
+  }
+  function micDenied(e) {
+    if (vc.denied) return;
+    vc.denied = true; micUI();
+    simNote(e && e.name === "NotFoundError" ? "Aucun micro détecté : le client parlera, vous répondrez au clavier."
+      : "Accès au micro refusé : le client parlera, vous répondrez au clavier. Pour répondre à la voix, autorisez le micro pour ce site (icône à gauche de l'adresse).");
+  }
 
   function voiceStartCall() {
     sim.voice = inputMode === "voix" && vc.ttsOK;
     document.body.classList.toggle("voice-call", sim.voice);
     $("callVoice").hidden = !sim.voice;
-    vc.spoken = 0; vc.pending = 0; vc.utts = []; vc.after = null; vc.restarts = 0;
+    hushSpeech();
+    vc.spoken = 0; vc.restarts = 0;
+    sim.genre = "";
     if (!sim.voice) { micUI(); return; }
-    vc.voice = pickVoice();
-    // Débloque la synthèse dans le geste « Répondre » (exigé par Safari iOS)
-    try { TTS.cancel(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; TTS.speak(u); } catch {}
-    // Demande l'accès au micro tout de suite, pendant le geste « Répondre »
+    ensureCtx();
+    if (vc.azure) {
+      const v = pickAzVoice(); vc.azVoice = v[0]; sim.genre = v[2];
+    } else {
+      vc.voice = pickBrowserVoice();
+      try { TTS.cancel(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; TTS.speak(u); } catch {}
+    }
+    // Accès au micro demandé tout de suite, pendant le geste « Répondre »
     if (vc.micOK && !vc.denied && navigator.mediaDevices?.getUserMedia) {
-      navigator.mediaDevices.getUserMedia({ audio: true })
-        .then((st) => st.getTracks().forEach((t) => t.stop()))
-        .catch((e) => {
-          if (e && (e.name === "NotAllowedError" || e.name === "NotFoundError" || e.name === "SecurityError")) {
-            vc.denied = true; micUI();
-            simNote(e.name === "NotFoundError" ? "Aucun micro détecté : le client parlera, vous répondrez au clavier."
-              : "Accès au micro refusé : le client parlera, vous répondrez au clavier. Pour répondre à la voix, autorisez le micro pour ce site.");
-          }
-        });
+      getMic().then((st) => { if (!vc.azure) { st.getTracks().forEach((t) => t.stop()); vc.stream = null; } })
+        .catch((e) => { if (e && /NotAllowed|NotFound|Security/.test(e.name)) micDenied(e); });
     }
     micUI();
   }
 
-  // Ce qui se lit à voix haute : sans indications de jeu ni guillemets
-  const forTTS = (t) => t.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "").replace(/\.{3,}/g, "…").replace(/\s+-\s+/g, ", ").replace(/\([^)]*\)/g, " ").replace(/\*[^*]*\*/g, " ").replace(/[«»"“”_#>]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
+  // Ce qui se lit à voix haute : sans indications de jeu, emojis ni guillemets
+  const forTTS = (t) => t.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}️]/gu, "").replace(/\.{3,}/g, "…").replace(/\s+-\s+/g, ", ").replace(/\([^)]*\)/g, " ").replace(/\*[^*]*\*/g, " ").replace(/[«»"“”_#>]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
 
-  // Lit la réplique d'un seul souffle (intonation plus naturelle) ; une très longue réplique commence plus tôt
+  // Lit la réplique d'un seul souffle ; une très longue réplique commence plus tôt
   function voiceFeed(clean, final) {
     if (!sim.voice || !sim.active || sim.ended) return;
     if (vc.spoken === -1) vc.spoken = 0;
@@ -1030,28 +1074,75 @@
     if (!cut) return;
     vc.spoken += cut;
     say(rest.slice(0, cut));
-    if (final) vc.spoken = -1; // prochaine réplique : on repart de zéro
+    if (final) vc.spoken = -1;
   }
-  function say(text) {
+  function say(text) { sayRaw(text, false); }
+  // Les morceaux se téléchargent en parallèle mais se lisent dans l'ordre
+  function sayRaw(text, preview) {
     const t = forTTS(text);
     if (!t) return;
-    voiceStopListening();
-    const u = new SpeechSynthesisUtterance(t);
-    if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
-    u.rate = 1; u.pitch = 1; // modifier le ton ou la vitesse rend la voix plus artificielle
-    vc.pending++; vc.utts.push(u); // garder une référence (sinon Chrome perd la fin)
-    const done = () => {
-      if (u._done) return; u._done = true;
+    if (!preview) voiceStopListening();
+    vc.pending++; if (!preview) talking(true);
+    const gen = vc.gen;
+    const bufP = vc.azure ? fetchTTS(t, vc.azVoice).catch(() => null) : Promise.resolve(null);
+    vc.chain = vc.chain.then(async () => {
+      if (gen !== vc.gen) return;
+      const buf = await bufP;
+      if (gen !== vc.gen) return;
+      if (buf) await playBuf(buf);
+      else if (TTS) await browserSay(t); // repli si Azure ne répond pas
+    }).catch(() => {}).then(() => {
+      if (gen !== vc.gen) return;
       vc.pending = Math.max(0, vc.pending - 1);
-      vc.utts = vc.utts.filter((x) => x !== u);
       if (!vc.pending) { talking(false); const f = vc.after; vc.after = null; f?.(); }
-    };
-    u.onend = done; u.onerror = done;
-    // Filets de sécurité si le navigateur n'annonce jamais la fin (ou ne commence jamais)
-    u.onstart = () => setTimeout(done, 4000 + t.length * 110);
-    setTimeout(() => { if (!vc.utts.length || vc.utts[0] === u) setTimeout(done, 4000 + t.length * 110); }, 12000);
-    talking(true);
-    TTS.speak(u);
+    });
+  }
+  async function fetchTTS(text, voice) {
+    const r = await fetch(cfg.apiUrl, {
+      method: "POST", signal: vc.ttsAbort.signal,
+      headers: { "content-type": "application/json", "x-agent-code": code, "x-agent-mode": "tts" },
+      body: JSON.stringify({ text, voice }),
+    });
+    if (!r.ok) throw new Error("tts");
+    const data = await r.arrayBuffer();
+    const ctx = ensureCtx();
+    return await new Promise((res, rej) => ctx.decodeAudioData(data, res, rej));
+  }
+  function playBuf(buf) {
+    return new Promise((res) => {
+      const ctx = ensureCtx();
+      let src;
+      try { src = ctx.createBufferSource(); src.buffer = buf; src.connect(ctx.destination); } catch { return res(); }
+      vc.playing = src;
+      const fin = () => { if (vc.playing === src) vc.playing = null; res(); };
+      src.onended = fin;
+      setTimeout(fin, buf.duration * 1000 + 2500);
+      try { src.start(); } catch { fin(); }
+    });
+  }
+  function browserSay(t) {
+    return new Promise((res) => {
+      const u = new SpeechSynthesisUtterance(t);
+      if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
+      u.rate = 1; u.pitch = 1;
+      vc.utts.push(u); // garder une référence (sinon Chrome perd la fin)
+      let ok = false;
+      const end = () => { if (ok) return; ok = true; vc.utts = vc.utts.filter((x) => x !== u); res(); };
+      u.onend = end; u.onerror = end;
+      u.onstart = () => setTimeout(end, 4000 + t.length * 110);
+      setTimeout(end, 20000 + t.length * 110);
+      try { TTS.speak(u); } catch { end(); }
+    });
+  }
+  // Coupe net la voix en cours et tout ce qui attendait
+  function hushSpeech() {
+    vc.gen++; vc.pending = 0; vc.after = null; vc.chain = Promise.resolve();
+    try { vc.ttsAbort.abort(); } catch {}
+    vc.ttsAbort = new AbortController();
+    try { TTS?.cancel(); } catch {}
+    try { vc.playing?.stop(); } catch {}
+    vc.playing = null; vc.utts = [];
+    talking(false);
   }
   function voiceAfterSpeech(f) { if (!vc.pending) f(); else vc.after = f; }
   function talking(on) {
@@ -1060,13 +1151,14 @@
   }
 
   function voiceListen() {
-    if (!sim.voice || !vc.micOK || vc.denied || !sim.active || sim.ended || vc.listening) return;
-    if (vc.pending) { try { TTS.cancel(); } catch {} vc.pending = 0; vc.after = null; talking(false); }
+    if (!sim.voice || !vc.micOK || vc.denied || !sim.active || sim.ended || vc.listening || vc.transcribing) return;
+    if (vc.pending) hushSpeech();
+    vc.base = $("q").value.trim() ? $("q").value.trim() + " " : "";
+    if (vc.azure) return azureListen();
     let r;
     try { r = new SR(); } catch { return; }
     r.lang = "fr-CA"; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
     vc.rec = r; vc.listening = true; vc.want = true;
-    vc.base = $("q").value.trim() ? $("q").value.trim() + " " : "";
     r.onresult = (e) => {
       vc.restarts = 0;
       let fin = "", interim = "";
@@ -1077,34 +1169,120 @@
       const txt = (vc.base + fin + interim).replace(/\s+/g, " ").trim();
       $("q").value = txt ? txt.charAt(0).toUpperCase() + txt.slice(1) : ""; autosize();
       clearTimeout(vc.silence);
-      // Courte pause = fin de la réplique : envoi automatique
       vc.silence = setTimeout(() => { if (vc.listening && $("q").value.trim()) simReply(); }, interim ? 2300 : 1500);
     };
     r.onerror = (e) => {
       if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") {
-        vc.denied = true; vc.want = false;
-        simNote(e.error === "audio-capture" ? "Aucun micro détecté : répondez au clavier." : "Accès au micro refusé : autorisez le micro pour ce site (icône à gauche de l'adresse), ou répondez au clavier.");
+        vc.want = false; micDenied({ name: e.error === "audio-capture" ? "NotFoundError" : "NotAllowedError" });
       }
     };
     r.onend = () => {
       vc.listening = false; vc.rec = null;
-      // Le navigateur coupe l'écoute après un silence : on la relance tant que c'est à la réceptionniste de parler
       if (vc.want && sim.active && !sim.ended && !vc.denied && vc.restarts < 6) { vc.restarts++; setTimeout(voiceListen, 200); return; }
       vc.want = false; micUI();
     };
     try { r.start(); } catch { vc.listening = false; vc.rec = null; }
     micUI();
   }
+
+  // Dictée Azure : enregistre la voix, détecte la fin de la réplique (silence), envoie le son au relais
+  async function azureListen() {
+    vc.listening = true; vc.want = true; micUI();
+    let stream;
+    try { stream = await getMic(); } catch (e) { vc.listening = false; vc.want = false; micDenied(e); return; }
+    if (!vc.want || !sim.active || sim.ended) { vc.listening = false; micUI(); return; }
+    const ctx = ensureCtx();
+    const src = ctx.createMediaStreamSource(stream);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+    const rate = ctx.sampleRate;
+    const chunks = [], pre = [];
+    const t0 = performance.now();
+    let started = false, lastVoice = 0, noise = 0.006, ended = false;
+    const finish = async (send) => {
+      if (ended) return; ended = true;
+      proc.onaudioprocess = null;
+      try { src.disconnect(); proc.disconnect(); } catch {}
+      vc.recStop = null; vc.listening = false;
+      $("mic").style.removeProperty("--lvl");
+      if (!send || !started || !vc.want) { vc.want = false; micUI(); return; }
+      vc.want = false; vc.transcribing = true; micUI();
+      const ctl = (vc.sttAbort = new AbortController());
+      try {
+        const r = await fetch(cfg.apiUrl, {
+          method: "POST", signal: ctl.signal,
+          headers: { "content-type": "audio/wav", "x-agent-code": code, "x-agent-mode": "stt" },
+          body: encodeWav(chunks, rate),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || "Dictée momentanément indisponible.");
+        vc.transcribing = false; micUI();
+        if (!sim.active || sim.ended) return;
+        const txt = String(j.text || "").trim();
+        if (!txt) { $("simHint").textContent = "Je n'ai pas bien entendu : reprenez votre phrase."; return voiceListen(); }
+        $("q").value = (vc.base + txt).trim(); autosize();
+        simReply();
+      } catch (e) {
+        vc.transcribing = false; micUI();
+        if (e.name !== "AbortError" && sim.active && !sim.ended) simNote(`${e.message} Répondez au clavier ou touchez le micro pour réessayer.`);
+      }
+    };
+    proc.onaudioprocess = (e) => {
+      if (ended) return;
+      const d = new Float32Array(e.inputBuffer.getChannelData(0));
+      let sum = 0; for (let i = 0; i < d.length; i++) sum += d[i] * d[i];
+      const rms = Math.sqrt(sum / d.length);
+      const now = performance.now();
+      if (!started) { noise = noise * 0.9 + Math.min(rms, 0.05) * 0.1; pre.push(d); if (pre.length > 4) pre.shift(); }
+      const thr = Math.max(0.012, noise * 2.8);
+      if (rms > thr) { if (!started) { started = true; chunks.push(...pre); } lastVoice = now; }
+      if (started) chunks.push(d);
+      $("mic").style.setProperty("--lvl", Math.min(1, rms * 14).toFixed(2));
+      if (started && now - lastVoice > 1300) finish(true);       // fin de la réplique
+      else if (started && now - t0 > 55000) finish(true);        // 55 s au maximum
+      else if (!started && now - t0 > 25000) finish(false);      // personne ne parle : on attend le micro
+    };
+    src.connect(proc); proc.connect(ctx.destination); // sortie muette, nécessaire pour que l'enregistrement tourne
+    vc.recStop = finish;
+    micUI();
+  }
+  // WAV PCM 16 bits, 16 kHz, mono (format attendu par la dictée Azure)
+  function encodeWav(chunks, rate) {
+    const total = chunks.reduce((n, c) => n + c.length, 0);
+    const ratio = rate / 16000;
+    const n = Math.floor(total / ratio);
+    const flat = new Float32Array(total);
+    let o = 0; for (const c of chunks) { flat.set(c, o); o += c.length; }
+    const buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+    const w = (p, s) => { for (let i = 0; i < s.length; i++) v.setUint8(p + i, s.charCodeAt(i)); };
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt ");
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    w(36, "data"); v.setUint32(40, n * 2, true);
+    for (let i = 0; i < n; i++) {
+      const a = Math.floor(i * ratio), b = Math.min(total, Math.floor((i + 1) * ratio));
+      let s = 0; for (let k = a; k < b; k++) s += flat[k];
+      const x = Math.max(-1, Math.min(1, b > a ? s / (b - a) : flat[a] || 0));
+      v.setInt16(44 + i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+    }
+    return new Blob([buf], { type: "audio/wav" });
+  }
+
   function voiceStopListening() {
     vc.want = false; clearTimeout(vc.silence);
     if (vc.rec) { try { vc.rec.abort(); } catch {} }
-    vc.rec = null; vc.listening = false;
+    vc.rec = null;
+    vc.recStop?.(false);
+    vc.listening = false;
     micUI();
   }
   function voiceHalt() {
     voiceStopListening();
-    vc.after = null; vc.pending = 0; vc.utts = []; vc.spoken = 0;
-    try { TTS?.cancel(); } catch {}
+    try { vc.sttAbort?.abort(); } catch {}
+    vc.transcribing = false;
+    hushSpeech();
+    vc.spoken = 0;
+    try { vc.stream?.getTracks().forEach((t) => t.stop()); } catch {}
+    vc.stream = null;
     $("callBar").classList.remove("talking");
     document.body.classList.remove("voice-call");
     $("callVoice").hidden = true;
@@ -1119,18 +1297,22 @@
     $("form").classList.toggle("listening", show && vc.listening);
     hint.classList.toggle("on", show && vc.listening);
     if (!sim.voice || !sim.active || sim.ended) { hint.textContent = SIM_HINT; return; }
-    const state = vc.pending ? "speaking" : vc.listening ? "listening" : "idle";
+    const state = vc.pending ? "speaking" : vc.transcribing ? "busy" : vc.listening ? "listening" : "idle";
     mic.dataset.state = state;
-    mic.setAttribute("aria-label", state === "listening" ? "Arrêter l'écoute" : state === "speaking" ? "Interrompre le client et parler" : "Parler");
+    mic.disabled = state === "busy";
+    mic.setAttribute("aria-label", state === "listening" ? (vc.azure ? "J'ai fini de parler" : "Arrêter l'écoute") : state === "speaking" ? "Interrompre le client et parler" : state === "busy" ? "Transcription en cours" : "Parler");
     mic.title = mic.getAttribute("aria-label");
     hint.textContent = state === "speaking" ? "🔊 Le client parle… écoutez-le"
+      : state === "busy" ? "✍️ Transcription de votre réponse…"
       : state === "listening" ? "🎙 À vous : parlez, la réponse part après une courte pause"
       : !show ? "Répondez au clavier"
       : "Touchez le micro pour parler, ou écrivez votre réponse";
   }
   $("mic").onclick = () => {
-    if (vc.listening) { voiceStopListening(); $("q").focus(); }
-    else voiceListen();
+    if (vc.listening) {
+      if (vc.azure && vc.recStop) { vc.recStop(true); return; } // envoie tout de suite ce qui a été dit
+      voiceStopListening(); $("q").focus();
+    } else { ensureCtx(); voiceListen(); }
   };
   // Si la réceptionniste se met à taper, on arrête la dictée pour ne pas écraser son texte
   $("q").addEventListener("keydown", (e) => { if (vc.listening && e.key !== "Enter") voiceStopListening(); });
@@ -1232,6 +1414,7 @@
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
+        setVoiceService(!!s.voice);
         needsCode = !!s.needsCode;
         if ((needsCode && !code) || !prenom) askCode(false);
       }).catch(() => setStatus("bad", "Service injoignable"));

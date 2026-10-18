@@ -42,3 +42,18 @@ Faites un commit. GitHub Pages republie le site en une à deux minutes.
 ## Quand le site passera sur laqualia.com
 
 Mettez `SITE_URL` à `https://www.laqualia.com` dans le Worker. `ALLOWED_ORIGINS` accepte déjà laqualia.com.
+
+## Voix naturelles pour la simulation (Microsoft Azure, facultatif)
+
+Sans ces variables, la simulation à la voix utilise les voix du navigateur. Avec elles, le client parle avec une voix neuronale québécoise (Sylvie, Antoine, Jean ou Thierry) et la dictée fonctionne de la même façon dans tous les navigateurs.
+
+1. Sur https://portal.azure.com, créez une ressource **Speech** (service « Speech » d'Azure AI services), niveau tarifaire **Free F0**, région **Canada Central**.
+2. Dans la ressource, ouvrez **Keys and Endpoint** et copiez **KEY 1** et la **Location/Region** (ex. `canadacentral`).
+3. Dans le Worker `laqualia-agent` → **Settings** → **Variables and Secrets**, ajoutez :
+
+| Nom | Type | Valeur |
+|---|---|---|
+| `AZURE_SPEECH_KEY` | Secret | la KEY 1 |
+| `AZURE_SPEECH_REGION` | Text | `canadacentral` |
+
+4. Cliquez **Deploy**. Rechargez l'agent : la liste « Voix du client » propose alors Sylvie, Antoine, Jean et Thierry.
