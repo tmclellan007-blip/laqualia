@@ -1184,6 +1184,23 @@ body.side-mini #privLink span{display:none}
 @media (max-width:860px){.model-badge .mb-l{display:none}}
 /* accueil sur ordinateur : bloc centré mais remonté pour être vu plus vite */
 @media (min-width:861px) and (min-height:820px){.main.is-empty .composer{padding-bottom:12vh}}
+
+/* ===== retouches cellulaire ===== */
+@media (max-width:860px){
+  body:not(.has-logo) .org-logo-ph{display:none}            /* pas de cadre vide : place au badge de rôle */
+  .top-title .tt-mode{max-width:none;overflow:visible}
+  .top-title .tt-row{overflow:visible}
+}
+@media (max-width:620px){
+  .box-learn .bh-sub,.box-learn .bh-meta{display:none}       /* « Réponse complète » sur une ligne */
+  .box-learn .bh-toggle{gap:8px}
+  .box-tsa .bh-note{display:none}
+  .under .card.tool{padding:10px 12px;gap:10px;align-items:center}
+  .under .card.tool small{display:none}
+  .under .card.tool b{font-size:13.5px;line-height:1.25}
+  .under .card.tool .tl-ico{width:28px;height:28px;border-radius:9px}
+  .under .card.tool .tl-ico svg{width:15px;height:15px}
+}
 </style>
 </head>
 <body>
@@ -1469,7 +1486,7 @@ body.side-mini #privLink span{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181358"></script>
+<script src="app-agent.js?v=202610181401"></script>
 <script src="dashboard.js?v=202610181207"></script>
 </body>
 </html>

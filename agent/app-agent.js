@@ -51,6 +51,8 @@
   let role = "reception";
   const isTsa = () => role === "tsa";
   const RP = () => (isTsa() ? cfg.tsa || {} : cfg);
+  const isNarrow = () => matchMedia("(max-width: 520px)").matches;
+  const basePH = () => (isTsa() ? (isNarrow() ? "Le cas ou la tâche…" : "Décrivez le cas ou la tâche…") : (isNarrow() ? "Votre question…" : "Posez votre question ici…"));
   const tagFor = (t) => (isTsa() ? TAGS_TSA : TAGS).find(([re]) => re.test(t))[1];
 
   let cfg = { name: "Assistant La Qualia", examples: [] };
@@ -825,7 +827,7 @@
     $("helloSub").textContent = isTsa() ? "Sur quel cas ou quelle tâche travaillez-vous" : "Comment puis-je vous aider aujourd'hui";
     $("askTitle").textContent = isTsa() ? "Décrivez le cas ou la tâche" : "Posez votre question ici";
     $("askHint").textContent = isTsa() ? "Données fictives ou dépersonnalisées seulement : aucun nom de client ni numéro de dossier." : "Écrivez ou dictez avec le bouton Voix, comme à une collègue d'expérience, puis appuyez sur Entrée.";
-    $("q").placeholder = isTsa() ? PH_TSA[0] : "Posez votre question ici…";
+    $("q").placeholder = basePH();
     $("q").setAttribute("aria-label", $("askTitle").textContent);
     $("sideTrainSub").textContent = isTsa() ? "Un cas fictif, avec quiz" : "Un appel court, avec quiz";
     $("learnToggleSub").textContent = sim.on ? "Cliquer pour revenir au mode habituel" : (isTsa() ? "Échange fictif avec sonnerie" : "Appel fictif avec sonnerie");
@@ -1051,7 +1053,7 @@
       updateSimComposer();
     } else {
       stopSim(true);
-      $("q").placeholder = isTsa() ? PH_TSA[0] : "Posez votre question ici…";
+      $("q").placeholder = basePH();
       $("q").disabled = false;
     }
     scroller.scrollTop = 0;
@@ -1897,8 +1899,11 @@
   setInterval(() => {
     const q = $("q");
     if (document.activeElement === q || q.value || q.disabled || document.body.classList.contains("learn")) return;
+    if (isNarrow()) { q.placeholder = basePH(); return; } // téléphone : texte court, pas de défilement d'exemples
     const L = isTsa() ? PH_TSA : PH; phI = (phI + 1) % L.length; q.placeholder = L[phI];
   }, 3500);
+  $("q").placeholder = basePH();
+  matchMedia("(max-width: 520px)").addEventListener?.("change", () => { if (!sim.on) $("q").placeholder = basePH(); });
   if (matchMedia("(min-width: 861px)").matches) setTimeout(() => { if (!$("codebox").hidden) return; $("q").focus(); }, 400);
 
   /* ---------- démarrage ---------- */
