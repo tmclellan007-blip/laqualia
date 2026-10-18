@@ -160,6 +160,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 .al-st{font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;margin-left:6px}
 .al-st.ok{background:#dcfce7;color:#166534}.al-st.no{background:#fff4e0;color:#8a4b00}
 .alerts .hint{margin:4px 0 0}
+
+/* ===== Grands écrans : tout est agrandi proportionnellement pour rester lisible ===== */
+@media (min-width:1560px) and (min-height:800px){:root{--z:1.1}body{zoom:1.1}}
+@media (min-width:1840px) and (min-height:920px){:root{--z:1.2}body{zoom:1.2}}
+@media (min-width:2300px) and (min-height:1150px){:root{--z:1.4}body{zoom:1.4}}
+@media (min-width:2800px) and (min-height:1400px){:root{--z:1.65}body{zoom:1.65}}
+.login{min-height:calc(100dvh / var(--z,1) - 52px)}
+.dlg{max-height:calc(100dvh / var(--z,1) - 40px)}
 </style>
 </head>
 <body>
@@ -305,6 +313,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="admin.js?v=202610181404"></script>
+<script src="admin.js?v=202610181445"></script>
 </body>
 </html>

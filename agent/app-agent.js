@@ -467,7 +467,8 @@
   const toBottom = () => { scroller.scrollTop = scroller.scrollHeight; };
   // Une fois la réponse terminée, on remonte au début de la réponse
   const toTopOf = (el) => {
-    const top = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop - 12;
+    const z = parseFloat(getComputedStyle(document.body).zoom) || 1; // zoom grand écran
+    const top = (el.getBoundingClientRect().top - scroller.getBoundingClientRect().top) / z + scroller.scrollTop - 12;
     scroller.scrollTo({ top: Math.max(0, top), behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 

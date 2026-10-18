@@ -178,7 +178,8 @@
       const show = (e) => {
         tip.innerHTML = `<b>${esc(b.full)}</b>` + SERIES.map((s) => `<div class="r"><span><i style="background:${s.color}"></i>${s.label}</span><strong>${b.g[s.k]}</strong></div>`).join("");
         tip.hidden = false;
-        tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 10, e.clientX + 14) + "px"; tip.style.top = Math.max(10, e.clientY - tip.offsetHeight - 12) + "px";
+        const z = parseFloat(getComputedStyle(document.body).zoom) || 1; // zoom grand écran
+        tip.style.left = Math.min(window.innerWidth / z - tip.offsetWidth - 10, e.clientX / z + 14) + "px"; tip.style.top = Math.max(10, e.clientY / z - tip.offsetHeight - 12) + "px";
       };
       h.addEventListener("mousemove", show); h.addEventListener("click", show); h.addEventListener("mouseleave", () => (tip.hidden = true));
     });
