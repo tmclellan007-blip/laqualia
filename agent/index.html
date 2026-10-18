@@ -645,6 +645,30 @@ body.learn #clear .top-new-l{display:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @media (prefers-reduced-motion:no-preference){.msg{animation:in .22s ease-out}@keyframes in{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}}
+
+/* simulation à la voix */
+.input-seg{grid-template-columns:repeat(2,minmax(0,1fr))}
+.input-seg b{display:inline-flex;align-items:center;gap:8px}
+.input-seg b svg{width:18px;height:18px}
+.input-seg button:disabled{opacity:.45;cursor:not-allowed}
+.mic{width:44px;height:44px;border:0;border-radius:999px;background:#ede5ff;color:#401098;display:grid;place-items:center;flex:none;position:relative;transition:background .15s,color .15s}
+.mic svg{width:21px;height:21px}
+.mic[hidden]{display:none}
+.mic:hover{background:#dccdfb}
+.mic[data-state="listening"]{background:#dc2626;color:#fff}
+.mic[data-state="speaking"]{background:#e8f5ec;color:#15803d}
+@media (prefers-reduced-motion:no-preference){
+  .mic[data-state="listening"]::after{content:"";position:absolute;inset:-5px;border-radius:999px;border:2px solid #dc2626;animation:micpulse 1.3s ease-out infinite}
+  @keyframes micpulse{from{opacity:.8;transform:scale(.9)}to{opacity:0;transform:scale(1.25)}}
+  .callbar.talking .cb-av{animation:talkring 1s ease-in-out infinite}
+  @keyframes talkring{50%{box-shadow:0 0 0 6px rgb(134 239 172/.35)}}
+}
+body.voice-call .composer-meta .keys{display:none}
+body.voice-call .sim-hint{font-weight:700;color:#2b0f6e}
+body.voice-call .sim-hint.on{color:#b91c1c}
+.box.listening{border-color:#dc2626;box-shadow:0 4px 18px rgb(220 38 38/.18)}
+.cb-voice{font-size:12px;font-weight:800;background:#ffffff26;border-radius:999px;padding:3px 9px;margin-left:6px}
+@media (max-width:860px){.input-seg button span{display:none}.input-seg button{align-items:center}}
 </style>
 </head>
 <body>
@@ -713,7 +737,7 @@ body.learn #clear .top-new-l{display:none}
     </div>
     <div class="callbar" id="callBar" hidden>
       <div class="cb-av" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg><i></i></div>
-      <div class="cb-txt"><b>Client fictif</b><span><span class="cb-live">Appel en cours</span> · <span class="cb-time" id="callTimer">00:00</span> · <span id="callLevel"></span></span></div>
+      <div class="cb-txt"><b>Client fictif</b><span><span class="cb-live">Appel en cours</span> · <span class="cb-time" id="callTimer">00:00</span> · <span id="callLevel"></span><span class="cb-voice" id="callVoice" hidden>🎙 Voix</span></span></div>
       <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg><span>Raccrocher</span></button>
     </div>
 
@@ -735,7 +759,7 @@ body.learn #clear .top-new-l{display:none}
             <div class="sh-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div>
             <div>
               <h1>Prêt pour un appel<span class="orange">?</span></h1>
-              <p class="sim-lead">Un client fictif vous appelle. Il parle en premier ; vous répondez une réplique à la fois. Rétroaction à la fin.</p>
+              <p class="sim-lead">Un client fictif vous appelle. Il parle en premier ; vous répondez une réplique à la fois, au clavier ou à voix haute. Rétroaction à la fin.</p>
             </div>
           </div>
           <div class="sim-setup">
@@ -752,6 +776,14 @@ body.learn #clear .top-new-l{display:none}
               <div class="theme-chips" id="themeChips" role="group" aria-labelledby="themeLab"></div>
               <span class="theme-hint" id="themeHint"></span>
             </div>
+            <div class="ss-step">
+              <div class="ss-lab"><span class="ss-n">3</span><span id="inputLab">Façon de répondre</span></div>
+              <div class="level-seg input-seg" id="inputSeg" role="radiogroup" aria-labelledby="inputLab">
+                <button type="button" role="radio" data-input="clavier"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Clavier</b><span>Le client écrit, vous tapez vos réponses</span></button>
+                <button type="button" role="radio" data-input="voix"><b><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Voix</b><span>Le client parle, vous répondez à voix haute</span></button>
+              </div>
+              <span class="theme-hint" id="inputHint"></span>
+            </div>
             <div class="ss-go">
               <button type="button" class="sim-call" id="simCall"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Recevoir un appel simulé</button>
               <button type="button" class="sim-mute" id="muteBtn" role="switch" aria-checked="true"><span class="sw" aria-hidden="true"></span><span class="sw-l">Sonnerie</span></button>
@@ -766,10 +798,11 @@ body.learn #clear .top-new-l{display:none}
       <div class="composer-in">
         <form class="box" id="form">
           <textarea id="q" rows="1" placeholder="Écrivez votre question…" aria-label="Votre question" enterkeyhint="send"></textarea>
+          <button class="mic" id="mic" type="button" aria-label="Parler" title="Parler" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
           <button class="send" id="send" type="submit" aria-label="Envoyer" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
           <button class="stop" id="stop" type="button" aria-label="Arrêter la réponse" hidden><svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></button>
         </form>
-        <div class="composer-meta"><span class="sim-hint">Parlez comme au téléphone · vos réponses restent fictives</span><span class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</span><span class="keys"><kbd>Entrée</kbd> envoyer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> nouvelle ligne</span></div>
+        <div class="composer-meta"><span class="sim-hint" id="simHint">Parlez comme au téléphone · vos réponses restent fictives</span><span class="fine">L'assistant peut se tromper. Au moindre doute sur l'état d'un animal, transférez au personnel clinique.</span><span class="keys"><kbd>Entrée</kbd> envoyer · <kbd>Maj</kbd>+<kbd>Entrée</kbd> nouvelle ligne</span></div>
         <div class="under" id="under">
           <div class="under-lab">Suggestions</div>
           <div class="cards" id="examples"></div>
@@ -808,6 +841,6 @@ body.learn #clear .top-new-l{display:none}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610171954"></script>
+<script src="app-agent.js?v=202610180845"></script>
 </body>
 </html>

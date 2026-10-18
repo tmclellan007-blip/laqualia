@@ -725,10 +725,13 @@
     document.body.classList.add("in-call");
     $("callLevel").textContent = LEVEL_NAMES[level];
     sim.level = level;
+    voiceStartCall();
     sim.start = Date.now();
     const tick = () => { const s = Math.floor((Date.now() - sim.start) / 1000); $("callTimer").textContent = `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`; };
     tick(); sim.timer = setInterval(tick, 1000);
-    simNote("Vous avez décroché. Le client parle en premier ; répondez-lui comme au téléphone.");
+    simNote(sim.voice ? (vc.micOK ? "Vous avez décroché. Écoutez le client, puis répondez à voix haute : le micro s'ouvre quand il a fini de parler et votre réponse part après une courte pause."
+      : "Vous avez décroché. Le client parle à voix haute ; ce navigateur n'offre pas la dictée, répondez au clavier (Chrome, Edge ou Safari permettent de répondre à la voix).")
+      : "Vous avez décroché. Le client parle en premier ; répondez-lui comme au téléphone.");
     updateSimComposer();
     simTurn("L'appel commence : la réceptionniste vient de décrocher. Dis ta première réplique de client.");
   }
@@ -795,7 +798,7 @@
     const histForCall = sim.turns.slice(-16);
     try {
       const raw = await simAsk({ phase: "client", scenario: `${sim.type[0]} — ${sim.type[1]}`, question: learnerText, history: histForCall },
-        (t) => { const clean = speech(t); if (clean) b.textContent = clean; if (nearBottom()) toBottom(); }, myCtl.signal);
+        (t) => { const clean = speech(t); if (clean) { b.textContent = clean; voiceFeed(clean, false); } if (nearBottom()) toBottom(); }, myCtl.signal);
       if (myCtl !== sim.ctl) return;
       const hungUp = /\[\s*FIN D['’]APPEL\s*\]/i.test(raw);
       const clean = speech(raw);
@@ -803,7 +806,17 @@
       b.textContent = clean || "…";
       sim.turns.push({ role: "user", content: learnerText }, { role: "assistant", content: clean });
       sim.log.push({ who: "Client", text: clean });
-      if (hungUp) { simNote("Le client a raccroché."); endCall(); }
+      if (sim.voice) {
+        voiceFeed(clean, true);
+        // Le client finit sa phrase avant de raccrocher ; sinon le micro s'ouvre quand il a fini
+        voiceAfterSpeech(() => {
+          if (myCtl !== sim.ctl && sim.ctl) return;
+          if (hungUp) { simNote("Le client a raccroché."); endCall(); }
+          else voiceListen();
+        });
+        if (!hungUp && choices.length) showChoices(b, choices);
+      }
+      else if (hungUp) { simNote("Le client a raccroché."); endCall(); }
       else if (choices.length) showChoices(b, choices);
     } catch (e) {
       if (myCtl !== sim.ctl) return;
@@ -812,13 +825,14 @@
     } finally {
       if (myCtl === sim.ctl) sim.ctl = null;
       updateSimComposer();
-      if (sim.active && !sim.ended) $("q").focus();
+      if (sim.active && !sim.ended && !sim.voice) $("q").focus();
     }
   }
 
   function simReply() {
     const t = $("q").value.trim();
     if (!t || !sim.active || sim.ended) return;
+    voiceStopListening();
     $("q").value = ""; autosize();
     document.querySelectorAll(".sim-choices button").forEach((y) => (y.disabled = true));
     learnerBubble(t);
@@ -829,6 +843,7 @@
   function endCall() {
     if (!sim.active || sim.ended) return;
     sim.ended = true;
+    voiceHalt();
     sim.ctl?.abort(); sim.ctl = null;
     clearInterval(sim.timer); $("callBar").hidden = true;
     document.body.classList.remove("in-call");
@@ -847,7 +862,7 @@
     box.innerHTML = `<div class="box-head">${SVG_BOOK}Rétroaction · scénario « ${esc(sim.type[0])} »</div><div class="box-body"><span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Analyse de votre appel…</span></div>`;
     col.append(who, box); m.append(av, col); $("simThread").append(m); toBottom();
     const body = box.querySelector(".box-body");
-    const transcript = `Scénario : ${sim.type[0]} (${sim.type[1]})\nNiveau : ${LEVEL_NAMES[sim.level || level]}\n\n` + sim.log.map((l) => `${l.who} : ${l.text}`).join("\n");
+    const transcript = `Scénario : ${sim.type[0]} (${sim.type[1]})\nNiveau : ${LEVEL_NAMES[sim.level || level]}\n${sim.voice && vc.micOK ? "Mode : appel à la voix ; les réponses de l'apprenant sont une transcription automatique de sa voix. N'évalue ni l'orthographe ni la ponctuation, et ignore les petites erreurs de transcription.\n" : ""}\n` + sim.log.map((l) => `${l.who} : ${l.text}`).join("\n");
     sim.ctl = new AbortController();
     const myCtl = sim.ctl;
     try {
@@ -881,6 +896,7 @@
   // Arrête tout : sonnerie, requête en cours, minuterie, conversation fictive
   function stopSim(clear) {
     stopRing();
+    voiceHalt();
     sim.ctl?.abort(); sim.ctl = null;
     clearInterval(sim.timer);
     sim.active = false; sim.ended = false; sim.turns = []; sim.log = [];
@@ -888,6 +904,191 @@
     document.body.classList.remove("in-call");
     if (clear) { $("simThread").textContent = ""; $("simThread").hidden = true; $("simHome").hidden = false; }
   }
+
+
+  /* =====================================================================
+     SIMULATION À LA VOIX — le client parle (synthèse vocale du navigateur),
+     la réceptionniste répond à voix haute (dictée du navigateur).
+     Rien n'est enregistré : l'audio reste dans le navigateur.
+     ===================================================================== */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const TTS = "speechSynthesis" in window ? window.speechSynthesis : null;
+  const vc = {
+    ttsOK: !!TTS, micOK: !!SR, denied: false,
+    voice: null, pitch: 1, spoken: 0, pending: 0, utts: [], after: null,
+    rec: null, listening: false, want: false, silence: null, base: "", restarts: 0,
+  };
+  let inputMode = vc.ttsOK && store.get("lq-input") === "voix" ? "voix" : "clavier";
+  try { TTS?.getVoices(); TTS?.addEventListener?.("voiceschanged", () => TTS.getVoices()); } catch {}
+
+  function renderInput() {
+    document.querySelectorAll("#inputSeg button").forEach((b) => {
+      b.setAttribute("aria-checked", String(b.dataset.input === inputMode));
+      if (b.dataset.input === "voix" && !vc.ttsOK) { b.disabled = true; b.title = "Non disponible dans ce navigateur"; }
+    });
+    $("inputHint").textContent = !vc.ttsOK ? "La voix n'est pas disponible dans ce navigateur. Essayez Chrome, Edge ou Safari."
+      : inputMode === "clavier" ? "Vous lisez le client et tapez vos réponses."
+      : vc.micOK ? "Le navigateur vous demandera l'accès au micro. Utilisez des écouteurs si possible ; rien n'est enregistré."
+      : "Le client parlera, mais ce navigateur n'offre pas la dictée : vous répondrez au clavier. Chrome, Edge ou Safari permettent de répondre à la voix.";
+  }
+  document.querySelectorAll("#inputSeg button").forEach((b) => {
+    b.onclick = () => { if (sim.active || b.disabled) return; inputMode = b.dataset.input; store.set("lq-input", inputMode); renderInput(); };
+  });
+
+  function pickVoice() {
+    const all = (TTS?.getVoices() || []).filter((v) => /^fr/i.test(v.lang));
+    if (!all.length) return null;
+    const ca = all.filter((v) => /CA/i.test(v.lang));
+    const pool = ca.length ? ca : all;
+    const good = pool.filter((v) => /natural|neural|online|premium|enhanced|google|amélior/i.test(v.name));
+    const p = good.length ? good : pool;
+    return p[Math.floor(Math.random() * p.length)];
+  }
+
+  function voiceStartCall() {
+    sim.voice = inputMode === "voix" && vc.ttsOK;
+    document.body.classList.toggle("voice-call", sim.voice);
+    $("callVoice").hidden = !sim.voice;
+    vc.spoken = 0; vc.pending = 0; vc.utts = []; vc.after = null; vc.restarts = 0;
+    if (!sim.voice) { micUI(); return; }
+    vc.voice = pickVoice();
+    vc.pitch = 0.92 + Math.random() * 0.16; // un client ne ressemble pas à l'autre
+    // Débloque la synthèse dans le geste « Répondre » (exigé par Safari iOS)
+    try { TTS.cancel(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; TTS.speak(u); } catch {}
+    // Demande l'accès au micro tout de suite, pendant le geste « Répondre »
+    if (vc.micOK && !vc.denied && navigator.mediaDevices?.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then((st) => st.getTracks().forEach((t) => t.stop()))
+        .catch((e) => {
+          if (e && (e.name === "NotAllowedError" || e.name === "NotFoundError" || e.name === "SecurityError")) {
+            vc.denied = true; micUI();
+            simNote(e.name === "NotFoundError" ? "Aucun micro détecté : le client parlera, vous répondrez au clavier."
+              : "Accès au micro refusé : le client parlera, vous répondrez au clavier. Pour répondre à la voix, autorisez le micro pour ce site.");
+          }
+        });
+    }
+    micUI();
+  }
+
+  // Ce qui se lit à voix haute : sans indications de jeu ni guillemets
+  const forTTS = (t) => t.replace(/\([^)]*\)/g, " ").replace(/\*[^*]*\*/g, " ").replace(/[«»"“”_#>]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
+
+  // Lit le client au fil du texte, phrase par phrase, pour réduire l'attente
+  function voiceFeed(clean, final) {
+    if (!sim.voice || !sim.active || sim.ended) return;
+    if (vc.spoken === -1) vc.spoken = 0;
+    const rest = clean.slice(vc.spoken);
+    let cut = 0;
+    if (final) cut = rest.length;
+    else { const re = /[.!?…]+[»")]?\s+/g; let m; while ((m = re.exec(rest))) cut = m.index + m[0].length; }
+    if (!cut) return;
+    vc.spoken += cut;
+    say(rest.slice(0, cut));
+    if (final) vc.spoken = -1; // prochaine réplique : on repart de zéro
+  }
+  function say(text) {
+    const t = forTTS(text);
+    if (!t) return;
+    voiceStopListening();
+    const u = new SpeechSynthesisUtterance(t);
+    if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
+    u.rate = 1.02; u.pitch = vc.pitch;
+    vc.pending++; vc.utts.push(u); // garder une référence (sinon Chrome perd la fin)
+    const done = () => {
+      if (u._done) return; u._done = true;
+      vc.pending = Math.max(0, vc.pending - 1);
+      vc.utts = vc.utts.filter((x) => x !== u);
+      if (!vc.pending) { talking(false); const f = vc.after; vc.after = null; f?.(); }
+    };
+    u.onend = done; u.onerror = done;
+    // Filets de sécurité si le navigateur n'annonce jamais la fin (ou ne commence jamais)
+    u.onstart = () => setTimeout(done, 4000 + t.length * 110);
+    setTimeout(() => { if (!vc.utts.length || vc.utts[0] === u) setTimeout(done, 4000 + t.length * 110); }, 12000);
+    talking(true);
+    TTS.speak(u);
+  }
+  function voiceAfterSpeech(f) { if (!vc.pending) f(); else vc.after = f; }
+  function talking(on) {
+    $("callBar").classList.toggle("talking", on);
+    micUI();
+  }
+
+  function voiceListen() {
+    if (!sim.voice || !vc.micOK || vc.denied || !sim.active || sim.ended || vc.listening) return;
+    if (vc.pending) { try { TTS.cancel(); } catch {} vc.pending = 0; vc.after = null; talking(false); }
+    let r;
+    try { r = new SR(); } catch { return; }
+    r.lang = "fr-CA"; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+    vc.rec = r; vc.listening = true; vc.want = true;
+    vc.base = $("q").value.trim() ? $("q").value.trim() + " " : "";
+    r.onresult = (e) => {
+      vc.restarts = 0;
+      let fin = "", interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const x = e.results[i];
+        if (x.isFinal) fin += x[0].transcript + " "; else interim += x[0].transcript;
+      }
+      const txt = (vc.base + fin + interim).replace(/\s+/g, " ").trim();
+      $("q").value = txt ? txt.charAt(0).toUpperCase() + txt.slice(1) : ""; autosize();
+      clearTimeout(vc.silence);
+      // Courte pause = fin de la réplique : envoi automatique
+      vc.silence = setTimeout(() => { if (vc.listening && $("q").value.trim()) simReply(); }, interim ? 2300 : 1500);
+    };
+    r.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed" || e.error === "audio-capture") {
+        vc.denied = true; vc.want = false;
+        simNote(e.error === "audio-capture" ? "Aucun micro détecté : répondez au clavier." : "Accès au micro refusé : autorisez le micro pour ce site (icône à gauche de l'adresse), ou répondez au clavier.");
+      }
+    };
+    r.onend = () => {
+      vc.listening = false; vc.rec = null;
+      // Le navigateur coupe l'écoute après un silence : on la relance tant que c'est à la réceptionniste de parler
+      if (vc.want && sim.active && !sim.ended && !vc.denied && vc.restarts < 6) { vc.restarts++; setTimeout(voiceListen, 200); return; }
+      vc.want = false; micUI();
+    };
+    try { r.start(); } catch { vc.listening = false; vc.rec = null; }
+    micUI();
+  }
+  function voiceStopListening() {
+    vc.want = false; clearTimeout(vc.silence);
+    if (vc.rec) { try { vc.rec.abort(); } catch {} }
+    vc.rec = null; vc.listening = false;
+    micUI();
+  }
+  function voiceHalt() {
+    voiceStopListening();
+    vc.after = null; vc.pending = 0; vc.utts = []; vc.spoken = 0;
+    try { TTS?.cancel(); } catch {}
+    $("callBar").classList.remove("talking");
+    document.body.classList.remove("voice-call");
+    $("callVoice").hidden = true;
+    micUI();
+  }
+
+  const SIM_HINT = $("simHint").textContent;
+  function micUI() {
+    const mic = $("mic"), hint = $("simHint");
+    const show = !!(sim.voice && sim.active && !sim.ended && vc.micOK && !vc.denied);
+    mic.hidden = !show;
+    $("form").classList.toggle("listening", show && vc.listening);
+    hint.classList.toggle("on", show && vc.listening);
+    if (!sim.voice || !sim.active || sim.ended) { hint.textContent = SIM_HINT; return; }
+    const state = vc.pending ? "speaking" : vc.listening ? "listening" : "idle";
+    mic.dataset.state = state;
+    mic.setAttribute("aria-label", state === "listening" ? "Arrêter l'écoute" : state === "speaking" ? "Interrompre le client et parler" : "Parler");
+    mic.title = mic.getAttribute("aria-label");
+    hint.textContent = state === "speaking" ? "🔊 Le client parle… écoutez-le"
+      : state === "listening" ? "🎙 À vous : parlez, la réponse part après une courte pause"
+      : !show ? "Répondez au clavier"
+      : "Touchez le micro pour parler, ou écrivez votre réponse";
+  }
+  $("mic").onclick = () => {
+    if (vc.listening) { voiceStopListening(); $("q").focus(); }
+    else voiceListen();
+  };
+  // Si la réceptionniste se met à taper, on arrête la dictée pour ne pas écraser son texte
+  $("q").addEventListener("keydown", (e) => { if (vc.listening && e.key !== "Enter") voiceStopListening(); });
+  renderInput();
 
   $("learnToggle").onclick = () => setLearn(!sim.on);
   $("learnExit").onclick = () => setLearn(false);
