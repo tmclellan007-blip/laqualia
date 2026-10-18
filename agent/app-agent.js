@@ -26,7 +26,30 @@
     [/deuil|euthanasie|pleure|décès/i, "Moment délicat"],
     [/.*/, "Client"],
   ];
-  const tagFor = (t) => TAGS.find(([re]) => re.test(t))[1];
+  const TAGS_TSA = [
+    [/urgen|alerter|immédiat|intoxic|transfusion/i, "Sécurité"],
+    [/transmission|sbar|transmettre/i, "Transmission"],
+    [/veut dire|signifie|qu'est-ce|différence|«/i, "Lexique clinique"],
+    [/surveill|paramètre|réveil|fluido|perfusion|calcul|douleur/i, "Surveillance"],
+    [/client/i, "Explication au client"],
+    [/.*/, "Procédure"],
+  ];
+  const SCENARIOS_TSA = [
+    "un chat hospitalisé dont la fréquence respiratoire augmente pendant la nuit",
+    "un chien au réveil d'une anesthésie qui reste hypotherme",
+    "un patient sous fluidothérapie dont le cathéter semble infiltré",
+    "un vétérinaire qui te demande une transmission rapide avant sa chirurgie",
+    "un client qui comprend mal les consignes post-opératoires déjà validées",
+    "une ordonnance où une donnée manque pour vérifier un débit de perfusion",
+    "un chien admis pour vomissements dont l'anamnèse est incomplète",
+    "un patient diabétique hospitalisé avec une glycémie inattendue",
+    "la préparation d'une salle pour un nettoyage dentaire sous anesthésie",
+    "un collègue qui veut donner un médicament sans ordonnance écrite",
+  ];
+  let role = "reception";
+  const isTsa = () => role === "tsa";
+  const RP = () => (isTsa() ? cfg.tsa || {} : cfg);
+  const tagFor = (t) => (isTsa() ? TAGS_TSA : TAGS).find(([re]) => re.test(t))[1];
 
   let cfg = { name: "Assistant La Qualia", examples: [] };
   let turns = [];
@@ -48,7 +71,7 @@
   try { shown = new Set(JSON.parse(store.get("lq-shown") || "[]")); } catch {}
 
   /* ---------- exemples qui tournent ---------- */
-  function pool() { return (Array.isArray(cfg.examples) ? cfg.examples : String(cfg.examples || "").split("\n")).map((s) => String(s).trim()).filter(Boolean); }
+  function pool() { const ex = RP().examples || []; return (Array.isArray(ex) ? ex : String(ex).split("\n")).map((s) => String(s).trim()).filter(Boolean); }
   function pickExamples(n, filter) {
     const all = filter ? pool().filter(filter) : pool();
     let fresh = all.filter((t) => !shown.has(t));
@@ -59,8 +82,36 @@
     store.set("lq-shown", JSON.stringify([...shown]));
     return out;
   }
+  const TSA_TOOLS = [
+    ["Transmission au vétérinaire", "Structurer un SBAR clair", '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+      "Aide-moi à préparer une transmission au vétérinaire (format SBAR).\nPatient (fictif ou dépersonnalisé) : \nSituation : \nContexte et antécédents connus : \nObservations et signes vitaux : \nCe que je demande au vétérinaire : "],
+    ["Note clinique", "Faits, dossier, à confirmer", '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+      "Aide-moi à structurer une note clinique à faire valider.\nType de note (admission, soins, surveillance, congé) : \nFaits observés : \nDonnées du dossier : \nÉléments à confirmer : "],
+    ["Consultation d'un protocole", "Ce que prévoit l'établissement", '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M9 7h7M9 11h5"/>',
+      "Que prévoit le protocole de l'établissement pour : "],
+    ["Surveillance et observations", "Liste de vérification", '<path d="M3 12h4l3-8 4 16 3-8h4"/>',
+      "Prépare une liste de surveillance à partir des protocoles approuvés.\nType de patient ou procédure : \nConsignes et fréquence demandées par le vétérinaire : "],
+    ["Explication au client", "Consignes déjà validées", '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/>',
+      "Aide-moi à expliquer au client des consignes déjà validées par le vétérinaire.\nConsignes validées : \nContexte du client : "],
+    ["Formation et simulation", "Cas fictif avec quiz", '<path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>', null],
+  ];
   function renderWelcomeCards() {
     const el = $("examples"); el.textContent = "";
+    if (isTsa()) {
+      TSA_TOOLS.forEach(([t, sub, ico, tpl]) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "card tool";
+        b.innerHTML = `<span class="tl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico}</svg></span><span class="tl-t"><b>${esc(t)}</b><small>${esc(sub)}</small></span>`;
+        b.onclick = () => {
+          if (!tpl) { startScenario(); return; }
+          hideCarry();
+          const q = $("q"); q.value = tpl; autosize(); q.focus();
+          const firstBlank = tpl.indexOf(" : \n"); const pos = firstBlank > 0 ? firstBlank + 3 : tpl.length;
+          try { q.setSelectionRange(pos, pos); } catch {}
+        };
+        el.append(b);
+      });
+      return;
+    }
     const t = document.createElement("button");
     t.type = "button"; t.className = "card train";
     t.innerHTML = '<span class="tag">Entraînement</span>Me mettre en situation d\'appel';
@@ -99,12 +150,16 @@
     });
   }
   const SCENE_FORMAT = "\n\n(Format MISE EN SITUATION : contexte en 2-3 phrases, réplique du client entre guillemets, puis un bloc ```quiz en JSON valide avec 2 ou 3 questions de type \"choix\" ou \"vraifaux\", chacune avec \"bonne\" et \"explication\". N'utilise pas [EN DIRECT] ni [APPRENTISSAGE].)";
+  const SCENE_FORMAT_TSA = "\n\n(Format MISE EN SITUATION TSA : commence par « Cas fictif », donne les données fournies par le scénario en liste courte, puis la demande du vétérinaire, du client ou du collègue. Ne donne pas les informations que l'apprenant devrait demander. Termine par un bloc ```quiz en JSON valide avec 2 ou 3 questions de type \"choix\" ou \"vraifaux\", chacune avec \"bonne\" et \"explication\" ; signale dans les explications ce qui exige le vétérinaire. N'utilise ni [EN DIRECT], ni [APPRENTISSAGE], ni le format en trois sections.)";
+  const sceneFormat = () => (isTsa() ? SCENE_FORMAT_TSA : SCENE_FORMAT);
   function startScenario() {
     closeMenu();
+    hideCarry();
     inScenario = true;
-    const sc = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
-    const label = `Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`;
-    send(label + SCENE_FORMAT, label);
+    const list = isTsa() ? SCENARIOS_TSA : SCENARIOS;
+    const sc = list[Math.floor(Math.random() * list.length)];
+    const label = isTsa() ? `Mets-moi en situation : je suis TSA et je gère ${sc}.` : `Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`;
+    send(label + sceneFormat(), label);
   }
 
   /* ---------- config ---------- */
@@ -112,9 +167,9 @@
     $("agentName").textContent = cfg.name || "Assistant La Qualia";
     $("orgName").textContent = cfg.etablissement || "Hôpital vétérinaire du Ruisseau";
     $("agentTag").textContent = cfg.tag || "";
-    $("disclaimerText").textContent = cfg.disclaimer || "";
-    $("disclaimer").hidden = !cfg.disclaimer;
-    if (cfg.name) document.title = cfg.name;
+    $("disclaimerText").textContent = RP().disclaimer || cfg.disclaimer || "";
+    $("disclaimer").hidden = !$("disclaimerText").textContent;
+    if (cfg.name) document.title = isTsa() ? (RP().name || cfg.name) : cfg.name;
     renderWelcomeCards();
     renderSideList();
     renderModels();
@@ -238,13 +293,32 @@
     more.hidden = !long;
     sec.classList.toggle("is-short", !long);
   }
+  const SVG_STETH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg>';
+  // Réponse TSA : un seul encadré, sections et statuts documentaires mis en évidence
+  function tsaHtml(text) {
+    let h = md(text)
+      .replace(/<li>\[\s?\]\s*/g, '<li class="task">')
+      .replace(/<strong>\s*(Vérifié dans la source)\s*<\/strong>/gi, '<span class="st st-ok">$1</span>')
+      .replace(/<strong>\s*(Général)\s*<\/strong>/g, '<span class="st st-gen">$1</span>')
+      .replace(/<strong>\s*(À confirmer)\s*<\/strong>/g, '<span class="st st-check">$1</span>')
+      .replace(/<strong>\s*(Validation vétérinaire requise)\s*<\/strong>/gi, "$1")
+      .replace(/Validation vétérinaire requise/g, '<span class="st st-vet">Validation vétérinaire requise</span>')
+      .replace(/<h3>([^<]*(vérifier|validation)[^<]*)<\/h3>/i, '<h3 class="h-check">$1</h3>')
+      .replace(/<h3>([^<]*sources?[^<]*)<\/h3>/i, '<h3 class="h-src">$1</h3>');
+    return enhance(h);
+  }
   function renderAnswerInner(body, text, done) {
+    if (isTsa() && !inScenario) {
+      body.dataset.live = "";
+      body.innerHTML = `<section class="box-tsa" aria-label="Soutien clinique"><div class="box-head">${SVG_STETH}Soutien clinique<span class="bh-note">À valider par l'équipe vétérinaire</span></div><div class="box-body">${text.trim() ? tsaHtml(text) : '<span class="skel"></span><span class="skel short"></span>'}</div></section>`;
+      return;
+    }
     const p = splitAnswer(text, done);
     if (p.pending) return;
     if (p.plain !== undefined) {
       body.dataset.live = "";
       body.innerHTML = inScenario
-        ? `<section class="box-learn box-scene"><div class="box-head">${SVG_PHONE}Mise en situation</div><div class="box-body">${md(p.plain)}</div></section>`
+        ? `<section class="box-learn box-scene"><div class="box-head">${isTsa() ? SVG_STETH : SVG_PHONE}Mise en situation${isTsa() ? " · cas fictif" : ""}</div><div class="box-body">${md(p.plain)}</div></section>`
         : md(p.plain);
       return;
     }
@@ -331,7 +405,7 @@
         const go = document.createElement("button"); go.type = "button"; go.className = "qz-next"; go.textContent = "Continuer l'appel";
         go.onclick = () => {
           const detail = qs.map((q, i) => `Q${i + 1} ${results[i] ? "réussie" : "manquée"}`).join(", ");
-          send(`Résultats du quiz : ${n}/${results.length} (${detail}). Continue la mise en situation.` + SCENE_FORMAT, `Continuer l'appel · ${n}/${results.length}`);
+          send(`Résultats du quiz : ${n}/${results.length} (${detail}). Continue la mise en situation.` + sceneFormat(), `Continuer l'appel · ${n}/${results.length}`);
         };
         const nw = document.createElement("button"); nw.type = "button"; nw.className = "qz-new"; nw.textContent = "Nouvelle mise en situation";
         nw.onclick = startScenario;
@@ -408,6 +482,7 @@
     if (ctl) { ctl.abort(); await running; }
     if (/^(mets-moi en situation|résultats du quiz)/i.test(q) || /mise en situation/i.test(q)) inScenario = true;
     $("q").value = ""; autosize();
+    hideCarry();
     const qm = addQuestion(display || q);
     const { m, col, body } = addAnswer();
     if (!cfg.apiUrl) { body.innerHTML = '<p class="err">L\'assistant n\'est pas encore activé.</p>'; return; }
@@ -425,13 +500,14 @@
     try {
       const res = await fetch(cfg.apiUrl, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-agent-code": code },
-        body: JSON.stringify({ question: q, history: turns.slice(-8), tier, prenom }),
+        headers: authHeaders(),
+        body: JSON.stringify({ question: q, history: turns.slice(-8), tier, prenom, role }),
         signal: ctl.signal,
       });
       if (!res.ok) {
         let msg = "La réponse a échoué. Réessayez.";
         try { msg = (await res.json()).error || msg; } catch {}
+        if (res.status === 403 && isTsa()) { tsaDenied(msg); body.innerHTML = `<p class="err">${esc(msg)}</p>`; return; }
         if (res.status === 401) {
           qm.remove(); m.remove();
           if (!$("thread").children.length) $("empty").hidden = false;
@@ -510,6 +586,7 @@
   }
 
   function resetConversation() {
+    try { hideCarry(); } catch {}
     if (sim.on) { stopSim(true); closeMenu(); return; }
     ctl?.abort(); turns = []; inScenario = false;
     convId = null; convMsgs = []; renderHistory();
@@ -576,7 +653,7 @@
      ===================================================================== */
   let convId = null, convMsgs = [];
   const HIST_MAX = 40, HIST_MSGS = 30;
-  const histKey = () => "lq-hist-" + (String(prenom || "invite").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-") || "invite");
+  const histKey = () => "lq-hist-" + (isTsa() ? "tsa-" : "") + (String(prenom || "invite").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-") || "invite");
   function histLoad() {
     try { const a = JSON.parse(localStorage.getItem(histKey()) || "[]"); return Array.isArray(a) ? a.filter((c) => c && c.id && Array.isArray(c.m)) : []; } catch { return []; }
   }
@@ -701,6 +778,124 @@
   });
   setSideTab(store.get("lq-side-tab") || (histLoad().length ? "recent" : "faq"));
 
+
+  /* =====================================================================
+     ESPACES DE TRAVAIL : Réception / Équipe technique — TSA
+     L'onglet adapte l'interface ; l'accès TSA est vérifié par le relais
+     (code TSA), jamais seulement par l'onglet choisi dans la page.
+     ===================================================================== */
+  let tsaCode = store.get("lq-tsa-code") || "";
+  let tsaEnabled = false, tsaVerified = false;
+  function authHeaders() {
+    const h = { "content-type": "application/json", "x-agent-code": code };
+    if (isTsa() && tsaCode) h["x-tsa-code"] = tsaCode;
+    return h;
+  }
+  function hideCarry() { $("carry").hidden = true; }
+  function applyRole() {
+    document.body.classList.toggle("tsa", isTsa());
+    $("roleRec").setAttribute("aria-selected", String(!isTsa()));
+    $("roleTsa").setAttribute("aria-selected", String(isTsa()));
+    $("tsaLock").hidden = tsaVerified;
+    document.querySelector(".mc-ico").innerHTML = $(isTsa() ? "roleTsa" : "roleRec").querySelector(".rt-ico").innerHTML;
+    $("atMid").textContent = isTsa() ? "Soutien clinique" : "Formation";
+    $("atEnd").textContent = isTsa() ? "Équipe technique TSA" : "Équipe d'accueil vétérinaire";
+    $("helloSub").textContent = isTsa() ? "Sur quel cas ou quelle tâche travaillez-vous" : "Comment puis-je vous aider aujourd'hui";
+    $("askTitle").textContent = isTsa() ? "Décrivez le cas ou la tâche" : "Posez votre question ici";
+    $("askHint").textContent = isTsa() ? "Données fictives ou dépersonnalisées seulement : aucun nom de client ni numéro de dossier." : "Écrivez comme vous parleriez à une collègue d'expérience, puis appuyez sur Entrée.";
+    $("q").placeholder = isTsa() ? PH_TSA[0] : "Posez votre question ici…";
+    $("q").setAttribute("aria-label", $("askTitle").textContent);
+    $("sideTrainSub").textContent = isTsa() ? "Un cas fictif, avec quiz" : "Un appel court, avec quiz";
+    $("learnToggleSub").textContent = sim.on ? "Cliquer pour revenir au mode habituel" : (isTsa() ? "Échange fictif avec sonnerie" : "Appel fictif avec sonnerie");
+    $("lbRole").textContent = isTsa() ? "Équipe technique — TSA" : "Réception";
+    $("callWho").textContent = isTsa() ? "Interlocuteur fictif" : "Client fictif";
+    document.querySelector(".under-lab").textContent = isTsa() ? "Outils de l'équipe technique" : "Suggestions";
+    const lead = document.querySelector(".sim-lead");
+    if (lead) lead.textContent = isTsa()
+      ? "Un vétérinaire, un client ou un collègue fictif vous appelle. Il parle en premier ; vous répondez une réplique à la fois. Rétroaction clinique à la fin."
+      : "Un client fictif vous appelle. Il parle en premier ; vous répondez une réplique à la fois, au clavier ou à voix haute. Rétroaction à la fin.";
+    applyCfg();
+    loadThemes(); renderThemes();
+    renderHistory();
+    setConvTitle();
+  }
+  function switchRole(target, opts = {}) {
+    if (target === role) { closeMenu(); return; }
+    if (target === "tsa" && !tsaVerified) { openTsaBox(); return; }
+    // On ne réutilise pas la conversation dans l'autre espace : elle reste dans les Récents de son espace
+    const prevLabel = isTsa() ? "Équipe technique — TSA" : "Réception";
+    const prev = convMsgs.map((m) => m.d).filter(Boolean).slice(-5);
+    if (sim.on) setLearn(false);
+    resetConversation();
+    role = target;
+    store.set("lq-role", role);
+    applyRole();
+    closeMenu();
+    if (opts.silent) return;
+    $("carryTitle").textContent = isTsa() ? "Mode TSA — Soutien clinique activé" : "Mode Réception activé";
+    $("carryText").textContent = prev.length
+      ? `La conversation ${prevLabel} reste dans ses Récents et n'est pas transmise ici.`
+      : `Outils, suggestions et règles de l'agent : espace ${isTsa() ? "Équipe technique — TSA" : "Réception"}.`;
+    $("carrySum").hidden = true;
+    $("carryUse").hidden = !prev.length;
+    $("carryUse").onclick = () => {
+      const q = $("q");
+      q.value = `Contexte repris de l'espace ${prevLabel} (à confirmer) :\n${prev.map((x) => "- " + x.replace(/\s+/g, " ").slice(0, 160)).join("\n")}\n\nMa demande : `;
+      autosize(); hideCarry(); q.focus(); try { q.setSelectionRange(q.value.length, q.value.length); } catch {}
+    };
+    $("carry").hidden = false;
+  }
+  $("carryNo").onclick = hideCarry;
+  $("roleRec").onclick = () => switchRole("reception");
+  $("roleTsa").onclick = () => switchRole("tsa");
+  $("roleRec").parentElement.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const next = document.activeElement === $("roleRec") ? "roleTsa" : "roleRec";
+    $(next).focus();
+  });
+
+  function openTsaBox(message) {
+    const box = $("tsabox");
+    const err = $("tsaErr");
+    $("tsaCode").hidden = !tsaEnabled; $("tsaGo").hidden = !tsaEnabled;
+    $("tsaIntro").textContent = tsaEnabled
+      ? "Cet espace est réservé au personnel technique. Entrez le code TSA fourni par le responsable vétérinaire. Il sera retenu sur cet appareil."
+      : "L'espace Équipe technique — TSA n'est pas encore activé. Le responsable doit ajouter le code secret TSA_CODE dans le relais Cloudflare.";
+    err.hidden = !message; err.textContent = message || "";
+    $("tsaCode").value = "";
+    box.hidden = false;
+    setTimeout(() => (tsaEnabled ? $("tsaCode") : $("tsaCancel")).focus(), 30);
+  }
+  function closeTsaBox() { $("tsabox").hidden = true; }
+  $("tsaCancel").onclick = closeTsaBox;
+  $("tsabox").addEventListener("keydown", (e) => { if (e.key === "Escape") closeTsaBox(); });
+  async function checkTsa(candidate) {
+    if (!cfg.apiUrl) return { tsa: false, tsaOk: false };
+    const h = { "x-agent-code": code }; if (candidate) h["x-tsa-code"] = candidate;
+    const r = await fetch(cfg.apiUrl, { headers: h });
+    return r.ok ? r.json() : { tsa: false, tsaOk: false };
+  }
+  $("tsaForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const v = $("tsaCode").value.trim();
+    if (!v) return;
+    $("tsaGo").disabled = true;
+    try {
+      const st = await checkTsa(v);
+      if (st.tsaOk) {
+        tsaCode = v; store.set("lq-tsa-code", v); tsaVerified = true;
+        closeTsaBox(); switchRole("tsa");
+      } else { $("tsaErr").hidden = false; $("tsaErr").textContent = "Code TSA invalide. Vérifiez-le avec le responsable vétérinaire."; }
+    } catch { $("tsaErr").hidden = false; $("tsaErr").textContent = "Vérification impossible pour le moment. Réessayez."; }
+    finally { $("tsaGo").disabled = false; }
+  });
+  // Le relais a refusé l'accès TSA : on retire l'accès local et on revient à la Réception
+  function tsaDenied(msg) {
+    tsaVerified = false; tsaCode = ""; store.del("lq-tsa-code");
+    switchRole("reception", { silent: true });
+    openTsaBox(msg);
+  }
+
   $("sideNew").onclick = resetConversation;
   // Menu réduit (ordinateur) : icônes seulement, choix mémorisé
   function setSideMini(on) {
@@ -724,6 +919,17 @@
      MODE APPRENTISSAGE — simulateur d'appels (tout est fictif : aucun vrai
      appel, aucun dossier modifié, aucun message envoyé à l'équipe)
      ===================================================================== */
+  const SIM_TYPES_TSA = [
+    ["Transmission au vétérinaire", "le médecin vétérinaire reçoit la transmission de l'apprenant au sujet d'un patient hospitalisé fictif ; tu joues le vétérinaire et tu poses des questions précises"],
+    ["Surveillance hospitalisation", "le vétérinaire demande un point de surveillance sur un patient fictif dont les paramètres se dégradent légèrement ; tu joues le vétérinaire"],
+    ["Préparation de procédure", "le vétérinaire vérifie que tout est prêt avant une anesthésie ou une chirurgie fictive ; tu joues le vétérinaire"],
+    ["Consignes au client", "un client appelle après le congé de son animal pour comprendre des consignes déjà validées par le vétérinaire ; tu joues le client"],
+    ["Client inquiet post-op", "un client signale des signes après une chirurgie, dont certains peuvent exiger le vétérinaire ; tu joues le client"],
+    ["Urgence en hospitalisation", "un collègue signale qu'un patient hospitalisé fictif se dégrade rapidement ; tu joues le collègue"],
+  ];
+  const simTypes = () => (isTsa() ? SIM_TYPES_TSA : SIM_TYPES);
+  const themesKey = () => (isTsa() ? "lq-themes-tsa" : "lq-themes");
+  function loadThemes() { try { themes = JSON.parse(store.get(themesKey()) || "[]").filter((k) => simTypes().some(([n]) => n === k)); } catch { themes = []; } }
   const SIM_TYPES = [
     ["Rendez-vous", "prise ou changement de rendez-vous ; horaire chargé, client pressé ou exigeant"],
     ["Facturation", "question ou contestation d'une facture, d'un dépôt ou d'un estimé"],
@@ -738,24 +944,24 @@
   const LEVEL_NAMES = { debutant: "Débutant", intermediaire: "Intermédiaire", expert: "Expert" };
   let level = LEVEL_NAMES[store.get("lq-level")] ? store.get("lq-level") : "intermediaire";
   // Thématiques : aucune choisie = aléatoire parmi toutes
-  let themes = []; try { themes = JSON.parse(store.get("lq-themes") || "[]").filter((k) => SIM_TYPES.some(([n]) => n === k)); } catch {}
+  let themes = []; loadThemes();
   function renderThemes() {
     const box = $("themeChips"); box.textContent = "";
     const rand = document.createElement("button"); rand.type = "button"; rand.textContent = "Aléatoire";
     rand.setAttribute("aria-pressed", String(!themes.length));
     rand.onclick = () => { themes = []; saveThemes(); };
     box.append(rand);
-    SIM_TYPES.forEach(([name]) => {
+    simTypes().forEach(([name]) => {
       const b = document.createElement("button"); b.type = "button"; b.textContent = name;
       b.setAttribute("aria-pressed", String(themes.includes(name)));
       b.onclick = () => { themes = themes.includes(name) ? themes.filter((x) => x !== name) : [...themes, name]; saveThemes(); };
       box.append(b);
     });
-    $("themeHint").textContent = !themes.length ? "Un thème au hasard parmi les six, sans répéter le précédent."
+    $("themeHint").textContent = !themes.length ? `Un thème au hasard parmi les ${simTypes().length}, sans répéter le précédent.`
       : themes.length === 1 ? `Tous les appels porteront sur : ${themes[0]}.`
       : `Un thème au hasard parmi vos ${themes.length} choix.`;
   }
-  function saveThemes() { store.set("lq-themes", JSON.stringify(themes)); renderThemes(); }
+  function saveThemes() { store.set(themesKey(), JSON.stringify(themes)); renderThemes(); }
   function renderLevel() {
     document.querySelectorAll("#levelSeg button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.level === level)));
   }
@@ -797,7 +1003,7 @@
     document.body.classList.toggle("learn", on);
     $("learnToggle").setAttribute("aria-pressed", String(on));
     $("learnToggleText").textContent = on ? "Simulation complète" : "Simulation complète";
-    $("learnToggleSub").textContent = on ? "Cliquer pour revenir au mode habituel" : "Appel fictif avec sonnerie";
+    $("learnToggleSub").textContent = on ? "Cliquer pour revenir au mode habituel" : (isTsa() ? "Échange fictif avec sonnerie" : "Appel fictif avec sonnerie");
     $("learnToggle").title = on ? "Quitter la simulation complète" : "Lancer la simulation complète";
     store.set("lq-learn", on ? "1" : "0");
     closeMenu();
@@ -808,7 +1014,7 @@
       updateSimComposer();
     } else {
       stopSim(true);
-      $("q").placeholder = "Posez votre question ici…";
+      $("q").placeholder = isTsa() ? PH_TSA[0] : "Posez votre question ici…";
       $("q").disabled = false;
     }
     scroller.scrollTop = 0;
@@ -827,7 +1033,7 @@
     sim.ringing = true;
     $("simCall").disabled = true;
     $("ringPanel").hidden = false;
-    $("ringSub").textContent = "Client fictif · numéro de simulation";
+    $("ringSub").textContent = isTsa() ? "Interlocuteur fictif · simulation TSA" : "Client fictif · numéro de simulation";
     if (!muted) startSound();
     setTimeout(() => $("ringAnswer").focus(), 50);
     // Sans réponse après 40 s : appel manqué, la sonnerie s'arrête
@@ -854,7 +1060,7 @@
     const m = document.createElement("div"); m.className = "msg a sim-c";
     const av = document.createElement("div"); av.className = "c-av"; av.innerHTML = ICON_PERSON;
     const col = document.createElement("div"); col.className = "a-col";
-    const who = document.createElement("div"); who.className = "who"; who.textContent = "Client (fictif)";
+    const who = document.createElement("div"); who.className = "who"; who.textContent = isTsa() ? "Interlocuteur (fictif)" : "Client (fictif)";
     const b = document.createElement("div"); b.className = "c-bub";
     b.innerHTML = '<span class="thinking-line"><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>Le client parle…</span>';
     col.append(who, b); m.append(av, col); $("simThread").append(m); toBottom();
@@ -868,7 +1074,7 @@
 
   function answerCall() {
     stopRing();
-    const pool = themes.length ? SIM_TYPES.filter(([k]) => themes.includes(k)) : SIM_TYPES;
+    const pool = themes.length ? simTypes().filter(([k]) => themes.includes(k)) : simTypes();
     const pick = pool.length > 1 ? pool.filter(([k]) => k !== store.get("lq-last-sim")) : pool;
     sim.type = pick[Math.floor(Math.random() * pick.length)];
     store.set("lq-last-sim", sim.type[0]);
@@ -885,6 +1091,7 @@
     tick(); sim.timer = setInterval(tick, 1000);
     simNote(sim.voice ? (vc.micOK ? "Vous avez décroché. Écoutez le client, puis répondez à voix haute : le micro s'ouvre quand il a fini de parler et votre réponse part après une courte pause."
       : "Vous avez décroché. Le client parle à voix haute ; ce navigateur n'offre pas la dictée, répondez au clavier (Chrome, Edge ou Safari permettent de répondre à la voix).")
+      : isTsa() ? "Vous avez décroché. Votre interlocuteur parle en premier ; répondez comme en situation réelle. Cas entièrement fictif."
       : "Vous avez décroché. Le client parle en premier ; répondez-lui comme au téléphone.");
     updateSimComposer();
     simTurn("L'appel commence : la réceptionniste vient de décrocher. Dis ta première réplique de client.");
@@ -894,14 +1101,15 @@
     if (!cfg.apiUrl) throw new Error("L'assistant n'est pas encore activé.");
     const res = await fetch(cfg.apiUrl, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-agent-code": code },
-      body: JSON.stringify({ ...payload, mode: "simulation", tier, prenom, level, voix: sim.voice || undefined, genre: sim.voice && sim.genre ? sim.genre : undefined }),
+      headers: authHeaders(),
+      body: JSON.stringify({ ...payload, role, mode: "simulation", tier, prenom, level, voix: sim.voice || undefined, genre: sim.voice && sim.genre ? sim.genre : undefined }),
       signal,
     });
     if (!res.ok) {
       let msg = "La simulation n'a pas pu continuer. Réessayez.";
       try { msg = (await res.json()).error || msg; } catch {}
       if (res.status === 401) askCode(true);
+      if (res.status === 403 && isTsa()) tsaDenied(msg);
       throw new Error(msg);
     }
     const reader = res.body.getReader(); const dec = new TextDecoder();
@@ -959,7 +1167,7 @@
       const choices = hungUp ? [] : parseChoices(raw);
       b.textContent = clean || "…";
       sim.turns.push({ role: "user", content: learnerText }, { role: "assistant", content: clean });
-      sim.log.push({ who: "Client", text: clean });
+      sim.log.push({ who: isTsa() ? "Interlocuteur" : "Client", text: clean });
       if (sim.voice) {
         voiceFeed(clean, true);
         // Le client finit sa phrase avant de raccrocher ; sinon le micro s'ouvre quand il a fini
@@ -1527,8 +1735,9 @@
   /* ---------- en-tête : titre de la conversation et mode ---------- */
   function setConvTitle() {
     const learn = document.body.classList.contains("learn");
-    $("modeChip").textContent = learn ? "Simulation" : "Assistant d'accueil";
-    if (learn) { $("convTitle").textContent = "Simulation complète · appels fictifs"; return; }
+    $("modeLong").textContent = isTsa() ? (learn ? "Mode TSA — Simulation" : "Mode TSA — Soutien clinique") : (learn ? "Réception — Simulation" : "Réception — Assistant d'accueil");
+    $("modeShort").textContent = isTsa() ? (learn ? "TSA · Simulation" : "Mode TSA") : (learn ? "Simulation" : "Réception");
+    if (learn) { $("convTitle").textContent = isTsa() ? "Simulation complète · cas fictifs" : "Simulation complète · appels fictifs"; return; }
     const first = $("thread").querySelector(".msg.q .qbub");
     const t = first ? first.textContent.replace(/\s+/g, " ").trim() : "";
     $("convTitle").textContent = t ? (t.length > 70 ? t.slice(0, 68) + "…" : t) : "Nouvelle conversation";
@@ -1545,12 +1754,13 @@
   syncEmpty();
 
   // Exemples qui défilent dans la zone de saisie vide (s'arrêtent dès qu'on écrit ou qu'on clique)
+  const PH_TSA = ["Décrivez le cas ou la tâche…", "Ex. : transmission SBAR pour un chat hospitalisé", "Ex. : que veut dire « CRT » ?", "Ex. : liste de surveillance post-anesthésie", "Ex. : expliquer au client des consignes validées"];
   const PH = ["Posez votre question ici…", "Ex. : un client conteste sa facture", "Ex. : que veut dire « NPO » ?", "Ex. : un chien a mangé du chocolat", "Ex. : comment annoncer un retard ?"];
   let phI = 0;
   setInterval(() => {
     const q = $("q");
     if (document.activeElement === q || q.value || q.disabled || document.body.classList.contains("learn")) return;
-    phI = (phI + 1) % PH.length; q.placeholder = PH[phI];
+    const L = isTsa() ? PH_TSA : PH; phI = (phI + 1) % L.length; q.placeholder = L[phI];
   }, 3500);
   if (matchMedia("(min-width: 861px)").matches) setTimeout(() => { if (!$("codebox").hidden) return; $("q").focus(); }, 400);
 
@@ -1564,11 +1774,16 @@
     .then(() => {
       applyCfg();
       if (!cfg.apiUrl) { setStatus("bad", "Assistant pas encore activé"); return; }
-      return fetch(cfg.apiUrl).then((r) => (r.ok ? r.json() : null)).then((s) => {
+      const h0 = {}; if (tsaCode) h0["x-tsa-code"] = tsaCode;
+      return fetch(cfg.apiUrl, { headers: h0 }).then((r) => (r.ok ? r.json() : null)).then((s) => {
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
         setVoiceService(!!s.voice);
+        tsaEnabled = !!s.tsa; tsaVerified = !!s.tsaOk;
+        if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
+        $("tsaLock").hidden = tsaVerified;
+        if (store.get("lq-role") === "tsa" && tsaVerified && !isTsa()) switchRole("tsa", { silent: true });
         needsCode = !!s.needsCode;
         if ((needsCode && !code) || !prenom) askCode(false);
       }).catch(() => setStatus("bad", "Service injoignable"));

@@ -779,6 +779,121 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
 .notice2{font-size:14px;line-height:1.5;color:#6b4a2a;margin-top:8px}
 .notice2 svg{width:17px;height:17px;margin-top:2px}
 @media (max-width:860px){.notice2{font-size:13px}}
+
+/* ===== espaces de travail : Réception / Équipe technique — TSA ===== */
+:root{--role:#401098;--role-soft:#ede5ff;--role-ink:#2b0f6e}
+body.tsa{--role:#0f766e;--role-soft:#ddf3ef;--role-ink:#134e4a}
+.role-sw{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#ffffff0f;border:1px solid #ffffff1a;border-radius:14px;padding:5px}
+.role-tab{position:relative;display:flex;align-items:flex-start;gap:8px;text-align:left;border:0;background:none;color:#ffffffc2;border-radius:10px;padding:8px 8px;min-width:0}
+.role-tab:hover{background:#ffffff12;color:#fff}
+.rt-ico{width:26px;height:26px;border-radius:8px;background:#ffffff14;display:grid;place-items:center;flex:none}
+.rt-ico svg{width:15px;height:15px}
+.rt-txt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.rt-txt b{font-size:12.5px;font-weight:800;line-height:1.2}
+.rt-txt small{font-size:11px;opacity:.75;line-height:1.25}
+.rt-lock{position:absolute;top:6px;right:6px;opacity:.7}
+.rt-lock svg{width:12px;height:12px}
+.rt-lock[hidden]{display:none}
+.role-tab[aria-selected="true"]{background:#fff;color:#1b1147;box-shadow:0 2px 8px rgb(0 0 0/.25)}
+#roleRec[aria-selected="true"] .rt-ico{background:#ede5ff;color:#401098}
+#roleTsa[aria-selected="true"]{color:#0b3b37}
+#roleTsa[aria-selected="true"] .rt-ico{background:#ccfbf1;color:#0f766e}
+#roleTsa[aria-selected="true"]{box-shadow:0 0 0 2px #2dd4bf,0 2px 8px rgb(0 0 0/.25)}
+body.tsa .side{background:linear-gradient(180deg,#062a2c 0%,#0a1430 55%)}
+.top-title .tt-mode{display:inline-flex;align-items:center;gap:6px}
+.mc-ico{display:inline-grid;place-items:center}
+.mc-ico svg{width:13px;height:13px}
+.mc-short{display:none}
+body.tsa .top-title .tt-mode{background:#0f766e;color:#fff}
+body.tsa.learn .top-title .tt-mode{background:#0f766e}
+.main{position:relative}
+body.tsa .main::before{content:"";position:absolute;inset:0 0 auto 0;height:4px;background:#0f766e;z-index:5}
+body.tsa .app-title{color:#134e4a}
+body.tsa .ask-ico{background:#0f766e;box-shadow:0 6px 14px rgb(15 118 110/.3)}
+body.tsa .main.is-empty .box{border-color:#0f766e;box-shadow:0 0 0 5px rgb(15 118 110/.12),0 14px 34px rgb(15 118 110/.16)}
+body.tsa .main.is-empty .box:not(:focus-within){animation:none}
+body.tsa .box:focus-within{border-color:#0f766e;box-shadow:0 0 0 4px rgb(15 118 110/.14),0 8px 24px rgb(15 118 110/.12)}
+body.tsa .box-ico,body.tsa .main.is-empty .box textarea::placeholder{color:#0f766e}
+body.tsa .send:not(:disabled){background:#0f766e;box-shadow:0 4px 12px rgb(15 118 110/.3)}
+body.tsa .side-new{background:#0f766e;box-shadow:0 2px 0 rgb(0 0 0/.25),0 8px 20px rgb(15 118 110/.35)}
+body.tsa .qbub{background:#0f766e}
+body.tsa .card.train{background:#e6f6f3;border-color:#a7e3d8}
+body.tsa .card.train .tag,body.tsa .card .tag{color:#0f766e}
+.lb-role{font-size:12px;font-weight:800;border-radius:999px;padding:3px 10px;background:#fff;color:#401098;border:1.5px solid currentColor}
+body.tsa .lb-role{color:#0f766e}
+body.tsa .learn-banner{background:#d5efe9;border-color:#a7e3d8}
+@media (max-width:860px){
+  .top-title .tt-mode{display:inline-flex;font-size:10.5px;padding:2px 7px}
+  .mc-long{display:none}.mc-short{display:inline}
+  .lb-role{display:none}
+}
+/* outils TSA (accueil) */
+.card.tool{display:flex;gap:10px;align-items:flex-start}
+.card.tool .tl-ico{width:34px;height:34px;border-radius:10px;background:#ddf3ef;color:#0f766e;display:grid;place-items:center;flex:none}
+.card.tool .tl-ico svg{width:18px;height:18px}
+.card.tool .tl-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.card.tool b{font-size:14.5px;font-weight:800;color:#0b3b37}
+.card.tool small{font-size:12.5px;color:#55565d;line-height:1.35;font-weight:500}
+.card.tool:hover{border-color:#0f766e}
+@media (min-width:1100px){body.tsa .under .cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* changement de mode : résumé à confirmer */
+.carry{margin-top:14px;border:1.5px solid var(--role);background:var(--role-soft);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;max-width:640px}
+.carry[hidden]{display:none}
+.carry-h{display:flex;flex-direction:column;gap:2px}
+.carry-h b{font-size:14px;color:var(--role-ink)}
+.carry-h span{font-size:13px;color:#3f3d56;line-height:1.45}
+.carry-sum{font-size:13px;line-height:1.45;background:#fff;border-radius:10px;padding:8px 10px;color:#2a2a33;white-space:pre-line}
+.carry-act{display:flex;gap:8px;flex-wrap:wrap}
+.carry-use{border:0;background:var(--role);color:#fff;font-weight:800;font-size:13px;border-radius:10px;padding:8px 12px}
+.carry-no{border:1.5px solid var(--role);background:#fff;color:var(--role-ink);font-weight:800;font-size:13px;border-radius:10px;padding:7px 12px}
+/* réponse TSA */
+.box-tsa{border:1.5px solid #99d8cc;background:#fff;border-radius:16px;overflow:hidden}
+.box-tsa .box-head{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#e6f6f3;color:#0b3b37;font-size:11.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase}
+.box-tsa .box-head svg{width:16px;height:16px}
+.box-tsa .bh-note{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:700;font-size:11.5px;color:#0f766e}
+.box-tsa .box-body{padding:12px 16px 14px}
+.box-tsa h3{font-size:15px;color:#0b3b37;margin:14px 0 6px;padding-top:10px;border-top:1px solid #e3efec}
+.box-tsa h3:first-child{margin-top:0;padding-top:0;border-top:0}
+.box-tsa h3.h-check{color:#9a3412}
+.box-tsa h3.h-src{color:#334155}
+.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:800;border-radius:999px;padding:2px 9px;border:1.5px solid currentColor;white-space:nowrap}
+.st::before{font-weight:900}
+.st-ok{color:#166534;background:#ecfdf3}.st-ok::before{content:"✓"}
+.st-gen{color:#334155;background:#f1f5f9}.st-gen::before{content:"ℹ"}
+.st-check{color:#9a3412;background:#fff4e5}.st-check::before{content:"?"}
+.st-vet{color:#9f1239;background:#fff1f2}.st-vet::before{content:"!"}
+.box-tsa li.task{list-style:none;margin-left:-18px}
+.box-tsa li.task::before{content:"☐";margin-right:8px;color:#0f766e;font-weight:800}
+/* fenêtre d'accès TSA */
+.tsa-ico{width:52px;height:52px;border-radius:16px;background:#0f766e;color:#fff;display:grid;place-items:center}
+.tsa-ico svg{width:26px;height:26px}
+#tsabox .go{background:#0f766e}
+#tsabox .ghost{border:0;background:none;color:#55565d;font-weight:700;padding:8px;width:100%}
+#tsabox form{display:flex;flex-direction:column;gap:10px}
+body.side-mini .role-sw{display:none}
+
+.top-title .mc-short{display:none}
+.top-title .mc-long{display:inline}
+@media (max-width:860px){.top-title .mc-long{display:none}.top-title .mc-short{display:inline}}
+body.tsa .msg.q .qbub,body.tsa .qbub{background:#0f766e;color:#fff}
+body.tsa .chip.train{background:#e6f6f3;color:#0b3b37;border-color:#a7e3d8}
+.role-sw{grid-template-columns:1fr;gap:3px;padding:4px}
+.role-tab{align-items:center;padding:7px 10px}
+.rt-txt{flex-direction:row;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rt-txt b{font-size:13.5px}
+.rt-ico{width:28px;height:28px}
+.rt-lock{position:static;margin-left:auto;align-self:center}
+.composer-in .carry{margin:0 0 8px;max-width:none}
+
+.carry{flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px 14px;padding:10px 12px}
+.carry-h{flex:1 1 260px}
+.carry-act{flex:none}
+@media (max-width:860px){
+  .tt-row{flex-direction:column;align-items:flex-start;gap:2px}
+  .top-title .tt-sub{display:none}
+  .tt-row{min-width:0;width:100%}
+  .tt-row b{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+}
 </style>
 </head>
 <body>
@@ -796,12 +911,16 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
       </div>
       <button type="button" class="su-edit" id="changeName" aria-label="Changer de prénom" title="Changer de prénom"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     </div>
+    <div class="role-sw" role="tablist" aria-label="Espace de travail">
+      <button type="button" role="tab" class="role-tab" id="roleRec" data-role="reception" aria-selected="true"><span class="rt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span class="rt-txt"><b>Réception</b><small>Accueil et téléphone</small></span></button>
+      <button type="button" role="tab" class="role-tab" id="roleTsa" data-role="tsa" aria-selected="false" aria-label="Équipe technique — TSA"><span class="rt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg></span><span class="rt-txt"><b>Équipe technique — TSA</b><small>Soutien clinique</small></span><span class="rt-lock" id="tsaLock" aria-hidden="true" title="Accès protégé par un code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span></button>
+    </div>
     <button class="side-new" id="sideNew" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="sn-l">Nouvelle conversation</span></button>
     <button class="rail-btn" id="railHist" type="button" title="Récents et questions fréquentes" aria-label="Afficher les récents et les questions fréquentes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button>
 
     <div class="side-group" role="group" aria-labelledby="navTrainLab">
       <div class="side-label" id="navTrainLab">S'entraîner</div>
-      <button class="nav-item normal-only" id="sideTrain" type="button" title="Mise en situation"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="ni-txt"><b>Mise en situation</b><small>Un appel court, avec quiz</small></span></button>
+      <button class="nav-item normal-only" id="sideTrain" type="button" title="Mise en situation"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="ni-txt"><b>Mise en situation</b><small id="sideTrainSub">Un appel court, avec quiz</small></span></button>
       <button class="nav-item" id="learnToggle" type="button" aria-pressed="false" title="Simulation complète"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg></span><span class="ni-txt"><b id="learnToggleText">Simulation complète</b><small id="learnToggleSub">Appel fictif avec sonnerie</small></span><em class="ni-badge" aria-hidden="true">Actif</em></button>
     </div>
 
@@ -843,7 +962,7 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
       <button class="menu-btn" id="menuBtn" type="button" aria-label="Ouvrir le menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
       <div class="top-av org" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 8v4M10 10h4"/></svg><i class="online"></i></div>
       <div class="top-title">
-        <div class="tt-row"><b id="orgName">Hôpital vétérinaire du Ruisseau</b><span class="tt-mode" id="modeChip">Assistant d'accueil</span></div>
+        <div class="tt-row"><b id="orgName">Hôpital vétérinaire du Ruisseau</b><span class="tt-mode" id="modeChip"><span class="mc-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span class="mc-long" id="modeLong">Réception — Assistant d'accueil</span><span class="mc-short" id="modeShort">Réception</span></span></div>
         <span class="tt-sub" id="convTitle">Nouvelle conversation</span>
         <span hidden><span id="agentName"></span><span id="agentTag"></span></span>
       </div>
@@ -857,12 +976,12 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
     </header>
     <div class="learn-banner learn-only" id="learnBanner" role="status">
       <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg>Mode simulation complète</span>
-      <span class="lb-txt">Appels et données fictifs — rien n'est envoyé à l'équipe</span>
+      <span class="lb-role" id="lbRole">Réception</span><span class="lb-txt">Appels et données fictifs — rien n'est envoyé à l'équipe</span>
       <button type="button" class="lb-exit" id="learnExit"><span class="lb-x-long">Quitter la simulation</span><span class="lb-x-short">Quitter</span></button>
     </div>
     <div class="callbar" id="callBar" hidden>
       <div class="cb-av" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z"/></svg><i></i></div>
-      <div class="cb-txt"><b>Client fictif</b><span><span class="cb-live">Appel en cours</span> · <span class="cb-time" id="callTimer">00:00</span> · <span id="callLevel"></span><span class="cb-voice" id="callVoice" hidden>🎙 Voix</span></span></div>
+      <div class="cb-txt"><b id="callWho">Client fictif</b><span><span class="cb-live">Appel en cours</span> · <span class="cb-time" id="callTimer">00:00</span> · <span id="callLevel"></span><span class="cb-voice" id="callVoice" hidden>🎙 Voix</span></span></div>
       <button type="button" class="cb-end" id="hangup"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.5 14.5c4.7-4.2 12.3-4.2 17 0l-2.2 2.6-3.6-1.3-.3-2.6a12 12 0 0 0-4.8 0l-.3 2.6-3.6 1.3z"/></svg><span>Raccrocher</span></button>
     </div>
 
@@ -872,9 +991,9 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
           <div class="hello2">
             <img class="hello2-av" src="avatar.webp" width="72" height="72" alt="">
             <div class="hello2-txt">
-              <p class="app-title"><span>Agent conversationnel</span><i aria-hidden="true"></i><span>Formation</span><i aria-hidden="true"></i><span>Équipe d'accueil vétérinaire</span></p>
+              <p class="app-title"><span>Agent conversationnel</span><i aria-hidden="true"></i><span id="atMid">Formation</span><i aria-hidden="true"></i><span id="atEnd">Équipe d'accueil vétérinaire</span></p>
               <h1>Bonjour<span id="helloName"></span><span class="orange">.</span></h1>
-              <p class="hello2-sub">Comment puis-je vous aider aujourd'hui<span class="orange">?</span></p>
+              <p class="hello2-sub"><span id="helloSub">Comment puis-je vous aider aujourd'hui</span><span class="orange">?</span></p>
             </div>
           </div>
         </section>
@@ -929,7 +1048,12 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
 
     <div class="composer">
       <div class="composer-in">
-        <label class="ask-lab" for="q"><span class="ask-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 16.5v.01"/></svg></span><span><b>Posez votre question ici</b><small>Écrivez comme vous parleriez à une collègue d'expérience, puis appuyez sur Entrée.</small></span></label>
+        <div class="carry" id="carry" hidden>
+          <div class="carry-h"><b id="carryTitle">Nouveau mode actif</b><span id="carryText"></span></div>
+          <div class="carry-sum" id="carrySum" hidden></div>
+          <div class="carry-act"><button type="button" class="carry-use" id="carryUse" hidden>Reprendre un résumé (à vérifier)</button><button type="button" class="carry-no" id="carryNo">Repartir à neuf</button></div>
+        </div>
+        <label class="ask-lab" for="q"><span class="ask-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.4 2.3c-.6.3-.9.8-.9 1.4v.3M12 16.5v.01"/></svg></span><span><b id="askTitle">Posez votre question ici</b><small id="askHint">Écrivez comme vous parleriez à une collègue d'expérience, puis appuyez sur Entrée.</small></span></label>
         <form class="box" id="form">
           <span class="box-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg></span>
           <textarea id="q" rows="1" placeholder="Posez votre question ici…" aria-label="Posez votre question ici" enterkeyhint="send"></textarea>
@@ -976,6 +1100,20 @@ body:not(.learn) .main:not(.is-empty) .box{border-color:#bfb2e6}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610180937"></script>
+<div class="modal" id="tsabox" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tsaTitle">
+    <div class="tsa-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg></div>
+    <h2 id="tsaTitle">Espace Équipe technique — TSA</h2>
+    <p id="tsaIntro">Cet espace est réservé au personnel technique. Entrez le code TSA fourni par le responsable vétérinaire. Il sera retenu sur cet appareil.</p>
+    <form id="tsaForm">
+      <input id="tsaCode" type="password" autocomplete="off" placeholder="Code TSA" aria-label="Code TSA">
+      <p class="err" id="tsaErr" hidden></p>
+      <button class="go" type="submit" id="tsaGo">Entrer dans l'espace TSA</button>
+      <button class="ghost" type="button" id="tsaCancel">Rester à la Réception</button>
+    </form>
+  </div>
+</div>
+
+<script src="app-agent.js?v=202610181007"></script>
 </body>
 </html>
