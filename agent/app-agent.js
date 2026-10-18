@@ -42,6 +42,7 @@
   function showName() {
     $("helloName").textContent = prenom ? " " + prenom : "";
     $("userName").textContent = prenom || "Invité";
+    try { renderHistory(); } catch {}
   }
   let shown = new Set();
   try { shown = new Set(JSON.parse(store.get("lq-shown") || "[]")); } catch {}
@@ -447,15 +448,17 @@
       renderAnswer(body, answer, true);
       if (!answer.trim()) { body.innerHTML = '<p class="err">Aucune réponse reçue. Réessayez.</p>'; return; }
       turns.push({ role: "user", content: q }, { role: "assistant", content: answer });
-      finishAnswer(res, col, answer);
+      let srcs = []; try { srcs = JSON.parse(decodeURIComponent(res.headers.get("x-agent-sources") || "[]")); } catch {}
+      remember(q, display || q, answer, srcs);
+      finishAnswer(srcs, col, answer);
       requestAnimationFrame(() => toTopOf(m));
     } catch (e) {
       if (e.name === "AbortError" && timedOut) {
         if (answer) renderAnswer(body, answer, true); else body.textContent = "";
         body.insertAdjacentHTML("beforeend", '<p class="err">Délai dépassé : la réponse a été arrêtée. Réessayez ou posez une question plus précise.</p>');
-        if (answer) turns.push({ role: "user", content: q }, { role: "assistant", content: answer });
+        if (answer) { turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); remember(q, display || q, answer, []); }
       } else if (e.name === "AbortError") {
-        if (answer) { renderAnswer(body, answer, true); body.insertAdjacentHTML("beforeend", '<p class="stopped">Réponse arrêtée.</p>'); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); }
+        if (answer) { renderAnswer(body, answer, true); body.insertAdjacentHTML("beforeend", '<p class="stopped">Réponse arrêtée.</p>'); turns.push({ role: "user", content: q }, { role: "assistant", content: answer }); remember(q, display || q, answer, []); }
         else body.innerHTML = '<p class="stopped">Réflexion arrêtée.</p>';
       } else { if (answer) renderAnswer(body, answer, true); else body.textContent = ""; body.insertAdjacentHTML("beforeend", '<p class="err">La connexion a été interrompue. Vérifiez Internet et réessayez.</p>'); }
     } finally {
@@ -464,9 +467,8 @@
     }
   }
 
-  function finishAnswer(res, col, answer) {
-    let sources = [];
-    try { sources = JSON.parse(decodeURIComponent(res.headers.get("x-agent-sources") || "[]")); } catch {}
+  function finishAnswer(sources, col, answer) {
+    sources = Array.isArray(sources) ? sources : [];
     const cited = sources.filter((t) => answer.includes(t));
     if (cited.length) {
       const s = document.createElement("div"); s.className = "srcs"; s.textContent = "Sources de la clinique : ";
@@ -505,6 +507,7 @@
   function resetConversation() {
     if (sim.on) { stopSim(true); closeMenu(); return; }
     ctl?.abort(); turns = []; inScenario = false;
+    convId = null; convMsgs = []; renderHistory();
     $("thread").textContent = "";
     $("empty").hidden = false;
     renderWelcomeCards(); renderSideList();
@@ -561,6 +564,138 @@
   $("form").addEventListener("submit", (e) => { e.preventDefault(); sim.on ? simReply() : send(); });
   $("stop").onclick = () => ctl?.abort();
   $("sideTrain").onclick = startScenario;
+
+  /* =====================================================================
+     HISTORIQUE (« Récents ») — conservé dans ce navigateur, par prénom.
+     Rien n'est envoyé ailleurs ; « Effacer l'historique » le supprime.
+     ===================================================================== */
+  let convId = null, convMsgs = [];
+  const HIST_MAX = 40, HIST_MSGS = 30;
+  const histKey = () => "lq-hist-" + (String(prenom || "invite").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-") || "invite");
+  function histLoad() {
+    try { const a = JSON.parse(localStorage.getItem(histKey()) || "[]"); return Array.isArray(a) ? a.filter((c) => c && c.id && Array.isArray(c.m)) : []; } catch { return []; }
+  }
+  function histSave(list) {
+    let l = list.slice(0, HIST_MAX);
+    // Si l'espace du navigateur est plein, on retire les plus anciennes conversations
+    for (;;) {
+      try { localStorage.setItem(histKey(), JSON.stringify(l)); return; }
+      catch { if (l.length <= 1) return; l = l.slice(0, Math.ceil(l.length * 0.7)); }
+    }
+  }
+  function remember(q, d, a, s) {
+    if (!a || !String(a).trim()) return;
+    if (!convId) convId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    convMsgs.push({ q: String(q).slice(0, 4000), d: String(d).slice(0, 600), a: String(a).slice(0, 30000), s: Array.isArray(s) ? s.slice(0, 6) : [] });
+    if (convMsgs.length > HIST_MSGS) convMsgs = convMsgs.slice(-HIST_MSGS);
+    const list = histLoad().filter((c) => c.id !== convId);
+    const title = convMsgs[0].d.replace(/\s+/g, " ").trim();
+    list.unshift({ id: convId, t: Date.now(), title: title.length > 90 ? title.slice(0, 88) + "…" : title, sc: inScenario, m: convMsgs });
+    histSave(list);
+    renderHistory();
+  }
+  function whenLabel(t) {
+    const d = new Date(t), now = new Date();
+    const day = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+    const diff = Math.round((day(now) - day(d)) / 86400000);
+    return diff <= 0 ? "Aujourd'hui" : diff === 1 ? "Hier" : diff < 7 ? "7 derniers jours" : diff < 30 ? "30 derniers jours" : "Plus ancien";
+  }
+  function whenShort(t) {
+    const d = new Date(t), diff = Math.round((Date.now() - t) / 86400000);
+    return diff < 1 && d.getDate() === new Date().getDate() ? d.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })
+      : d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" });
+  }
+  const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  function renderHistory() {
+    const el = $("sideHistory"); if (!el) return;
+    const list = histLoad();
+    el.textContent = "";
+    $("histCount").hidden = !list.length;
+    $("histCount").textContent = list.length > 99 ? "99+" : String(list.length);
+    $("histFoot").hidden = !list.length || $("tabRecent").getAttribute("aria-selected") !== "true";
+    if (!list.length) {
+      const e = document.createElement("p"); e.className = "hist-empty";
+      e.textContent = "Vos questions apparaîtront ici pour y revenir plus tard. Elles restent seulement dans ce navigateur.";
+      el.append(e); return;
+    }
+    let last = "";
+    list.forEach((c) => {
+      const g = whenLabel(c.t);
+      if (g !== last) { const h = document.createElement("div"); h.className = "hist-group"; h.textContent = g; el.append(h); last = g; }
+      const row = document.createElement("div"); row.className = "hist-row" + (c.id === convId ? " on" : "");
+      const open = document.createElement("button"); open.type = "button"; open.className = "hist-open";
+      if (c.id === convId) open.setAttribute("aria-current", "true");
+      const b = document.createElement("b"); b.textContent = c.title || "Conversation";
+      const sm = document.createElement("small");
+      sm.textContent = `${whenShort(c.t)} · ${c.m.length} question${c.m.length > 1 ? "s" : ""}${c.sc ? " · mise en situation" : ""}`;
+      open.append(b, sm);
+      open.onclick = () => openConversation(c.id);
+      const del = document.createElement("button"); del.type = "button"; del.className = "hist-del";
+      del.innerHTML = SVG_TRASH; del.setAttribute("aria-label", `Supprimer « ${c.title} »`); del.title = "Supprimer cette conversation";
+      del.onclick = () => deleteConversation(c.id);
+      row.append(open, del); el.append(row);
+    });
+  }
+  function openConversation(id) {
+    const c = histLoad().find((x) => x.id === id);
+    if (!c) { renderHistory(); return; }
+    if (sim.on) setLearn(false);
+    ctl?.abort();
+    turns = []; inScenario = !!c.sc;
+    convId = c.id; convMsgs = c.m.slice();
+    $("thread").textContent = "";
+    $("empty").hidden = true;
+    const stamp = new Date(c.t).toLocaleString("fr-CA", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    let lastQ = null;
+    c.m.forEach((x) => {
+      lastQ = addQuestion(x.d || x.q);
+      const { col, body } = addAnswer();
+      const tm = col.querySelector(".who time"); if (tm) tm.textContent = stamp;
+      renderAnswer(body, x.a, true);
+      finishAnswer(x.s, col, x.a);
+      turns.push({ role: "user", content: x.q }, { role: "assistant", content: x.a });
+    });
+    closeMenu();
+    renderHistory();
+    requestAnimationFrame(() => { if (lastQ) toTopOf(lastQ); });
+  }
+  function deleteConversation(id) {
+    histSave(histLoad().filter((c) => c.id !== id));
+    if (id === convId) resetConversation(); else renderHistory();
+  }
+  let clearTimer = null;
+  $("histClear").onclick = () => {
+    const btn = $("histClear");
+    if (!btn.classList.contains("confirm")) {
+      btn.classList.add("confirm"); btn.querySelector("span").textContent = "Confirmer : tout effacer";
+      clearTimer = setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Effacer l'historique"; }, 4000);
+      return;
+    }
+    clearTimeout(clearTimer);
+    btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Effacer l'historique";
+    try { localStorage.removeItem(histKey()); } catch {}
+    resetConversation();
+  };
+  function setSideTab(tab) {
+    const recent = tab === "recent";
+    $("tabRecent").setAttribute("aria-selected", String(recent));
+    $("tabFaq").setAttribute("aria-selected", String(!recent));
+    $("sideHistory").hidden = !recent;
+    $("sideExamples").hidden = recent;
+    $("shuffleBtn").hidden = recent;
+    store.set("lq-side-tab", tab);
+    renderHistory();
+  }
+  $("tabRecent").onclick = () => setSideTab("recent");
+  $("tabFaq").onclick = () => setSideTab("faq");
+  // Flèches gauche/droite entre les onglets (accessibilité)
+  $("tabRecent").parentElement.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const next = document.activeElement === $("tabRecent") ? "faq" : "recent";
+    setSideTab(next); $(next === "recent" ? "tabRecent" : "tabFaq").focus();
+  });
+  setSideTab(store.get("lq-side-tab") || (histLoad().length ? "recent" : "faq"));
+
   $("sideNew").onclick = resetConversation;
   // Logo : retour à l'interface de départ (quitte la simulation au besoin)
   $("homeLogo").onclick = () => { if (sim.on) setLearn(false); resetConversation(); };
@@ -1344,7 +1479,7 @@
     clearTimeout(outTimer);
     ctl?.abort();
     try { stopSim(true); } catch {}
-    try { Object.keys(localStorage).filter((k) => k.startsWith("lq-")).forEach((k) => localStorage.removeItem(k)); } catch {}
+    try { Object.keys(localStorage).filter((k) => k.startsWith("lq-") && !k.startsWith("lq-hist-")).forEach((k) => localStorage.removeItem(k)); } catch {}
     try { sessionStorage.clear(); } catch {}
     location.reload();
   };
