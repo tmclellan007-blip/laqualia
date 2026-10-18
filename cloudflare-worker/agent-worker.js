@@ -360,7 +360,7 @@ const fnv = (t) => { let h = 2166136261; t = String(t || "").trim(); for (let i 
 // Anciennes instructions d'origine, jamais modifiées par l'équipe : remplacées par la version à jour de config.json
 const LEGACY_DEFAULTS = new Set(["3906c25b"]);
 const ROLES = ["reception", "tsa"];
-const SHARED_KEYS = ["apiUrl", "etablissement", "modelesProposes", "tier", "audience"];
+const SHARED_KEYS = ["apiUrl", "etablissement", "logo", "modelesProposes", "tier", "audience"];
 const EDITABLE = ["name", "disclaimer", "instructions", "examples", "scenarios", "simTypes", "simulationClient", "simulationBilan", "tier", "modelesProposes"];
 const roleCache = {};
 async function kvJson(env, key) {
@@ -402,6 +402,7 @@ async function publicConfig(request, env) {
   }
   const { config } = await loadRole(request, env, "reception");
   out.etablissement = config.etablissement;
+  out.logo = config.logo || "";
   return out;
 }
 
@@ -449,13 +450,18 @@ async function handleAdmin(request, env, cors) {
       invalidate();
       const { config, docs } = await loadRole(request, env, role);
       const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
-      return json(200, { role, config: edit, etablissement: config.etablissement || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk }, cors);
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk }, cors);
     }
     case "save": {
       const clean = cleanConfig(body.config || {});
       const prev = (await kvJson(env, "cfg:" + role)) || {};
       await KV.put("cfg:" + role, JSON.stringify({ ...prev, ...clean, updated: new Date().toISOString() }));
-      if (body.etablissement !== undefined) await KV.put("cfg:shared", JSON.stringify({ etablissement: str(body.etablissement, 120).trim() }));
+      if (body.etablissement !== undefined || body.logo !== undefined) {
+        const sh = (await kvJson(env, "cfg:shared")) || {};
+        if (body.etablissement !== undefined) sh.etablissement = str(body.etablissement, 120).trim();
+        if (body.logo !== undefined) { const u = str(body.logo, 500).trim(); sh.logo = /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ""; }
+        await KV.put("cfg:shared", JSON.stringify(sh));
+      }
       invalidate();
       return json(200, { ok: true }, cors);
     }
