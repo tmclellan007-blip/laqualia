@@ -356,6 +356,9 @@ function chunkText(title, text) {
 }
 
 /* ---------- configuration privée par espace (Cloudflare KV) ---------- */
+const fnv = (t) => { let h = 2166136261; t = String(t || "").trim(); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
+// Anciennes instructions d'origine, jamais modifiées par l'équipe : remplacées par la version à jour de config.json
+const LEGACY_DEFAULTS = new Set(["3906c25b"]);
 const ROLES = ["reception", "tsa"];
 const SHARED_KEYS = ["apiUrl", "etablissement", "modelesProposes", "tier", "audience"];
 const EDITABLE = ["name", "disclaimer", "instructions", "examples", "scenarios", "simTypes", "simulationClient", "simulationBilan", "tier", "modelesProposes"];
@@ -376,6 +379,7 @@ async function loadRole(request, env, role) {
   if (hit && Date.now() - hit.at < 60 * 1000) return hit;
   const base = await loadKnowledge(request, env);
   const kvCfg = (await kvJson(env, "cfg:" + role)) || {};
+  if (kvCfg.instructions && LEGACY_DEFAULTS.has(fnv(kvCfg.instructions))) delete kvCfg.instructions;
   // Une copie abîmée (texte de remplacement) ne doit jamais remplacer de vraies instructions
   if (/^Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire\. Réponds en français\.?\s*$/.test(String(kvCfg.instructions || "").trim())) delete kvCfg.instructions;
   const shared = (await kvJson(env, "cfg:shared")) || {};
