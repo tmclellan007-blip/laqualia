@@ -316,8 +316,8 @@ function streamSegments(segments, abort, total) {
 }
 
 async function asset(request, env, path) {
-  const base = String(env.SITE_URL || "").replace(/\/$/, "");
-  const res = await fetch(base + path, { cf: { cacheTtl: 30 } });
+  const base = String(env.SITE_URL || "https://tmclellan007-blip.github.io/nc").replace(/\/$/, "");
+  const res = await fetch(base + path, { cf: { cacheTtl: 30 }, headers: { "user-agent": "laqualia-agent (Cloudflare Worker)", accept: "*/*" } });
   if (!res.ok) throw new Error(path);
   return res;
 }
@@ -325,8 +325,10 @@ async function asset(request, env, path) {
 // Fichiers du site (configuration de départ + anciens documents publics de la Réception)
 async function loadKnowledge(request, env) {
   if (cache && Date.now() - cache.at < 60 * 1000) return cache;
-  let config = {};
-  try { config = await (await asset(request, env, "/agent/config.json")).json(); } catch {}
+  let config = {}, fileOk = false;
+  for (let attempt = 0; attempt < 2 && !fileOk; attempt++) {
+    try { config = await (await asset(request, env, "/agent/config.json")).json(); fileOk = !!config.instructions; } catch {}
+  }
   if (!config.instructions) config.instructions = "Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire. Réponds en français.";
   let files = [];
   try { files = await (await asset(request, env, "/agent/docs/index.json")).json(); } catch {}
@@ -340,7 +342,8 @@ async function loadKnowledge(request, env) {
       chunks.push(...chunkText(title, text));
     } catch {}
   }
-  cache = { at: Date.now(), config, chunks };
+  // Lecture ratée : on ne garde pas ce résultat en mémoire, on réessaiera à la prochaine demande
+  cache = { at: fileOk ? Date.now() : Date.now() - 55 * 1000, config, chunks, fileOk };
   return cache;
 }
 function chunkText(title, text) {
@@ -373,6 +376,8 @@ async function loadRole(request, env, role) {
   if (hit && Date.now() - hit.at < 60 * 1000) return hit;
   const base = await loadKnowledge(request, env);
   const kvCfg = (await kvJson(env, "cfg:" + role)) || {};
+  // Une copie abîmée (texte de remplacement) ne doit jamais remplacer de vraies instructions
+  if (/^Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire\. Réponds en français\.?\s*$/.test(String(kvCfg.instructions || "").trim())) delete kvCfg.instructions;
   const shared = (await kvJson(env, "cfg:shared")) || {};
   const config = { ...fileRoleConfig(base.config, role), ...shared, ...kvCfg };
   if (role === "tsa") config.audience = "techniciens";
@@ -382,7 +387,7 @@ async function loadRole(request, env, role) {
   for (const d of Array.isArray(index) ? index : []) {
     try { const t = await env.AGENT_KV.get(`doc:${role}:${d.id}`); if (t) chunks.push(...chunkText(d.title || "Document", t)); } catch {}
   }
-  roleCache[role] = { at: Date.now(), config, chunks, docs: index };
+  roleCache[role] = { at: base.fileOk ? Date.now() : Date.now() - 55 * 1000, config, chunks, docs: index };
   return roleCache[role];
 }
 async function publicConfig(request, env) {
@@ -440,7 +445,7 @@ async function handleAdmin(request, env, cors) {
       invalidate();
       const { config, docs } = await loadRole(request, env, role);
       const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
-      return json(200, { role, config: edit, etablissement: config.etablissement || "", docs, customized: !!(await KV.get("cfg:" + role)) }, cors);
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk }, cors);
     }
     case "save": {
       const clean = cleanConfig(body.config || {});
