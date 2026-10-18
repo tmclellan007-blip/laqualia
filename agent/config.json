@@ -1,6 +1,7 @@
 {
   "apiUrl": "https://laqualia-agent.tmclellan007.workers.dev",
   "etablissement": "Hôpital vétérinaire du Ruisseau",
+  "logo": "https://cdn.prod.website-files.com/66a1067199e858196e98f619/66a11bd04074aeadb1e6a21a_neovet-logo-original.png",
   "name": "Assistant La Qualia",
   "tag": "Le coach de l'équipe d'accueil : clients, équipe clinique et lexique",
   "audience": "telephonistes",

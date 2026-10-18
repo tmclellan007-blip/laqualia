@@ -71,13 +71,14 @@
       if (!j.customized) Object.assign(c, orig);
       else FIELDS.forEach((k) => { const v = c[k]; if (k === "instructions" || v === undefined || v === "" || (Array.isArray(v) && !v.length)) { if (orig[k] !== undefined) c[k] = orig[k]; } });
       if (!data.etablissement && fileCfg.etablissement) data.etablissement = fileCfg.etablissement;
+      if (!data.logo && fileCfg.logo) data.logo = fileCfg.logo;
       seeded = true;
     }
     fill();
     dirty = false;
     if (seeded && orig.instructions) {
       try {
-        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim() });
+        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim(), logo: $("logo").value.trim() });
         data.customized = true;
         setState("", stale ? "Instructions mises à jour vers la nouvelle version" : j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
         toast(stale ? "Nouvelles instructions installées" : j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
@@ -96,6 +97,8 @@
     $("sceneExample").textContent = tsa ? "« je suis TSA et je gère … »" : "« je reçois un appel de … »";
     $("legacy").hidden = tsa;
     $("etab").value = data.etablissement || "";
+    $("logo").value = data.logo ?? fileCfg.logo ?? "";
+    logoPreview();
     $("name").value = c.name || "";
     $("disclaimer").value = c.disclaimer || "";
     $("instructions").value = c.instructions || "";
@@ -167,7 +170,7 @@
     if (!c.modelesProposes.length) return toast("Cochez au moins un modèle.");
     busy = true; setState("dirty", "Enregistrement…"); $("saveBtn").disabled = true;
     try {
-      await call({ action: "save", config: c, etablissement: $("etab").value.trim() });
+      await call({ action: "save", config: c, etablissement: $("etab").value.trim(), logo: $("logo").value.trim() });
       dirty = false; setState("", "Enregistré · actif dans l'agent d'ici une minute");
       toast("Configuration enregistrée");
     } catch (e) { setState("err", e.message); }
@@ -179,7 +182,9 @@
     if (!confirm(`Rétablir les réglages d'origine de l'espace ${role === "tsa" ? "TSA" : "Réception"} ? Vos modifications de configuration seront effacées (la base de connaissances est conservée).`)) return;
     try { await call({ action: "reset" }); await load(); toast("Réglages d'origine rétablis"); } catch (e) { setState("err", e.message); }
   };
-  ["etab", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
+  function logoPreview() { const u = $("logo").value.trim(), im = $("logoPv"); if (!/^https:\/\//.test(u)) { im.hidden = true; return; } im.onload = () => (im.hidden = false); im.onerror = () => (im.hidden = true); im.src = u; }
+  $("logo").addEventListener("input", logoPreview);
+  ["etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
   /* ---------- onglets ---------- */

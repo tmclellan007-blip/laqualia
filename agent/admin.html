@@ -141,6 +141,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
   .tab{min-width:0;flex:1}
   .tab small,.tabs .right .hide-m{display:none}
 }
+.logo-row{display:flex;gap:10px;align-items:center}
+.logo-pv{height:44px;min-width:60px;max-width:160px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:flex;align-items:center;background:#fff}
+.logo-pv img{max-height:100%;max-width:100%;object-fit:contain}
 </style>
 </head>
 <body>
@@ -185,6 +188,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
           <div class="f"><label for="etab">Nom de l'établissement <span class="shared">commun aux deux espaces</span></label><input type="text" id="etab" maxlength="120"></div>
           <div class="f"><label for="name">Nom de l'assistant</label><input type="text" id="name" maxlength="120"></div>
         </div>
+        <div class="f"><label for="logo">Logo de l'établissement <span class="shared">commun aux deux espaces</span></label><div class="logo-row"><input type="text" id="logo" maxlength="500" placeholder="https://… (adresse d'une image PNG ou SVG)"><span class="logo-pv"><img id="logoPv" alt="" referrerpolicy="no-referrer" hidden></span></div><span class="hint">Affiché à gauche du nom de l'établissement, en haut de l'agent. Laissez vide pour retirer le logo.</span></div>
         <div class="f"><label for="disclaimer">Avertissement affiché sous la zone de saisie</label><textarea id="disclaimer" maxlength="600" style="min-height:70px"></textarea></div>
       </section>
 
@@ -259,6 +263,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="admin.js?v=202610181101"></script>
+<script src="admin.js?v=202610181149"></script>
 </body>
 </html>

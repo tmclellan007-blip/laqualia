@@ -168,6 +168,14 @@
   function applyCfg() {
     $("agentName").textContent = cfg.name || "Assistant La Qualia";
     $("orgName").textContent = cfg.etablissement || "Hôpital vétérinaire du Ruisseau";
+    // Logo de l'établissement (si l'image ne se charge pas, on garde l'icône)
+    const lg = $("orgLogo"), lb = $("orgLogoBox");
+    if (cfg.logo && lg.getAttribute("src") !== cfg.logo) {
+      lg.onload = () => { lb.hidden = false; document.body.classList.add("has-logo"); };
+      lg.onerror = () => { lb.hidden = true; document.body.classList.remove("has-logo"); };
+      lg.alt = "Logo " + (cfg.etablissement || "");
+      lg.src = cfg.logo;
+    } else if (!cfg.logo) { lb.hidden = true; document.body.classList.remove("has-logo"); }
     $("agentTag").textContent = cfg.tag || "";
     $("disclaimerText").textContent = RP().disclaimer || cfg.disclaimer || "";
     $("disclaimer").hidden = !$("disclaimerText").textContent;
@@ -1894,6 +1902,7 @@
           const pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length)));
           cfg = { ...cfg, ...pick(s.pub.reception) };
           if (s.pub.etablissement) cfg.etablissement = s.pub.etablissement;
+          if (s.pub.logo !== undefined) cfg.logo = s.pub.logo;
           cfg.tsa = { ...(cfg.tsa || {}), ...pick(s.pub.tsa) };
           applyCfg();
         }
