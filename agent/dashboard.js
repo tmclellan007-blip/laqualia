@@ -7,247 +7,234 @@
   const store = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch {} } };
   const fmt = (n) => n.toLocaleString("fr-CA");
 
-  /* ---------- données fictives, cohérentes entre cartes, graphiques et listes ---------- */
-  // Générateur pseudo-aléatoire stable : les mêmes jours donnent toujours les mêmes chiffres
+  /* ---------- données fictives : formation et utilisation des agents ----------
+     Une équipe fictive de 15 personnes ; chaque jour, chaque personne pose des questions,
+     fait des simulations et des quiz. Tout le reste (cartes, graphique, listes) en découle. */
   function rng(seed) { let x = seed >>> 0 || 1; return () => { x ^= x << 13; x >>>= 0; x ^= x >> 17; x ^= x << 5; x >>>= 0; return x / 4294967296; }; }
   const dayKey = (d) => d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
-  const TYPES = [
-    { k: "consult", label: "Consultation", group: "consultations" },
-    { k: "vaccin", label: "Vaccination", group: "consultations" },
-    { k: "urgence", label: "Urgence", group: "consultations" },
-    { k: "chir", label: "Chirurgie", group: "chirurgies" },
-    { k: "dent", label: "Dentisterie", group: "chirurgies" },
-    { k: "exam", label: "Imagerie et laboratoire", group: "examens" },
-  ];
-  const SERIES = [
-    { k: "consultations", label: "Consultations", color: "var(--s1)" },
-    { k: "chirurgies", label: "Chirurgies", color: "var(--s2)" },
-    { k: "examens", label: "Examens", color: "var(--s3)" },
-  ];
-  const CAPACITY = (d) => (d.getDay() === 0 ? 10 : d.getDay() === 6 ? 16 : 22);
-
-  // Aujourd'hui : une journée type fixe (18 rendez-vous), le reste est généré
-  const TODAY_TYPES = { consult: 6, vaccin: 4, urgence: 2, chir: 2, dent: 1, exam: 3 };
-  function dayData(d, isToday) {
-    const r = rng(dayKey(d) * 2654435761);
-    const cap = CAPACITY(d);
-    let types;
-    if (isToday) types = { ...TODAY_TYPES };
-    else {
-      const total = Math.max(4, Math.round(cap * (0.66 + r() * 0.3)));
-      const w = { consult: 0.34, vaccin: 0.22, urgence: 0.1, chir: 0.1, dent: 0.06, exam: 0.18 };
-      types = {}; let used = 0;
-      TYPES.forEach((t, i) => {
-        const n = i === TYPES.length - 1 ? total - used : Math.max(0, Math.round(total * w[t.k] * (0.7 + r() * 0.6)));
-        types[t.k] = Math.max(0, i === TYPES.length - 1 ? n : Math.min(n, total - used)); used += types[t.k];
-      });
-      if (d.getDay() === 0) { types.chir = 0; types.dent = 0; } // dimanche : pas de chirurgie planifiée
-    }
-    const rdv = Object.values(types).reduce((a, b) => a + b, 0);
-    const groups = { consultations: 0, chirurgies: 0, examens: 0 };
-    TYPES.forEach((t) => (groups[t.group] += types[t.k]));
-    return {
-      date: d, types, groups, rdv, cap: isToday ? 22 : cap,
-      calls: isToday ? 47 : Math.round(rdv * (2.2 + r() * 0.9)),
-      hosp: isToday ? 4 : 2 + Math.floor(r() * 4),
-      admissions: isToday ? 2 : Math.floor(r() * 3),
-    };
-  }
-
-  // Heure de la démo : l'heure réelle pendant la journée, sinon 11 h 20 (pour voir tous les statuts)
+  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
   const now = new Date();
-  const mins = now.getHours() * 60 + now.getMinutes();
-  const demoMin = mins >= 9 * 60 + 30 && mins <= 16 * 60 + 30 ? mins : 11 * 60 + 20;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const days = {};
-  const getDay = (d) => { const k = dayKey(d); return days[k] || (days[k] = dayData(d, k === dayKey(today))); };
-  const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-  const monday = addDays(today, -((today.getDay() + 6) % 7));
-  const weekDays = Array.from({ length: 7 }, (_, i) => getDay(addDays(monday, i)));
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const monthDays = []; for (let d = monthStart; d <= monthEnd; d = addDays(d, 1)) monthDays.push(getDay(d));
-
-  // Horaire du jour, construit à partir des 18 rendez-vous d'aujourd'hui (noms d'animaux fictifs, aucun client)
-  const PETS = [["Moka", "Chien · Labrador"], ["Pistache", "Chat · Européen"], ["Bijou", "Chien · Shih Tzu"], ["Caramel", "Chat · Maine Coon"], ["Rocky", "Chien · Berger allemand"], ["Nala", "Chatte · Siamoise"], ["Biscuit", "Lapin · Bélier"], ["Luna", "Chienne · Golden"], ["Gaston", "Chat · Persan"], ["Fripouille", "Furet"], ["Max", "Chien · Beagle"], ["Mimi", "Chatte · Européenne"], ["Oscar", "Chien · Bouledogue français"], ["Praline", "Chatte · Ragdoll"], ["Zeus", "Chien · Husky"], ["Noisette", "Cochon d'Inde"], ["Charlie", "Chien · Caniche"], ["Simba", "Chat · Bengal"]];
-  const REASON = { consult: ["Examen annuel", "Boiterie", "Problème de peau", "Suivi de poids", "Otite", "Examen de santé"], vaccin: ["Vaccins annuels", "Rappel de vaccin", "Vaccins de base", "Vaccin rage"], urgence: ["Vomissements", "Plaie à la patte"], chir: ["Stérilisation", "Retrait de masse"], dent: ["Détartrage"], exam: ["Radiographie", "Analyses sanguines", "Échographie"] };
-  const LEN = { consult: 30, vaccin: 20, urgence: 30, chir: 90, dent: 60, exam: 30 };
-  const VET = ["Dre Lavoie", "Dr Tremblay", "Dre Côté"];
-  function buildSchedule() {
-    const td = getDay(today);
-    const list = [];
-    Object.entries(td.types).forEach(([k, n]) => { for (let i = 0; i < n; i++) list.push({ k, reason: REASON[k][i % REASON[k].length] }); });
-    // ordre de la journée : chirurgies et dentisterie le matin, le reste réparti
-    const order = ["chir", "dent", "vaccin", "consult", "exam", "urgence"];
-    const r = rng(dayKey(today));
-    list.sort((a, b) => order.indexOf(a.k) - order.indexOf(b.k) + (r() - 0.5) * 3.2);
-    let t = 8 * 60; const vetT = [8 * 60, 8 * 60, 8 * 60 + 30];
-    return list.map((x, i) => {
-      const v = i % 3; const start = Math.max(vetT[v], t); vetT[v] = start + LEN[x.k] + (x.k === "chir" ? 0 : 10); t = start + 15;
-      const end = start + LEN[x.k];
-      const status = end <= demoMin ? "done" : start <= demoMin ? "cons" : start - demoMin <= 25 && i % 2 === 0 ? "arr" : "up";
-      const [name, sp] = PETS[i % PETS.length];
-      return { start, end, name, sp, reason: x.reason, type: TYPES.find((tt) => tt.k === x.k).label, vet: VET[v], status };
-    }).sort((a, b) => a.start - b.start);
-  }
-  const schedule = buildSchedule();
-
-  const TASKS = [
-    { c: "rappel", t: "Rappeler pour les résultats d'analyses de {exam}", d: "Aujourd'hui · 10 h", who: "Réception", late: true },
-    { c: "rappel", t: "Rappel de vaccins annuels : 6 animaux à contacter", d: "Aujourd'hui", who: "Réception" },
-    { c: "rappel", t: "Confirmer le rendez-vous de détartrage de demain", d: "Aujourd'hui · 15 h", who: "Réception" },
-    { c: "rappel", t: "Rappel vermifuge printanier : liste à envoyer", d: "Demain", who: "Réception" },
-    { c: "rappel", t: "Rappeler pour le renouvellement d'une ordonnance", d: "Hier", who: "TSA", late: true },
-    { c: "rappel", t: "Relancer un estimé de chirurgie non confirmé", d: "Aujourd'hui", who: "Réception" },
-    { c: "suivi", t: "Suivi post-opératoire de {chir}", d: "Aujourd'hui · 14 h", who: "TSA" },
-    { c: "suivi", t: "Appel de suivi après l'urgence de {urg}", d: "Aujourd'hui", who: "TSA" },
-    { c: "suivi", t: "Envoyer les consignes de diète à un propriétaire", d: "Aujourd'hui", who: "Réception", done: true },
-    { c: "suivi", t: "Vérifier l'appétit de {dent} après son détartrage", d: "Demain", who: "TSA" },
-    { c: "prep", t: "Préparer la salle de chirurgie pour 8 h", d: "Aujourd'hui · 7 h 45", who: "TSA", done: true },
-    { c: "prep", t: "Vérifier le jeûne des patients opérés demain", d: "Aujourd'hui · 16 h", who: "Réception" },
-    { c: "prep", t: "Préparer les dossiers des nouveaux patients de l'après-midi", d: "Aujourd'hui · 12 h", who: "Réception" },
-    { c: "prep", t: "Réapprovisionner la salle d'examen 2", d: "Aujourd'hui", who: "TSA" },
+  const SERIES = [
+    { k: "qRec", label: "Questions Réception", color: "#6250d6" },
+    { k: "qTsa", label: "Questions TSA", color: "#1baf7a" },
+    { k: "sims", label: "Simulations et quiz", color: "#eb6834" },
   ];
-  // Les tâches parlent des animaux vus aujourd'hui (même horaire, mêmes noms)
-  const firstOf = (type) => (schedule.find((x) => x.type === type) || {}).name || "un patient";
-  const SUB = { exam: firstOf("Imagerie et laboratoire"), chir: firstOf("Chirurgie"), urg: firstOf("Urgence"), dent: firstOf("Dentisterie") };
-  TASKS.forEach((t) => (t.t = t.t.replace(/\{(\w+)\}/g, (_, k) => SUB[k] || "un patient")));
-  // État des tâches propre à cet appareil (démo) : cocher ne modifie aucun dossier
-  try { const saved = JSON.parse(store.get("lq-dash-tasks") || "null"); if (Array.isArray(saved) && saved.length === TASKS.length) saved.forEach((v, i) => (TASKS[i].done = !!v)); } catch {}
-  const CAT = { suivi: ["Suivis clients", "tg-suivi", "Suivi"], rappel: ["Rappels", "tg-rappel", "Rappel"], prep: ["Préparation", "tg-prep", "Préparation"] };
+  const TEAM = [
+    ["Julie R.", "rec", 0.95, "Expert"], ["Marc-André B.", "rec", 0.7, "Intermédiaire"], ["Sophie L.", "rec", 0.85, "Intermédiaire"],
+    ["Karine D.", "rec", 0.5, "Débutant"], ["Émilie G.", "rec", 0.9, "Débutant"], ["Nadia T.", "rec", 0.35, "Intermédiaire"],
+    ["Olivier P.", "rec", 0.6, "Débutant"], ["Camille F.", "rec", 0.0, "Débutant"], ["Isabelle M.", "rec", 0.75, "Expert"],
+    ["Vincent C.", "tsa", 0.8, "Expert"], ["Mélanie S.", "tsa", 0.9, "Intermédiaire"], ["Audrey N.", "tsa", 0.55, "Intermédiaire"],
+    ["Jérôme H.", "tsa", 0.4, "Débutant"], ["Laurence V.", "tsa", 0.0, "Intermédiaire"], ["Sarah K.", "tsa", 0.7, "Débutant"],
+  ].map(([name, role, act, level], i) => ({ id: i, name, role, act, level, initials: name.split(/[\s-]/).map((x) => x[0]).join("").slice(0, 2).toUpperCase() }));
+  // Deux personnes inactives depuis un moment (dernière connexion il y a 9 et 16 jours)
+  const LAST_SEEN_DAYS = { 7: 9, 13: 16 };
+
+  const THEMES = {
+    rec: [["Rendez-vous", 84], ["Facturation", 78], ["Plainte", 71], ["Client inquiet", 80], ["Deuil", 74], ["Urgence potentielle", 61]],
+    tsa: [["Transmission au vétérinaire", 76], ["Surveillance hospitalisation", 82], ["Préparation de procédure", 85], ["Consignes au client", 79], ["Client inquiet post-op", 72], ["Urgence en hospitalisation", 63]],
+  };
+  const TOPICS = {
+    rec: [["Lexique vétérinaire", 0.24], ["Triage téléphonique", 0.2], ["Client mécontent", 0.16], ["Facturation et dépôts", 0.13], ["Prise de rendez-vous", 0.15], ["Deuil et euthanasie", 0.12]],
+    tsa: [["Transmission SBAR", 0.22], ["Anesthésie et réveil", 0.2], ["Calculs d'ordonnance", 0.17], ["Surveillance hospitalisation", 0.18], ["Laboratoire", 0.13], ["Consignes au client", 0.1]],
+  };
+
+  // Activité d'une personne pour un jour donné (journées futures : rien ; aujourd'hui : jusqu'à maintenant)
+  const cache = {};
+  function userDay(u, d) {
+    const k = dayKey(d) * 100 + u.id;
+    if (cache[k]) return cache[k];
+    const r = rng(k * 2654435761 + 7);
+    const daysAgo = Math.round((today - d) / 86400000);
+    let act = u.act;
+    if (LAST_SEEN_DAYS[u.id] !== undefined) act = daysAgo === LAST_SEEN_DAYS[u.id] ? 0.6 : 0;
+    if (daysAgo < 0) act = 0;
+    const weekend = d.getDay() === 0 || d.getDay() === 6;
+    const works = r() < (weekend && daysAgo !== 0 ? 0.35 : 0.85) * Math.min(1, act + 0.2); // la démo traite aujourd'hui comme une journée normale
+    let o = { q: 0, sims: [], min: 0, last: null };
+    if (works && act > 0) {
+      const dayFrac = daysAgo === 0 ? Math.max(0, Math.min(1, (nowMin - 8 * 60) / (9 * 60))) : 1;
+      const q = Math.round((2 + r() * 7) * act * dayFrac);
+      const nSims = r() < act * 0.7 * dayFrac ? 1 + Math.floor(r() * 2) : 0;
+      const sims = [];
+      for (let i = 0; i < nSims; i++) {
+        const th = THEMES[u.role][Math.floor(r() * 6)];
+        const lvlBonus = u.level === "Expert" ? 6 : u.level === "Débutant" ? -5 : 0;
+        sims.push({ theme: th[0], score: Math.max(35, Math.min(100, Math.round(th[1] + lvlBonus + (r() - 0.5) * 22))) });
+      }
+      const lastMin = daysAgo === 0 ? Math.max(8 * 60, nowMin - Math.floor(r() * 240)) : 9 * 60 + Math.floor(r() * 8 * 60);
+      o = { q, sims, min: q * 3 + nSims * 14, last: q || nSims ? lastMin : null };
+    }
+    return (cache[k] = o);
+  }
+
+  function rangeDays() {
+    if (period === "day") return [today];
+    if (period === "week") { const m = addDays(today, -((today.getDay() + 6) % 7)); return Array.from({ length: 7 }, (_, i) => addDays(m, i)); }
+    const out = []; for (let d = new Date(today.getFullYear(), today.getMonth(), 1); d.getMonth() === today.getMonth(); d = addDays(d, 1)) out.push(d); return out;
+  }
+  const prevRange = () => { const ds = rangeDays(); const n = period === "month" ? 30 : ds.length; return ds.map((d) => addDays(d, -n)); };
+  function aggregate(ds) {
+    const a = { qRec: 0, qTsa: 0, sims: 0, scoreSum: 0, min: 0, users: new Set(), themes: {} };
+    ds.forEach((d) => TEAM.forEach((u) => {
+      const x = userDay(u, d);
+      if (u.role === "rec") a.qRec += x.q; else a.qTsa += x.q;
+      a.sims += x.sims.length; a.min += x.min;
+      x.sims.forEach((sm) => { a.scoreSum += sm.score; const t = a.themes[sm.theme] || (a.themes[sm.theme] = { n: 0, sum: 0 }); t.n++; t.sum += sm.score; });
+      if (x.q || x.sims.length) a.users.add(u.id);
+    }));
+    return a;
+  }
+  function lastSeen(u) {
+    for (let i = 0; i < 40; i++) { const d = addDays(today, -i); const x = userDay(u, d); if (x.last !== null) return { daysAgo: i, min: x.last }; }
+    return null;
+  }
 
   /* ---------- état ---------- */
-  let period = ["day", "week", "month"].includes(store.get("lq-dash-period")) ? store.get("lq-dash-period") : "day";
-  let actView = "chart", schedFilter = "all", taskFilter = "all";
-  const STATUS = { up: ["À venir", "st-up"], arr: ["Arrivé", "st-arr"], cons: ["En consultation", "st-cons"], done: ["Terminé", "st-done"] };
+  let period = ["day", "week", "month"].includes(store.get("lq-dash-period")) ? store.get("lq-dash-period") : "week";
+  let actView = "chart", schedFilter = "all", taskFilter = "rec";
   const hm = (m) => `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, "0")}`;
   const dLong = (d) => d.toLocaleDateString("fr-CA", { weekday: "long", day: "numeric", month: "long" });
-  const dShort = (d) => d.toLocaleDateString("fr-CA", { weekday: "short" }).replace(".", "");
   const sum = (arr, f) => arr.reduce((a, x) => a + f(x), 0);
-
-  function periodDays() { return period === "day" ? [getDay(today)] : period === "week" ? weekDays : monthDays; }
+  const perLab = () => (period === "day" ? "aujourd'hui" : period === "week" ? "cette semaine" : "ce mois-ci");
 
   /* ---------- cartes ---------- */
   const IC = {
-    cal: '<path d="M7 3v3M17 3v3M4 8h16"/><rect x="4" y="5" width="16" height="16" rx="2"/>',
-    bed: '<path d="M3 18v-7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7M3 14h18M7 9V6"/>',
+    users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20c0-2.6-1.4-4.6-3.5-5.5"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/>',
     phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
-    bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4"/>',
-    gauge: '<path d="M12 14l4-4"/><path d="M3.5 18a9 9 0 1 1 17 0"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   };
   const kpi = (ico, label, value, sub, bar) => `<article class="kpi"><div class="k-l"><span class="k-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[ico]}</svg></span>${label}</div><div class="k-v">${value}</div>${bar !== undefined ? `<div class="k-bar" aria-hidden="true"><i style="width:${Math.min(100, bar)}%"></i></div>` : ""}<div class="k-s">${sub}</div></article>`;
+  const delta = (cur, prev, unit = "") => { const d = cur - prev; if (!prev && !cur) return ""; return d === 0 ? "stable" : `<b>${d > 0 ? "+" : "−"}${fmt(Math.abs(d))}${unit}</b> vs période précédente`; };
   function renderKpis() {
-    const ds = periodDays();
-    const rdv = sum(ds, (x) => x.rdv), cap = sum(ds, (x) => x.cap), calls = sum(ds, (x) => x.calls), adm = sum(ds, (x) => x.admissions);
-    const occ = Math.round((rdv / cap) * 100);
-    const open = TASKS.filter((t) => t.c === "rappel" && !t.done), late = open.filter((t) => t.late).length;
-    const td = getDay(today);
-    const doneToday = schedule.filter((s) => s.status === "done").length;
-    const lab = period === "day" ? "aujourd'hui" : period === "week" ? "cette semaine" : "ce mois-ci";
+    const A = aggregate(rangeDays()), P = aggregate(prevRange());
+    const score = A.sims ? Math.round(A.scoreSum / A.sims) : 0, pscore = P.sims ? Math.round(P.scoreSum / P.sims) : 0;
+    const online = TEAM.filter((u) => { const l = lastSeen(u); return l && l.daysAgo === 0 && nowMin - l.min <= 15; }).length;
+    const hours = A.min / 60;
     $("kpis").innerHTML = [
-      kpi("cal", period === "day" ? "Rendez-vous du jour" : "Rendez-vous", fmt(rdv), period === "day" ? `<b>${doneToday}</b> terminés · <b>${rdv - doneToday}</b> à venir ou en cours` : `<b>${fmt(Math.round(rdv / ds.length))}</b> par jour en moyenne`),
-      kpi("bed", "Animaux hospitalisés", td.hosp + "<small>en ce moment</small>", period === "day" ? `<b>${td.admissions}</b> admissions aujourd'hui` : `<b>${adm}</b> admissions ${lab}`),
-      kpi("phone", "Appels reçus", fmt(calls), period === "day" ? `<b>${Math.round(calls / 9)}</b> par heure en moyenne` : `<b>${fmt(Math.round(calls / ds.length))}</b> par jour en moyenne`),
-      kpi("bell", "Rappels à effectuer", open.length, late ? `<span class="late">${late} en retard</span> · voir les tâches` : "aucun en retard"),
-      kpi("gauge", "Taux d'occupation", occ + " %", `<b>${fmt(rdv)}</b> plages réservées sur <b>${fmt(cap)}</b>`, occ),
+      kpi("users", "Personnes actives", `${A.users.size}<small>sur ${TEAM.length}</small>`, period === "day" ? `<b>${online}</b> en ligne en ce moment` : delta(A.users.size, P.users.size)),
+      kpi("chat", "Questions aux agents", fmt(A.qRec + A.qTsa), `<b>${fmt(A.qRec)}</b> Réception · <b>${fmt(A.qTsa)}</b> TSA`),
+      kpi("phone", "Simulations et quiz", fmt(A.sims), delta(A.sims, P.sims) || "aucune sur la période précédente"),
+      kpi("star", "Score moyen", A.sims ? score + " %" : "—", A.sims ? delta(score, pscore, " pt") : "aucune simulation", A.sims ? score : 0),
+      kpi("clock", "Temps de formation", hours >= 10 ? `${Math.round(hours)} h` : `${hours.toFixed(1).replace(".", ",")} h`, A.users.size ? `≈ <b>${Math.round(A.min / A.users.size)} min</b> par personne active` : "—"),
     ].join("");
   }
 
-  /* ---------- activité (colonnes groupées, 3 séries) ---------- */
-  function actBuckets() {
-    if (period === "month") {
-      const out = [];
-      monthDays.forEach((d) => {
-        const wk = addDays(d.date, -((d.date.getDay() + 6) % 7));
-        let b = out.find((x) => x.key === dayKey(wk));
-        if (!b) { b = { key: dayKey(wk), label: "Sem. du " + Math.max(wk < monthStart ? 1 : wk.getDate(), 1), full: "Semaine du " + (wk < monthStart ? monthStart : wk).toLocaleDateString("fr-CA", { day: "numeric", month: "long" }), tbl: "Sem. du " + (wk < monthStart ? monthStart : wk).toLocaleDateString("fr-CA", { day: "numeric", month: "short" }).replace(".", ""), g: { consultations: 0, chirurgies: 0, examens: 0 }, cur: false }; out.push(b); }
-        SERIES.forEach((s) => (b.g[s.k] += d.groups[s.k]));
-        if (dayKey(d.date) === dayKey(today)) b.cur = true;
-      });
-      return out;
+  /* ---------- utilisation (colonnes groupées) ---------- */
+  function buckets() {
+    if (period === "day") {
+      // Aujourd'hui par heure : la journée d'aujourd'hui répartie sur les heures déjà écoulées
+      const A = aggregate([today]); const hours = []; const r = rng(dayKey(today));
+      const cur = Math.min(17, Math.max(8, Math.floor(nowMin / 60)));
+      for (let h = 8; h <= 17; h++) hours.push({ h, w: h <= cur ? 0.6 + r() * (h === 10 || h === 14 ? 1.4 : 0.9) : 0 });
+      const W = sum(hours, (x) => x.w) || 1;
+      const split = (tot) => { let left = tot; return hours.map((x, i) => { const v = i === hours.length - 1 ? left : Math.min(left, Math.round((tot * x.w) / W)); left -= v; return v; }); };
+      const qr = split(A.qRec), qt = split(A.qTsa), sm = split(A.sims);
+      return hours.map((x, i) => ({ label: x.h + " h", full: `${x.h} h à ${x.h + 1} h`, tbl: `${x.h} h`, g: { qRec: qr[i], qTsa: qt[i], sims: sm[i] }, cur: x.h === cur }));
     }
-    return weekDays.map((d) => ({ key: dayKey(d.date), label: dShort(d.date), full: dLong(d.date), tbl: d.date.toLocaleDateString("fr-CA", { weekday: "short", day: "numeric" }).replace(".", ""), g: d.groups, cur: dayKey(d.date) === dayKey(today) }));
+    const ds = rangeDays();
+    if (period === "week") return ds.map((d) => { const A = aggregate([d]); return { label: d.toLocaleDateString("fr-CA", { weekday: "short" }).replace(".", ""), full: dLong(d), tbl: d.toLocaleDateString("fr-CA", { weekday: "short", day: "numeric" }).replace(".", ""), g: { qRec: A.qRec, qTsa: A.qTsa, sims: A.sims }, cur: dayKey(d) === dayKey(today) }; });
+    const out = [];
+    ds.forEach((d) => {
+      const wk = addDays(d, -((d.getDay() + 6) % 7)); const start = wk < ds[0] ? ds[0] : wk;
+      let b = out.find((x) => x.key === dayKey(start));
+      if (!b) { b = { key: dayKey(start), label: "Sem. du " + start.getDate(), full: "Semaine du " + start.toLocaleDateString("fr-CA", { day: "numeric", month: "long" }), tbl: "Sem. du " + start.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }).replace(".", ""), g: { qRec: 0, qTsa: 0, sims: 0 }, cur: false }; out.push(b); }
+      const A = aggregate([d]); b.g.qRec += A.qRec; b.g.qTsa += A.qTsa; b.g.sims += A.sims;
+      if (dayKey(d) === dayKey(today)) b.cur = true;
+    });
+    return out;
   }
   function renderActivity() {
-    const B = actBuckets();
-    $("actSub").textContent = period === "month" ? "Par semaine, " + today.toLocaleDateString("fr-CA", { month: "long", year: "numeric" }) : period === "week" ? "Par jour, semaine en cours" : "Semaine en cours · aujourd'hui en évidence";
+    const B = buckets();
+    $("actSub").textContent = period === "day" ? "Par heure, aujourd'hui" : period === "week" ? "Par jour, semaine en cours · aujourd'hui en évidence" : "Par semaine, " + today.toLocaleDateString("fr-CA", { month: "long", year: "numeric" });
     $("actLegend").innerHTML = SERIES.map((s) => `<span><i style="background:${s.color}"></i>${s.label}</span>`).join("");
     const W = 720, H = 260, padL = 34, padB = 28, padT = 10;
-    const max = Math.max(...B.map((b) => Math.max(...SERIES.map((s) => b.g[s.k]))));
-    const step = max > 60 ? 20 : max > 30 ? 10 : 5;
-    const top = Math.ceil(max / step) * step || step;
+    const max = Math.max(1, ...B.map((b) => Math.max(...SERIES.map((s) => b.g[s.k]))));
+    const step = max > 100 ? 50 : max > 40 ? 20 : max > 20 ? 10 : max > 8 ? 5 : 2;
+    const top = Math.ceil(max / step) * step;
     const y = (v) => padT + (H - padT - padB) * (1 - v / top);
-    const bw = (W - padL) / B.length;
-    const barW = Math.min(24, (bw - 18) / 3 - 2);
+    const bw = (W - padL) / B.length, barW = Math.min(24, (bw - 14) / 3 - 2);
     let g = "";
     for (let v = 0; v <= top; v += step) g += `<line class="gl" x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${padL - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
     B.forEach((b, i) => {
       const cx = padL + bw * i + bw / 2;
-      if (b.cur && period !== "month") g += `<rect class="band" x="${cx - bw / 2 + 4}" y="${padT}" width="${bw - 8}" height="${H - padT - padB}" rx="8"/>`;
+      if (b.cur) g += `<rect class="band" x="${cx - bw / 2 + 3}" y="${padT}" width="${bw - 6}" height="${H - padT - padB}" rx="8"/>`;
       const x0 = cx - (barW * 3 + 4) / 2;
-      g += `<g data-i="${i}">`;
       SERIES.forEach((s, j) => {
-        const v = b.g[s.k], x = x0 + j * (barW + 2), yt = y(v), h = y(0) - yt;
-        if (h <= 0) return;
+        const v = b.g[s.k], x = x0 + j * (barW + 2), yt = y(v), h = y(0) - yt; if (h <= 0) return;
         const r = Math.min(4, h, barW / 2);
-        g += `<path class="bar" fill="${s.color}" d="M${x},${y(0)} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + barW - r} Q${x + barW},${yt} ${x + barW},${yt + r} V${y(0)} Z"/>`;
+        g += `<path fill="${s.color}" d="M${x},${y(0)} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + barW - r} Q${x + barW},${yt} ${x + barW},${yt + r} V${y(0)} Z"/>`;
       });
-      g += `</g><text class="ax${b.cur ? " cur" : ""}" x="${cx}" y="${H - 8}" text-anchor="middle">${esc(b.label)}${b.cur && period !== "month" ? " ●" : ""}</text>`;
-      g += `<rect class="hit" data-i="${i}" x="${padL + bw * i}" y="${padT}" width="${bw}" height="${H - padT - padB + 4}"/>`;
+      g += `<text class="ax${b.cur ? " cur" : ""}" x="${cx}" y="${H - 8}" text-anchor="middle">${esc(b.label)}</text><rect class="hit" data-i="${i}" x="${padL + bw * i}" y="${padT}" width="${bw}" height="${H - padT - padB + 4}"/>`;
     });
-    $("actChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Activité : consultations, chirurgies et examens">${g}</svg>`;
+    $("actChart").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Utilisation des agents : questions Réception, questions TSA, simulations et quiz">${g}</svg>`;
     const tip = $("dashTip");
     $("actChart").querySelectorAll(".hit").forEach((h) => {
       const b = B[+h.dataset.i];
       const show = (e) => {
-        tip.innerHTML = `<b>${esc(b.full)}</b>` + SERIES.map((s) => `<div class="r"><span><i style="background:${s.color}"></i>${s.label}</span><strong>${b.g[s.k]}</strong></div>`).join("") + `<div class="r" style="margin-top:3px;opacity:.8"><span>Total</span><strong>${sum(SERIES, (s) => b.g[s.k])}</strong></div>`;
+        tip.innerHTML = `<b>${esc(b.full)}</b>` + SERIES.map((s) => `<div class="r"><span><i style="background:${s.color}"></i>${s.label}</span><strong>${b.g[s.k]}</strong></div>`).join("");
         tip.hidden = false;
-        const x = Math.min(window.innerWidth - tip.offsetWidth - 10, e.clientX + 14), yy = Math.max(10, e.clientY - tip.offsetHeight - 12);
-        tip.style.left = x + "px"; tip.style.top = yy + "px";
+        tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 10, e.clientX + 14) + "px"; tip.style.top = Math.max(10, e.clientY - tip.offsetHeight - 12) + "px";
       };
-      h.addEventListener("mousemove", show); h.addEventListener("click", show);
-      h.addEventListener("mouseleave", () => (tip.hidden = true));
+      h.addEventListener("mousemove", show); h.addEventListener("click", show); h.addEventListener("mouseleave", () => (tip.hidden = true));
     });
-    // Vue tableau (mêmes données)
     const tot = (k) => sum(B, (b) => b.g[k]);
-    $("actTable").innerHTML = `<table><thead><tr><th>${period === "month" ? "Semaine" : "Jour"}</th>${SERIES.map((s) => `<th>${s.label}</th>`).join("")}<th>Total</th></tr></thead><tbody>${B.map((b) => `<tr><td>${esc(b.tbl || b.full)}${b.cur ? " · auj." : ""}</td>${SERIES.map((s) => `<td>${b.g[s.k]}</td>`).join("")}<td>${sum(SERIES, (s) => b.g[s.k])}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td>${SERIES.map((s) => `<td>${tot(s.k)}</td>`).join("")}<td>${sum(SERIES, (s) => tot(s.k))}</td></tr></tfoot></table>`;
+    $("actTable").innerHTML = `<table><thead><tr><th>${period === "day" ? "Heure" : period === "week" ? "Jour" : "Semaine"}</th>${SERIES.map((s) => `<th>${s.label}</th>`).join("")}</tr></thead><tbody>${B.map((b) => `<tr><td>${esc(b.tbl)}${b.cur ? " · auj." : ""}</td>${SERIES.map((s) => `<td>${b.g[s.k]}</td>`).join("")}</tr>`).join("")}</tbody><tfoot><tr><td>Total</td>${SERIES.map((s) => `<td>${tot(s.k)}</td>`).join("")}</tr></tfoot></table>`;
     $("actChart").hidden = actView !== "chart"; $("actLegend").hidden = actView !== "chart"; $("actTable").hidden = actView !== "table";
   }
 
-  /* ---------- répartition par type (barres horizontales, une couleur) ---------- */
+  /* ---------- sujets les plus consultés ---------- */
   function renderTypes() {
-    const ds = periodDays();
-    const rows = TYPES.map((t) => ({ label: t.label, n: sum(ds, (d) => d.types[t.k]) })).sort((a, b) => b.n - a.n);
-    const total = sum(rows, (r) => r.n), max = Math.max(...rows.map((r) => r.n)) || 1;
-    $("typeSub").textContent = `${fmt(total)} rendez-vous ${period === "day" ? "aujourd'hui" : period === "week" ? "cette semaine" : "ce mois-ci"}`;
-    $("typeBars").innerHTML = rows.map((r) => `<div class="hb"><span class="hb-l" title="${esc(r.label)}">${esc(r.label)}</span><span class="hb-t" aria-hidden="true"><i style="width:${(r.n / max) * 100}%"></i></span><span class="hb-v">${fmt(r.n)}<small>${total ? Math.round((r.n / total) * 100) : 0} %</small></span></div>`).join("");
+    const A = aggregate(rangeDays());
+    const rows = [];
+    ["rec", "tsa"].forEach((role) => { const tot = role === "rec" ? A.qRec : A.qTsa; let left = tot; TOPICS[role].forEach(([t, w], i) => { const n = i === TOPICS[role].length - 1 ? left : Math.round(tot * w); left -= n; rows.push({ label: t, role, n: Math.max(0, n) }); }); });
+    rows.sort((a, b) => b.n - a.n);
+    const top = rows.slice(0, 8), total = A.qRec + A.qTsa, max = Math.max(1, ...top.map((r) => r.n));
+    $("typeSub").textContent = `${fmt(total)} questions ${perLab()} · 8 sujets principaux`;
+    $("typeBars").innerHTML = total ? top.map((r) => `<div class="hb"><span class="hb-l" title="${esc(r.label)}">${esc(r.label)} <small style="color:var(--muted)">${r.role === "rec" ? "Réc." : "TSA"}</small></span><span class="hb-t" aria-hidden="true"><i style="width:${(r.n / max) * 100}%"></i></span><span class="hb-v">${fmt(r.n)}<small>${Math.round((r.n / total) * 100)} %</small></span></div>`).join("") : '<p class="empty2">Aucune question sur cette période.</p>';
   }
 
-  /* ---------- horaire du jour ---------- */
+  /* ---------- équipe : connexions et progression ---------- */
+  function seenStatus(l) {
+    if (!l) return ["off", "Jamais connecté"];
+    if (l.daysAgo === 0) return nowMin - l.min <= 15 ? ["on", "En ligne"] : ["day", "Aujourd'hui · " + hm(l.min)];
+    if (l.daysAgo <= 7) return ["week", l.daysAgo === 1 ? "Hier" : `Il y a ${l.daysAgo} jours`];
+    return ["off", `Inactif depuis ${l.daysAgo} jours`];
+  }
   function renderSchedule() {
-    const counts = { all: schedule.length }; Object.keys(STATUS).forEach((k) => (counts[k] = schedule.filter((s) => s.status === k).length));
-    $("schedSub").textContent = `${dLong(today)} · ${schedule.length} rendez-vous · il est ${hm(demoMin)}`;
-    $("schedFilter").innerHTML = [["all", "Tous"], ...Object.entries(STATUS).map(([k, [l]]) => [k, l])].map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${schedFilter === k}">${l} <span class="n">${counts[k]}</span></button>`).join("");
+    const ds = rangeDays();
+    const rows = TEAM.map((u) => {
+      const l = lastSeen(u);
+      let q = 0, sims = 0, sc = 0;
+      ds.forEach((d) => { const x = userDay(u, d); q += x.q; sims += x.sims.length; sc += sum(x.sims, (s) => s.score); });
+      return { u, l, st: seenStatus(l), q, sims, score: sims ? Math.round(sc / sims) : null };
+    }).sort((a, b) => (a.l ? a.l.daysAgo * 2000 - a.l.min : 1e9) - (b.l ? b.l.daysAgo * 2000 - b.l.min : 1e9));
+    const inact = rows.filter((r) => r.st[0] === "off").length;
+    $("schedSub").textContent = `${TEAM.length} personnes · activité ${perLab()} · ${inact} inactive${inact > 1 ? "s" : ""} depuis plus de 7 jours`;
+    const F = [["all", "Toutes", rows.length], ["rec", "Réception", rows.filter((r) => r.u.role === "rec").length], ["tsa", "TSA", rows.filter((r) => r.u.role === "tsa").length], ["off", "Inactives", inact]];
+    $("schedFilter").innerHTML = F.map(([k, l, n]) => `<button type="button" data-f="${k}" aria-pressed="${schedFilter === k}">${l} <span class="n">${n}</span></button>`).join("");
     $("schedFilter").querySelectorAll("button").forEach((b) => (b.onclick = () => { schedFilter = b.dataset.f; renderSchedule(); }));
-    const list = schedule.filter((s) => schedFilter === "all" || s.status === schedFilter);
-    $("sched").innerHTML = list.length ? list.map((s) => `<li class="${s.status === "cons" ? "now" : ""}"><span class="t">${hm(s.start).replace(" h ", ":").replace(/^(\d):/, "0$1:")}</span><span class="w"><b>${esc(s.name)} · ${esc(s.reason)}</b><small>${esc(s.sp)} · ${esc(s.type)} · ${esc(s.vet)}</small></span><span class="st2 ${STATUS[s.status][1]}"><i aria-hidden="true"></i>${STATUS[s.status][0]}</span></li>`).join("") : '<li class="empty2">Aucun rendez-vous avec ce statut.</li>';
+    const list = rows.filter((r) => schedFilter === "all" || (schedFilter === "off" ? r.st[0] === "off" : r.u.role === schedFilter));
+    const ST = { on: "st-on", day: "st-day", week: "st-week", off: "st-off" };
+    $("sched").innerHTML = list.map((r) => `<li><span class="av2 ${r.u.role}" aria-hidden="true">${r.u.initials}</span><span class="w"><b>${esc(r.u.name)} <small style="font-weight:700;color:var(--muted)">· ${r.u.role === "rec" ? "Réception" : "TSA"} · ${r.u.level}</small></b><span class="meta"><span>${fmt(r.q)} questions</span><span>${r.sims} simulation${r.sims > 1 ? "s" : ""}</span><span>${r.score === null ? "score —" : "score " + r.score + " %"}${r.score === null ? "" : `<span class="prog" aria-hidden="true"><i style="width:${r.score}%"></i></span>`}</span></span></span><span class="st2 ${ST[r.st[0]]}"><i aria-hidden="true"></i>${esc(r.st[1])}</span></li>`).join("") || '<li class="empty2">Personne dans cette catégorie.</li>';
   }
 
-  /* ---------- tâches ---------- */
+  /* ---------- réussite par thème ---------- */
   function renderTasks() {
-    const open = TASKS.filter((t) => !t.done).length;
-    $("taskSub").textContent = `${open} à faire · ${TASKS.length - open} faites`;
-    const cnt = (c) => TASKS.filter((t) => (c === "all" || t.c === c) && !t.done).length;
-    $("taskFilter").innerHTML = [["all", "Toutes"], ...Object.entries(CAT).map(([k, [l]]) => [k, l])].map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${taskFilter === k}">${l} <span class="n">${cnt(k)}</span></button>`).join("");
+    const A = aggregate(rangeDays());
+    $("taskFilter").innerHTML = [["rec", "Réception"], ["tsa", "TSA"]].map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${taskFilter === k}">${l}</button>`).join("");
     $("taskFilter").querySelectorAll("button").forEach((b) => (b.onclick = () => { taskFilter = b.dataset.f; renderTasks(); }));
-    const list = TASKS.map((t, i) => ({ ...t, i })).filter((t) => taskFilter === "all" || t.c === taskFilter).sort((a, b) => a.done - b.done || b.late - a.late);
-    $("tasks").innerHTML = list.map((t) => `<li class="${t.done ? "done" : ""}"><label><input type="checkbox" data-i="${t.i}"${t.done ? " checked" : ""}><span class="tt"><b>${esc(t.t)}</b><small>${t.late && !t.done ? '<span class="late">En retard · </span>' : ""}${esc(t.d)} · ${esc(t.who)}</small></span></label><span class="tag2 ${CAT[t.c][1]}">${CAT[t.c][2]}</span></li>`).join("");
-    $("tasks").querySelectorAll("input").forEach((c) => (c.onchange = () => {
-      TASKS[+c.dataset.i].done = c.checked;
-      store.set("lq-dash-tasks", JSON.stringify(TASKS.map((t) => !!t.done)));
-      renderTasks(); renderKpis();
-    }));
+    const rows = THEMES[taskFilter].map(([t]) => { const x = A.themes[t]; return { t, n: x ? x.n : 0, score: x ? Math.round(x.sum / x.n) : null }; }).sort((a, b) => (a.score ?? 101) - (b.score ?? 101));
+    const n = sum(rows, (r) => r.n);
+    $("taskSub").textContent = `${n} simulation${n > 1 ? "s" : ""} ${taskFilter === "rec" ? "Réception" : "TSA"} ${perLab()} · du thème le plus faible au plus fort`;
+    const lvl = (s) => (s >= 80 ? ["ok", "Solide"] : s >= 68 ? ["mid", "À consolider"] : ["low", "À renforcer"]);
+    $("tasks").innerHTML = rows.map((r) => r.score === null
+      ? `<div class="th"><span class="th-l">${esc(r.t)}</span><span class="th-v"><small>aucune simulation</small></span><span class="th-t"></span></div>`
+      : `<div class="th"><span class="th-l">${esc(r.t)} <small>· ${r.n} essai${r.n > 1 ? "s" : ""}</small></span><span class="th-v">${r.score} %<span class="lvl ${lvl(r.score)[0]}">${lvl(r.score)[1]}</span></span><span class="th-t" aria-hidden="true"><i style="width:${r.score}%"></i></span></div>`).join("");
   }
 
   function render() {
