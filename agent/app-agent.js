@@ -682,7 +682,7 @@
     $("tabFaq").setAttribute("aria-selected", String(!recent));
     $("sideHistory").hidden = !recent;
     $("sideExamples").hidden = recent;
-    $("shuffleBtn").hidden = recent;
+    $("faqFoot").hidden = recent;
     store.set("lq-side-tab", tab);
     renderHistory();
   }
