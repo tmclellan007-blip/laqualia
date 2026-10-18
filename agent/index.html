@@ -941,6 +941,12 @@ body.tsa .dict:hover{background:#d0efe9}
 .dict[data-state="busy"]{opacity:.7;cursor:progress}
 @media (prefers-reduced-motion:no-preference){.dict[data-state="listening"]::after{content:"";position:absolute;inset:-4px;border-radius:999px;border:2px solid #dc2626;animation:micpulse 1.3s ease-out infinite}}
 @media (max-width:520px){.dict{width:44px;padding:0;justify-content:center}.dict-l{display:none}}
+
+.tabs-admin{margin-left:auto;align-self:center;display:inline-flex;align-items:center;gap:7px;color:#ffffffd9;text-decoration:none;font-weight:800;font-size:13.5px;padding:7px 12px;border-radius:10px;border:1px solid #ffffff2e;background:#ffffff0d}
+.tabs-admin svg{width:16px;height:16px}
+.tabs-admin:hover{background:#ffffff1f;color:#fff}
+.tabs-admin[hidden]{display:none}
+@media (max-width:860px){.tabs-admin{padding:7px 9px;margin-left:6px}.tabs-admin span{display:none}}
 </style>
 </head>
 <body>
@@ -949,6 +955,7 @@ body.tsa .dict:hover{background:#d0efe9}
     <button type="button" role="tab" class="role-tab rt-rec" id="roleRec" data-role="reception" aria-selected="true"><span class="rt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span class="rt-txt"><b>Réception</b><small>Accueil et téléphone</small></span></button>
     <button type="button" role="tab" class="role-tab rt-tsa" id="roleTsa" data-role="tsa" aria-selected="false" aria-label="Équipe technique — TSA"><span class="rt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg></span><span class="rt-txt"><b><span class="rt-long">Équipe technique — TSA</span><span class="rt-short">TSA</span></b><small>Soutien clinique</small></span><span class="rt-lock" id="tsaLock" aria-hidden="true" title="Accès protégé par un code"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span></button>
   </div>
+  <a class="tabs-admin" id="adminLink" href="admin.html" hidden title="Configuration de l'agent" aria-label="Admin : configuration de l'agent"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Admin</span></a>
 </div>
 <div class="app" id="app">
   <aside class="side" id="side" aria-label="Menu">
@@ -1001,7 +1008,6 @@ body.tsa .dict:hover{background:#d0efe9}
       <div class="model-lab">Modèle de Claude</div>
       <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
     </div>
-      <a class="side-out side-admin" id="adminLink" href="admin.html" hidden title="Configuration"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Configuration</span></a>
       <button type="button" class="side-out" id="logout" title="Se déconnecter"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Se déconnecter</span></button>
     </div>
   </aside>
