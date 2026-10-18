@@ -144,6 +144,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 .logo-row{display:flex;gap:10px;align-items:center}
 .logo-pv{height:44px;min-width:60px;max-width:160px;border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:flex;align-items:center;background:#fff}
 .logo-pv img{max-height:100%;max-width:100%;object-fit:contain}
+.rot{border:1.5px solid var(--line);border-radius:14px;padding:14px;margin:4px 0 14px;display:flex;flex-direction:column;gap:12px}
+.rot-sw{border:0;padding:0;align-items:flex-start}
+.rot-sw small{display:block;font-weight:600;color:var(--muted);font-size:12.5px}
+.rot-codes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rot-codes > div{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;background:#f8f7f4;border-radius:12px;padding:10px 12px}
+.rc-l{grid-column:1/-1;font-size:12px;font-weight:800;color:var(--muted)}
+.rc-v{font-size:20px;font-weight:800;letter-spacing:.5px;font-variant-numeric:tabular-nums}
+.rc-v.soft{color:#55565d;font-size:17px}
+.rc-copy{padding:7px 12px;font-size:12.5px}
+.rot.off .rot-codes{opacity:.55}
+@media (max-width:900px){.rot-codes{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -200,6 +211,17 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
           <div class="f"><label for="dailyLimit">Limite quotidienne de questions (toute l'équipe)</label><input type="text" inputmode="numeric" id="dailyLimit" maxlength="5" style="max-width:160px"><span class="hint" id="usage">—</span></div>
           <div class="f"><span class="lab">Aussi recommandé</span><span class="hint">Fixez une limite de dépenses mensuelle dans la console Anthropic (Settings › Limits). C'est le seul plafond qui protège à coup sûr votre carte de crédit.</span></div>
         </div>
+        <div class="rot" id="rotBox" hidden>
+          <div class="rot-h">
+            <label class="chk rot-sw"><input type="checkbox" id="rotate"> <span><b>Code d'équipe mensuel</b><small>Le code change automatiquement le 1er de chaque mois. L'ancien reste accepté 7 jours.</small></span></label>
+          </div>
+          <div class="rot-codes" id="rotCodes">
+            <div><span class="rc-l">Code de ce mois-ci</span><span class="rc-v" id="rotCur">—</span><button type="button" class="btn sec rc-copy" data-copy="rotCur">Copier</button></div>
+            <div><span class="rc-l" id="rotNextL">À partir du 1er</span><span class="rc-v soft" id="rotNext">—</span><button type="button" class="btn sec rc-copy" data-copy="rotNext">Copier</button></div>
+          </div>
+          <p class="hint" id="rotHint"></p>
+        </div>
+        <p class="hint">Après 5 mauvais codes (équipe, TSA ou Admin), l'appareil est bloqué 15 minutes.</p>
         <div class="f"><label for="privacy">Avis de confidentialité affiché à la première connexion</label><textarea id="privacy" style="min-height:240px"></textarea><span class="hint">Chaque personne doit l'accepter une fois par appareil, puis de nouveau si vous le modifiez. Complétez le nom et le courriel du responsable de la protection des renseignements personnels.</span></div>
       </section>
 
@@ -274,6 +296,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="admin.js?v=202610181319"></script>
+<script src="admin.js?v=202610181336"></script>
 </body>
 </html>

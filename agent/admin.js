@@ -78,7 +78,7 @@
     dirty = false;
     if (seeded && orig.instructions) {
       try {
-        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined });
+        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined, rotate: data?.rotation?.available ? $("rotate").checked : undefined });
         data.customized = true;
         setState("", stale ? "Instructions mises à jour vers la nouvelle version" : j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
         toast(stale ? "Nouvelles instructions installées" : j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
@@ -101,6 +101,15 @@
     $("dailyLimit").value = data.dailyLimit || 300;
     $("usage").textContent = `Aujourd'hui : ${data.usedToday || 0} question${(data.usedToday || 0) > 1 ? "s" : ""} utilisée${(data.usedToday || 0) > 1 ? "s" : ""} sur ${data.dailyLimit || 300}. Au-delà, l'agent répond que la limite est atteinte jusqu'à minuit.`;
     $("privacy").value = data.privacy || "";
+    const R = data.rotation || {};
+    $("rotBox").hidden = !R.available;
+    if (R.available) {
+      $("rotate").checked = !!R.enabled;
+      $("rotCur").textContent = R.current; $("rotNext").textContent = R.next;
+      const d = new Date(R.changesOn + "T12:00:00");
+      $("rotNextL").textContent = "À partir du 1er " + d.toLocaleDateString("fr-CA", { month: "long" });
+      rotHint();
+    }
     logoPreview();
     $("name").value = c.name || "";
     $("disclaimer").value = c.disclaimer || "";
@@ -175,8 +184,9 @@
     if (!(lim >= 10 && lim <= 5000)) return toast("La limite quotidienne doit être entre 10 et 5000.");
     busy = true; setState("dirty", "Enregistrement…"); $("saveBtn").disabled = true;
     try {
-      await call({ action: "save", config: c, etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined });
+      await call({ action: "save", config: c, etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined, rotate: data?.rotation?.available ? $("rotate").checked : undefined });
       dirty = false; setState("", "Enregistré · actif dans l'agent d'ici une minute");
+      if (data.rotation) { data.rotation.enabled = $("rotate").checked; rotHint(); }
       toast("Configuration enregistrée");
     } catch (e) { setState("err", e.message); }
     finally { busy = false; if (dirty) $("saveBtn").disabled = false; }
@@ -189,6 +199,17 @@
   };
   function logoPreview() { const u = $("logo").value.trim(), im = $("logoPv"); if (!/^https:\/\//.test(u)) { im.hidden = true; return; } im.onload = () => (im.hidden = false); im.onerror = () => (im.hidden = true); im.src = u; }
   $("logo").addEventListener("input", logoPreview);
+  function rotHint() {
+    const on = $("rotate").checked, was = !!data?.rotation?.enabled;
+    $("rotBox").classList.toggle("off", !on);
+    $("rotHint").textContent = !on ? "Désactivé : l'équipe utilise le code fixe AGENT_CODE défini dans Cloudflare."
+      : was ? "Activé. Communiquez le nouveau code à l'équipe avant le 1er du mois ; les appareils le demanderont automatiquement."
+      : "Attention : après l'enregistrement, l'ancien code fixe ne fonctionnera plus. Chaque appareil demandera le code de ce mois-ci : communiquez-le à l'équipe.";
+  }
+  $("rotate").addEventListener("change", () => { rotHint(); markDirty(); });
+  document.querySelectorAll(".rc-copy").forEach((b) => (b.onclick = async () => {
+    try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); toast("Code copié"); } catch { toast("Copie impossible : sélectionnez le code à la main."); }
+  }));
   ["dailyLimit", "privacy", "etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
