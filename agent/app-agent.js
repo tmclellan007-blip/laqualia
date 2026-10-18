@@ -482,6 +482,7 @@
   async function send(text, display) {
     const q = String(text ?? $("q").value).trim();
     if (!q) return;
+    try { dictCancel(); } catch {}
     // Changement d'idée : on arrête la réponse en cours et on passe à la nouvelle question
     if (ctl) { ctl.abort(); await running; }
     if (/^(mets-moi en situation|résultats du quiz)/i.test(q) || /mise en situation/i.test(q)) inScenario = true;
@@ -808,7 +809,7 @@
     $("atEnd").textContent = isTsa() ? "Équipe technique TSA" : "Équipe d'accueil vétérinaire";
     $("helloSub").textContent = isTsa() ? "Sur quel cas ou quelle tâche travaillez-vous" : "Comment puis-je vous aider aujourd'hui";
     $("askTitle").textContent = isTsa() ? "Décrivez le cas ou la tâche" : "Posez votre question ici";
-    $("askHint").textContent = isTsa() ? "Données fictives ou dépersonnalisées seulement : aucun nom de client ni numéro de dossier." : "Écrivez comme vous parleriez à une collègue d'expérience, puis appuyez sur Entrée.";
+    $("askHint").textContent = isTsa() ? "Données fictives ou dépersonnalisées seulement : aucun nom de client ni numéro de dossier." : "Écrivez ou dictez avec le bouton Voix, comme à une collègue d'expérience, puis appuyez sur Entrée.";
     $("q").placeholder = isTsa() ? PH_TSA[0] : "Posez votre question ici…";
     $("q").setAttribute("aria-label", $("askTitle").textContent);
     $("sideTrainSub").textContent = isTsa() ? "Un cas fictif, avec quiz" : "Un appel court, avec quiz";
@@ -1201,6 +1202,7 @@
     const t = $("q").value.trim();
     if (!t || !sim.active || sim.ended) return;
     voiceStopListening();
+    try { dictCancel(); } catch {}
     $("q").value = ""; autosize();
     document.querySelectorAll(".sim-choices button").forEach((y) => (y.disabled = true));
     learnerBubble(t);
@@ -1297,7 +1299,7 @@
     vc.micOK = vc.azure ? !!(AC && navigator.mediaDevices?.getUserMedia) : !!SR;
   }
   caps();
-  function setVoiceService(on) { vc.azure = !!on && !!AC; caps(); renderInput(); }
+  function setVoiceService(on) { vc.azure = !!on && !!AC; caps(); renderInput(); try { dictUI(); } catch {} }
   let inputMode = store.get("lq-input") === "voix" ? "voix" : "clavier";
   try { TTS?.getVoices(); TTS?.addEventListener?.("voiceschanged", () => TTS.getVoices()); } catch {}
 
@@ -1685,6 +1687,105 @@
   // Si la réceptionniste se met à taper, on arrête la dictée pour ne pas écraser son texte
   $("q").addEventListener("keydown", (e) => { if (vc.listening && e.key !== "Enter") voiceStopListening(); });
   renderInput();
+
+  /* ---------- dictée : poser sa question à la voix dans la zone de saisie principale ----------
+     Le texte dicté s'écrit dans la zone ; la personne le relit, puis l'envoie elle-même. */
+  const dict = { on: false, busy: false, rec: null, stop: null, silence: null, base: "" };
+  const dictAvailable = () => !!SR || (vc.azure && !!AC && !!navigator.mediaDevices?.getUserMedia);
+  function dictUI() {
+    const b = $("dictBtn");
+    const show = dictAvailable() && !document.body.classList.contains("voice-call") && !$("q").disabled;
+    b.hidden = !show;
+    b.dataset.state = dict.on ? "listening" : dict.busy ? "busy" : "idle";
+    const lab = dict.on ? "Arrêter la dictée" : dict.busy ? "Transcription…" : "Dicter votre question";
+    b.setAttribute("aria-label", lab); b.title = lab;
+    b.querySelector(".dict-l").textContent = dict.on ? "Arrêter" : dict.busy ? "…" : "Voix";
+    if (!document.body.classList.contains("voice-call")) $("form").classList.toggle("listening", dict.on);
+  }
+  function dictHint(t) {
+    const q = $("q"); const keep = q.placeholder; q.placeholder = t;
+    clearTimeout(dictHint.t); dictHint.t = setTimeout(() => { if (q.placeholder === t) q.placeholder = keep; }, 4000);
+  }
+  function dictWrite(txt) {
+    const v = (dict.base + txt).replace(/\s+/g, " ").trimStart();
+    $("q").value = v ? v.charAt(0).toUpperCase() + v.slice(1) : ""; autosize();
+  }
+  // Envoi de la question : on coupe la dictée sans laisser de texte arriver après coup
+  function dictCancel() {
+    if (!dict.on) return;
+    clearTimeout(dict.silence);
+    if (dict.rec) { dict.rec.onresult = null; try { dict.rec.abort(); } catch {} }
+    dict.stop?.(false);
+  }
+  function dictStop() {
+    clearTimeout(dict.silence);
+    if (dict.rec) { try { dict.rec.stop(); } catch {} }
+    dict.stop?.(true);
+  }
+  async function dictStart() {
+    if (dict.on || dict.busy) return;
+    const q = $("q");
+    dict.base = q.value.trim() ? q.value.trim() + " " : "";
+    if (SR) {
+      let r; try { r = new SR(); } catch { return; }
+      r.lang = "fr-CA"; r.continuous = true; r.interimResults = true;
+      dict.rec = r; dict.on = true; dictUI();
+      r.onresult = (e) => {
+        let fin = "", interim = "";
+        for (let i = 0; i < e.results.length; i++) { const x = e.results[i]; if (x.isFinal) fin += x[0].transcript + " "; else interim += x[0].transcript; }
+        dictWrite(fin + interim);
+        clearTimeout(dict.silence); dict.silence = setTimeout(dictStop, 2500); // pause = fin de la dictée
+      };
+      r.onerror = (e) => { if (/not-allowed|service-not-allowed|audio-capture/.test(e.error)) dictHint("Micro refusé : autorisez-le pour ce site, ou écrivez votre question."); };
+      r.onend = () => { dict.on = false; dict.rec = null; dictUI(); q.focus(); };
+      try { r.start(); } catch { dict.on = false; dict.rec = null; dictUI(); }
+      dict.silence = setTimeout(dictStop, 8000); // personne ne parle
+      return;
+    }
+    // Navigateurs sans dictée intégrée : enregistrement court transcrit par Azure, via le relais
+    let stream;
+    try { stream = await getMic(); } catch { dictHint("Micro refusé ou absent : écrivez votre question."); return; }
+    const ctx = ensureCtx();
+    const src = ctx.createMediaStreamSource(stream);
+    const proc = ctx.createScriptProcessor(4096, 1, 1);
+    const chunks = [], pre = []; const t0 = performance.now();
+    let started = false, last = 0, noise = 0.006, ended = false;
+    dict.on = true; dictUI();
+    const finish = async (send) => {
+      if (ended) return; ended = true;
+      proc.onaudioprocess = null; try { src.disconnect(); proc.disconnect(); } catch {}
+      try { stream.getTracks().forEach((t) => t.stop()); } catch {} vc.stream = null;
+      dict.on = false; dict.stop = null; $("dictBtn").style.removeProperty("--lvl");
+      if (!send || !started) { dictUI(); return; }
+      dict.busy = true; dictUI();
+      try {
+        const r = await fetch(cfg.apiUrl, { method: "POST", headers: { "content-type": "audio/wav", "x-agent-code": code, "x-agent-mode": "stt" }, body: encodeWav(chunks, ctx.sampleRate) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.error || "Dictée indisponible.");
+        if (j.text) dictWrite(j.text); else dictHint("Je n'ai pas bien entendu. Réessayez.");
+      } catch (e) { dictHint(e.message); }
+      finally { dict.busy = false; dictUI(); q.focus(); }
+    };
+    dict.stop = finish;
+    proc.onaudioprocess = (e) => {
+      if (ended) return;
+      const d = new Float32Array(e.inputBuffer.getChannelData(0));
+      let sum = 0; for (let i = 0; i < d.length; i++) sum += d[i] * d[i];
+      const rms = Math.sqrt(sum / d.length), now = performance.now();
+      if (!started) { noise = noise * 0.9 + Math.min(rms, 0.05) * 0.1; pre.push(d); if (pre.length > 4) pre.shift(); }
+      if (rms > Math.max(0.012, noise * 2.8)) { if (!started) { started = true; chunks.push(...pre); } last = now; }
+      if (started) chunks.push(d);
+      $("dictBtn").style.setProperty("--lvl", Math.min(1, rms * 14).toFixed(2));
+      if ((started && now - last > 1800) || now - t0 > 60000) finish(true);
+      else if (!started && now - t0 > 10000) finish(false);
+    };
+    src.connect(proc); proc.connect(ctx.destination);
+  }
+  $("dictBtn").onclick = () => { if (dict.on) dictStop(); else { ensureCtx(); dictStart(); } };
+  $("q").addEventListener("keydown", (e) => { if (dict.on && e.key !== "Enter") dictStop(); });
+  new MutationObserver(dictUI).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(dictUI).observe($("q"), { attributes: true, attributeFilter: ["disabled"] });
+  dictUI();
 
   $("learnToggle").onclick = () => setLearn(!sim.on);
   $("learnExit").onclick = () => setLearn(false);
