@@ -8,7 +8,9 @@
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
     del(k) { try { localStorage.removeItem(k); } catch {} },
   };
-  const ICON = "avatar.webp";
+  // Visage de l'agent : une assistante à la Réception, un assistant côté TSA
+  let tsaFace = true; // devient faux si l'image TSA est absente
+  const avatarSrc = () => (document.body.classList.contains("tsa") && tsaFace ? "avatar-tsa.webp" : "avatar.webp");
   const SVG_COPY = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>';
 
   const SCENARIOS = [
@@ -464,7 +466,7 @@
   }
   function addAnswer() {
     const m = document.createElement("div"); m.className = "msg a";
-    const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${ICON}" alt="">`;
+    const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${avatarSrc()}" alt="">`;
     const col = document.createElement("div"); col.className = "a-col";
     const who = document.createElement("div"); who.className = "who";
     who.innerHTML = `<span></span><time>${new Date().toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}</time>`;
@@ -797,6 +799,8 @@
     $("roleRec").setAttribute("aria-selected", String(!isTsa()));
     $("roleTsa").setAttribute("aria-selected", String(isTsa()));
     $("tsaLock").hidden = tsaVerified;
+    const hv = document.querySelector(".hello2-av");
+    if (hv) { hv.onerror = () => { tsaFace = false; hv.onerror = null; hv.src = "avatar.webp"; }; hv.src = avatarSrc(); }
     document.querySelector(".mc-ico").innerHTML = $(isTsa() ? "roleTsa" : "roleRec").querySelector(".rt-ico").innerHTML;
     $("atMid").textContent = isTsa() ? "Soutien clinique" : "Formation";
     $("atEnd").textContent = isTsa() ? "Équipe technique TSA" : "Équipe d'accueil vétérinaire";
@@ -1217,7 +1221,7 @@
 
   async function simFeedback() {
     const m = document.createElement("div"); m.className = "msg a";
-    const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${ICON}" alt="">`;
+    const av = document.createElement("div"); av.className = "av"; av.innerHTML = `<img src="${avatarSrc()}" alt="">`;
     const col = document.createElement("div"); col.className = "a-col";
     const who = document.createElement("div"); who.className = "who"; who.textContent = "Rétroaction";
     const box = document.createElement("section"); box.className = "box-learn";
