@@ -118,6 +118,9 @@ async function handlePost(request, env, cors) {
     if (!env.TSA_CODE) return json(403, { error: "L'espace Équipe technique — TSA n'est pas activé.", needTsa: true }, cors);
     if (!tsaAuthorized(request, env)) return json(403, { error: "Code TSA invalide ou manquant : accès à l'espace technique refusé.", needTsa: true }, cors);
   }
+  // Plafond quotidien global (toute l'équipe), compté dans Cloudflare KV
+  const gate = await dailyGate(env);
+  if (!gate.ok) return json(429, { error: `La limite quotidienne de ${gate.limit} questions pour l'équipe est atteinte. Elle se réinitialise à minuit. Votre gestionnaire peut l'ajuster dans Admin.` }, cors);
   const isSim = body?.mode === "simulation";
   const simPhase = isSim && body?.phase === "bilan" ? "bilan" : "client";
   const question = String(body?.question || "").trim().slice(0, isSim && simPhase === "bilan" ? 12000 : MAX_QUESTION);
@@ -360,7 +363,7 @@ const fnv = (t) => { let h = 2166136261; t = String(t || "").trim(); for (let i 
 // Anciennes instructions d'origine, jamais modifiées par l'équipe : remplacées par la version à jour de config.json
 const LEGACY_DEFAULTS = new Set(["3906c25b"]);
 const ROLES = ["reception", "tsa"];
-const SHARED_KEYS = ["apiUrl", "etablissement", "logo", "modelesProposes", "tier", "audience"];
+const SHARED_KEYS = ["apiUrl", "etablissement", "logo", "privacy", "modelesProposes", "tier", "audience"];
 const EDITABLE = ["name", "disclaimer", "instructions", "examples", "scenarios", "simTypes", "simulationClient", "simulationBilan", "tier", "modelesProposes"];
 const roleCache = {};
 async function kvJson(env, key) {
@@ -406,6 +409,7 @@ async function publicConfig(request, env) {
   const { config } = await loadRole(request, env, "reception");
   out.etablissement = config.etablissement;
   out.logo = config.logo || "";
+  out.privacy = config.privacy || PRIVACY_DEFAULT;
   return out;
 }
 
@@ -453,16 +457,18 @@ async function handleAdmin(request, env, cors) {
       invalidate();
       const { config, docs } = await loadRole(request, env, role);
       const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
-      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk }, cors);
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk, privacy: config.privacy || PRIVACY_DEFAULT, dailyLimit: await dailyLimit(env), usedToday: Number(await KV.get("use:" + torontoDate())) || 0 }, cors);
     }
     case "save": {
       const clean = cleanConfig(body.config || {});
       const prev = (await kvJson(env, "cfg:" + role)) || {};
       await KV.put("cfg:" + role, JSON.stringify({ ...prev, ...clean, updated: new Date().toISOString() }));
-      if (body.etablissement !== undefined || body.logo !== undefined) {
+      if (body.etablissement !== undefined || body.logo !== undefined || body.privacy !== undefined || body.dailyLimit !== undefined) {
         const sh = (await kvJson(env, "cfg:shared")) || {};
         if (body.etablissement !== undefined) sh.etablissement = str(body.etablissement, 120).trim();
         if (body.logo !== undefined) { const u = str(body.logo, 500).trim(); sh.logo = /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ""; }
+        if (body.privacy !== undefined) sh.privacy = str(body.privacy, 6000).trim();
+        if (body.dailyLimit !== undefined) { const n = Math.round(Number(body.dailyLimit)); if (n >= 10 && n <= 5000) sh.dailyLimit = n; }
         await KV.put("cfg:shared", JSON.stringify(sh));
       }
       invalidate();
@@ -592,3 +598,36 @@ async function handleSpeech(kind, request, env, cors) {
     clearTimeout(t);
   }
 }
+
+
+/* ---------- plafond quotidien et avis de confidentialité ---------- */
+const DAILY_DEFAULT = 300; // questions par jour pour toute l'équipe (modifiable dans Admin)
+function torontoDate() {
+  try { return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
+  catch { return new Date().toISOString().slice(0, 10); }
+}
+async function dailyLimit(env) {
+  const sh = (await kvJson(env, "cfg:shared")) || {};
+  const n = Number(sh.dailyLimit || env.DAILY_LIMIT || DAILY_DEFAULT);
+  return n >= 10 ? n : DAILY_DEFAULT;
+}
+async function dailyGate(env) {
+  if (!env.AGENT_KV) return { ok: true };
+  try {
+    const key = "use:" + torontoDate();
+    const limit = await dailyLimit(env);
+    const used = Number(await env.AGENT_KV.get(key)) || 0;
+    if (used >= limit) return { ok: false, limit };
+    await env.AGENT_KV.put(key, String(used + 1), { expirationTtl: 3 * 86400 });
+    return { ok: true, limit, used: used + 1 };
+  } catch { return { ok: true }; } // le stockage ne doit jamais bloquer l'agent par erreur
+}
+const PRIVACY_DEFAULT = `Avant de commencer, merci de lire ces quelques règles.
+
+• N'inscrivez aucun renseignement permettant d'identifier une personne : nom de client, téléphone, adresse, courriel ou numéro de dossier. Utilisez des données fictives ou dépersonnalisées.
+• Vos questions sont transmises à Anthropic, le fournisseur du modèle d'intelligence artificielle Claude, uniquement pour produire les réponses. Selon ses conditions commerciales, Anthropic n'utilise pas ces données pour entraîner ses modèles.
+• La dictée vocale est traitée par le service de reconnaissance de votre navigateur (Google, Apple ou Microsoft) ou par Microsoft Azure.
+• L'historique de vos conversations reste dans ce navigateur ; vous pouvez l'effacer en tout temps depuis le menu.
+• Les réponses soutiennent la formation et le travail de l'équipe. Elles ne remplacent ni le jugement d'un médecin vétérinaire ni les procédures de l'établissement.
+
+Responsable de la protection des renseignements personnels : [nom et courriel à compléter dans Admin].`;
