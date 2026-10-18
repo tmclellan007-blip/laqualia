@@ -697,6 +697,18 @@
   setSideTab(store.get("lq-side-tab") || (histLoad().length ? "recent" : "faq"));
 
   $("sideNew").onclick = resetConversation;
+  // Menu réduit (ordinateur) : icônes seulement, choix mémorisé
+  function setSideMini(on) {
+    document.body.classList.toggle("side-mini", on);
+    const b = $("sideCollapse");
+    b.setAttribute("aria-expanded", String(!on));
+    b.setAttribute("aria-label", on ? "Agrandir le menu" : "Réduire le menu");
+    b.title = on ? "Agrandir le menu" : "Réduire le menu";
+    store.set("lq-side-mini", on ? "1" : "0");
+  }
+  $("sideCollapse").onclick = () => setSideMini(!document.body.classList.contains("side-mini"));
+  $("railHist").onclick = () => { setSideMini(false); setSideTab(histLoad().length ? "recent" : "faq"); };
+  setSideMini(store.get("lq-side-mini") === "1");
   // Logo : retour à l'interface de départ (quitte la simulation au besoin)
   $("homeLogo").onclick = () => { if (sim.on) setLearn(false); resetConversation(); };
   $("clear").onclick = resetConversation;
