@@ -1155,6 +1155,14 @@ body:not(.has-logo) .top-av.org{display:none}
 .su-txt b{flex:0 1 auto}
 .su-txt .status{flex:none;white-space:nowrap}
 #modelWrap{display:none!important}
+
+/* accueil : pas de défilement interne ; si l'écran est trop court, toute la colonne défile d'un bloc */
+.main.is-empty{overflow-y:auto}
+.main.is-empty .scroller{flex-shrink:0;overflow:visible}
+.main.is-empty .composer{flex-shrink:0}
+/* outils TSA plus compacts : icône à gauche du titre */
+.under .card.tool{flex-direction:row;align-items:center;gap:12px;padding:12px 14px}
+.under .card.tool .tl-ico{width:32px;height:32px}
 </style>
 </head>
 <body>
