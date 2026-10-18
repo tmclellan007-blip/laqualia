@@ -1019,6 +1019,8 @@ body.dash-on .app{display:none}
 .dash-in{max-width:1280px;margin:0 auto;padding:24px 24px 48px;display:flex;flex-direction:column;gap:18px}
 .dh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
 .dh h1{margin:0;font-size:clamp(26px,3vw,34px);letter-spacing:-1px;display:flex;align-items:center;gap:12px}
+.admin-only{display:inline-flex;align-items:center;gap:7px;margin:8px 0 0;font-size:13.5px;font-weight:700;color:#5b2a86;background:#f3ecfb;border:1.5px solid #d9c6f0;border-radius:10px;padding:6px 12px;line-height:1.35}
+.admin-only svg{flex:none}
 .demo-pill{font-size:12px;font-weight:800;letter-spacing:.4px;background:#fff4e0;color:#8a4b00;border:1.5px solid #f6c56b;border-radius:999px;padding:3px 10px}
 .dh-sub{margin:4px 0 0;color:var(--ink2);font-weight:600}
 .seg{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px}
@@ -1445,6 +1447,7 @@ body.side-mini #privLink span{display:none}
       <div class="dh-t">
         <h1 id="dashTitle">Tableau de bord <span class="demo-pill" title="Données fictives">Démo</span></h1>
         <p class="dh-sub"><span id="dashOrg"></span> · <span id="dashDate"></span></p>
+        <p class="admin-only" role="note"><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Section réservée aux administrateurs : seuls les administrateurs y auront accès.</p>
       </div>
       <div class="seg" role="radiogroup" aria-label="Période" id="dashPeriod">
         <button type="button" role="radio" data-p="day" aria-checked="true">Aujourd'hui</button>
