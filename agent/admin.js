@@ -7,6 +7,15 @@
   const ls = { get: (k) => { try { return localStorage.getItem(k); } catch { return null; } } };
   const DEFAULTS = {"SCENARIOS": ["un client en colère au sujet d'une facture", "un propriétaire inquiet dont le chien vomit depuis ce matin", "un client qui veut annuler une chirurgie le matin même", "un client en deuil qui appelle pour l'incinération", "un client qui demande une dose de médicament", "un nouveau client qui veut un rendez-vous rapidement", "un appel où l'animal a peut-être avalé un toxique", "un client qui conteste un dépôt pour chirurgie", "un technicien qui te demande de rappeler un client pour des résultats", "un client pressé qui veut parler au vétérinaire tout de suite", "un client qui trouve les prix trop élevés", "un client âgé qui a du mal à comprendre les consignes préopératoires"], "SCENARIOS_TSA": ["un chat hospitalisé dont la fréquence respiratoire augmente pendant la nuit", "un chien au réveil d'une anesthésie qui reste hypotherme", "un patient sous fluidothérapie dont le cathéter semble infiltré", "un vétérinaire qui te demande une transmission rapide avant sa chirurgie", "un client qui comprend mal les consignes post-opératoires déjà validées", "une ordonnance où une donnée manque pour vérifier un débit de perfusion", "un chien admis pour vomissements dont l'anamnèse est incomplète", "un patient diabétique hospitalisé avec une glycémie inattendue", "la préparation d'une salle pour un nettoyage dentaire sous anesthésie", "un collègue qui veut donner un médicament sans ordonnance écrite"], "SIM_TYPES": [["Rendez-vous", "prise ou changement de rendez-vous ; horaire chargé, client pressé ou exigeant"], ["Facturation", "question ou contestation d'une facture, d'un dépôt ou d'un estimé"], ["Plainte", "plainte sur un service, une attente ou un membre de l'équipe"], ["Client inquiet", "propriétaire inquiet pour un symptôme léger à modéré de son animal"], ["Deuil", "fin de vie, euthanasie à planifier ou décès récent d'un animal"], ["Urgence potentielle", "symptômes qui cachent une vraie urgence, que le client minimise au début"]], "SIM_TYPES_TSA": [["Transmission au vétérinaire", "le médecin vétérinaire reçoit la transmission de l'apprenant au sujet d'un patient hospitalisé fictif ; tu joues le vétérinaire et tu poses des questions précises"], ["Surveillance hospitalisation", "le vétérinaire demande un point de surveillance sur un patient fictif dont les paramètres se dégradent légèrement ; tu joues le vétérinaire"], ["Préparation de procédure", "le vétérinaire vérifie que tout est prêt avant une anesthésie ou une chirurgie fictive ; tu joues le vétérinaire"], ["Consignes au client", "un client appelle après le congé de son animal pour comprendre des consignes déjà validées par le vétérinaire ; tu joues le client"], ["Client inquiet post-op", "un client signale des signes après une chirurgie, dont certains peuvent exiger le vétérinaire ; tu joues le client"], ["Urgence en hospitalisation", "un collègue signale qu'un patient hospitalisé fictif se dégrade rapidement ; tu joues le collègue"]]};
   const MODELS = { quick: ["Rapide", "Haiku, le plus vif"], default: ["Standard", "Sonnet, équilibré"], complex: ["Approfondi", "Opus, le plus réfléchi"] };
+  let fileCfg = {}; // agent/config.json lu directement par la page : la source des réglages d'origine
+  const FALLBACK_RE = /^Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire\. Réponds en français\.?\s*$/;
+  const FIELDS = ["name", "disclaimer", "instructions", "examples", "scenarios", "simTypes", "simulationClient", "simulationBilan", "tier", "modelesProposes"];
+  function fileRole() {
+    const src = role === "tsa" ? (fileCfg.tsa || {}) : fileCfg;
+    const out = {};
+    FIELDS.forEach((k) => { const v = src[k] ?? (role === "tsa" && (k === "tier" || k === "modelesProposes") ? fileCfg[k] : undefined); if (v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)) out[k] = v; });
+    return out;
+  }
   let apiUrl = "", adminCode = ss.get("lq-admin-code") || "", role = "reception", data = null, dirty = false, busy = false;
 
   /* ---------- appels au relais ---------- */
@@ -49,15 +58,25 @@
   async function load() {
     const j = await call({ action: "load" });
     data = j;
+    const orig = fileRole();
+    const c = data.config || (data.config = {});
+    // Copie absente, ou copie abîmée (texte de remplacement au lieu de vos instructions) : on reprend config.json
+    const broken = !c.instructions || FALLBACK_RE.test(c.instructions.trim());
+    let seeded = false;
+    if (!j.customized || broken) {
+      if (!j.customized) Object.assign(c, orig);
+      else FIELDS.forEach((k) => { const v = c[k]; if (k === "instructions" || v === undefined || v === "" || (Array.isArray(v) && !v.length)) { if (orig[k] !== undefined) c[k] = orig[k]; } });
+      if (!data.etablissement && fileCfg.etablissement) data.etablissement = fileCfg.etablissement;
+      seeded = true;
+    }
     fill();
     dirty = false;
-    if (!j.customized) {
-      // Première ouverture de cet espace : on copie la configuration d'origine (config.json + scénarios intégrés)
+    if (seeded && orig.instructions) {
       try {
         await call({ action: "save", config: collect(), etablissement: $("etab").value.trim() });
         data.customized = true;
-        setState("", "Configuration d'origine copiée dans l'interface");
-        toast("Configuration d'origine copiée : vous partez de vos réglages actuels");
+        setState("", j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
+        toast(j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
       } catch (e) { setState("err", e.message); }
     } else setState("", "Tout est enregistré");
   }
@@ -266,6 +285,7 @@
 
   /* ---------- démarrage ---------- */
   fetch("config.json", { cache: "no-cache" }).then((r) => r.json()).then((c) => {
+    fileCfg = c || {};
     apiUrl = c.apiUrl || "";
     if (!apiUrl) { $("loginErr").hidden = false; $("loginErr").textContent = "apiUrl manquante dans config.json."; return; }
     if (adminCode) login(adminCode); else setTimeout(() => $("adminCode").focus(), 50);
