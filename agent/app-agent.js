@@ -656,7 +656,7 @@
       updateSimComposer();
     } else {
       stopSim(true);
-      $("q").placeholder = "Écrivez votre question…";
+      $("q").placeholder = "Posez votre question ici…";
       $("q").disabled = false;
     }
     scroller.scrollTop = 0;
@@ -1393,7 +1393,7 @@
   syncEmpty();
 
   // Exemples qui défilent dans la zone de saisie vide (s'arrêtent dès qu'on écrit ou qu'on clique)
-  const PH = ["Écrivez votre question…", "Ex. : un client conteste sa facture", "Ex. : que veut dire « NPO » ?", "Ex. : un chien a mangé du chocolat", "Ex. : comment annoncer un retard ?"];
+  const PH = ["Posez votre question ici…", "Ex. : un client conteste sa facture", "Ex. : que veut dire « NPO » ?", "Ex. : un chien a mangé du chocolat", "Ex. : comment annoncer un retard ?"];
   let phI = 0;
   setInterval(() => {
     const q = $("q");
