@@ -50,7 +50,16 @@
     const j = await call({ action: "load" });
     data = j;
     fill();
-    dirty = false; setState("", j.customized ? "Tout est enregistré" : "Réglages d'origine (config.json)");
+    dirty = false;
+    if (!j.customized) {
+      // Première ouverture de cet espace : on copie la configuration d'origine (config.json + scénarios intégrés)
+      try {
+        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim() });
+        data.customized = true;
+        setState("", "Configuration d'origine copiée dans l'interface");
+        toast("Configuration d'origine copiée : vous partez de vos réglages actuels");
+      } catch (e) { setState("err", e.message); }
+    } else setState("", "Tout est enregistré");
   }
   const linesOf = (v) => (Array.isArray(v) ? v.join("\n") : String(v || ""));
   function fill() {
