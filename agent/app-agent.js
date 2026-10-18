@@ -202,7 +202,7 @@
       b.onclick = () => { tier = t; store.set("lq-tier", t); renderModels(); };
       seg.append(b);
     });
-    $("modelWrap").hidden = list.length < 2;
+    $("modelWrap").hidden = true; // le choix du modèle reste dans le menu en haut à droite
     const badge = $("modelBadge");
     badge.hidden = list.length < 2;
     badge.textContent = MODEL_LABELS[tier][0];
