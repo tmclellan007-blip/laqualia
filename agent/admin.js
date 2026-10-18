@@ -101,6 +101,12 @@
     $("dailyLimit").value = data.dailyLimit || 300;
     $("usage").textContent = `Aujourd'hui : ${data.usedToday || 0} question${(data.usedToday || 0) > 1 ? "s" : ""} utilisée${(data.usedToday || 0) > 1 ? "s" : ""} sur ${data.dailyLimit || 300}. Au-delà, l'agent répond que la limite est atteinte jusqu'à minuit.`;
     $("privacy").value = data.privacy || "";
+    const AL = data.alerts || {};
+    $("alertSt").textContent = AL.ready ? (AL.lastError ? "Erreur" : "Prêt") : "À configurer";
+    $("alertSt").className = "al-st " + (AL.ready && !AL.lastError ? "ok" : "no");
+    $("alertTxt").textContent = AL.ready
+      ? (AL.lastError ? "Dernier envoi raté : " + AL.lastError : `Vers ${AL.to} : blocages après mauvais codes, clé API refusée, limite quotidienne, modification de la configuration, et vérification automatique toutes les 6 heures.`)
+      : "Activez Email Service pour laqualia.com dans Cloudflare et vérifiez votre adresse ; voir les instructions.";
     const R = data.rotation || {};
     $("rotBox").hidden = !R.available;
     if (R.available) {
@@ -210,6 +216,12 @@
   document.querySelectorAll(".rc-copy").forEach((b) => (b.onclick = async () => {
     try { await navigator.clipboard.writeText($(b.dataset.copy).textContent); toast("Code copié"); } catch { toast("Copie impossible : sélectionnez le code à la main."); }
   }));
+  $("alertTest").onclick = async () => {
+    $("alertTest").disabled = true;
+    try { await call({ action: "testAlert" }); toast("Courriel de test envoyé : vérifiez votre boîte (et les indésirables)"); $("alertSt").textContent = "Prêt"; $("alertSt").className = "al-st ok"; }
+    catch (e) { toast(e.message); $("alertSt").textContent = "Erreur"; $("alertSt").className = "al-st no"; $("alertTxt").textContent = e.message; }
+    finally { $("alertTest").disabled = false; }
+  };
   ["dailyLimit", "privacy", "etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
