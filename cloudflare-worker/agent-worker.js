@@ -731,7 +731,7 @@ async function sendAlert(env, type, subject, lines, throttleSec = 3600, force = 
     }
     const when = new Intl.DateTimeFormat("fr-CA", { timeZone: "America/Toronto", dateStyle: "long", timeStyle: "short" }).format(new Date());
     const text = `${lines.join("\n\n")}\n\n— ${when}\nAgent La Qualia · alerte automatique (relais Cloudflare laqualia-agent)`;
-    await env.ALERT_EMAIL.send({ to: ALERT_TO, from: { email: env.ALERT_FROM || "alertes@laqualia.com", name: "Agent La Qualia" }, subject: "⚠️ Agent La Qualia : " + subject, text });
+    await env.ALERT_EMAIL.send({ to: ALERT_TO, from: { email: env.ALERT_FROM || "alertes@notif.laqualia.com", name: "Agent La Qualia" }, subject: "⚠️ Agent La Qualia : " + subject, text });
     if (env.AGENT_KV) await env.AGENT_KV.delete("alert:lastError");
     return { ok: true };
   } catch (e) {
