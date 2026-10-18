@@ -16,6 +16,9 @@
     FIELDS.forEach((k) => { const v = src[k] ?? (role === "tsa" && (k === "tier" || k === "modelesProposes") ? fileCfg[k] : undefined); if (v !== undefined && v !== "" && !(Array.isArray(v) && !v.length)) out[k] = v; });
     return out;
   }
+  const fnv = (t) => { let h = 2166136261; t = String(t || "").trim(); for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
+  // Anciennes instructions d'origine, jamais modifiées par l'équipe : remplacées par la version à jour de config.json
+  const LEGACY_DEFAULTS = new Set(["3906c25b"]);
   let apiUrl = "", adminCode = ss.get("lq-admin-code") || "", role = "reception", data = null, dirty = false, busy = false;
 
   /* ---------- appels au relais ---------- */
@@ -61,7 +64,8 @@
     const orig = fileRole();
     const c = data.config || (data.config = {});
     // Copie absente, ou copie abîmée (texte de remplacement au lieu de vos instructions) : on reprend config.json
-    const broken = !c.instructions || FALLBACK_RE.test(c.instructions.trim());
+    const stale = !!c.instructions && LEGACY_DEFAULTS.has(fnv(c.instructions)) && orig.instructions && fnv(orig.instructions) !== fnv(c.instructions);
+    const broken = !c.instructions || FALLBACK_RE.test(c.instructions.trim()) || stale;
     let seeded = false;
     if (!j.customized || broken) {
       if (!j.customized) Object.assign(c, orig);
@@ -75,8 +79,8 @@
       try {
         await call({ action: "save", config: collect(), etablissement: $("etab").value.trim() });
         data.customized = true;
-        setState("", j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
-        toast(j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
+        setState("", stale ? "Instructions mises à jour vers la nouvelle version" : j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
+        toast(stale ? "Nouvelles instructions installées" : j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
       } catch (e) { setState("err", e.message); }
     } else setState("", "Tout est enregistré");
   }
