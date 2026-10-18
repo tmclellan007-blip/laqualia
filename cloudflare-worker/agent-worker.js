@@ -72,11 +72,14 @@ export default {
       // Vérification du code TSA limitée en fréquence (contre les essais en série)
       if (request.headers.get("x-tsa-code") && rateLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop d'essais. Attendez quelques minutes." }, cors);
       const tsaOk = tsa && tsaAuthorized(request, env);
-      return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env), tsa, tsaOk }, cors);
+      let pub = null;
+      try { pub = await publicConfig(request, env); } catch {}
+      return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env), tsa, tsaOk, admin: !!(env.ADMIN_CODE && env.AGENT_KV), pub }, cors);
     }
     if (request.method === "POST") {
       const sp = request.headers.get("x-agent-mode");
       if (sp === "tts" || sp === "stt") return handleSpeech(sp, request, env, cors);
+      if (sp === "admin") return handleAdmin(request, env, cors);
       return handlePost(request, env, cors);
     }
     return json(405, { error: "Méthode non permise." }, cors);
@@ -90,7 +93,7 @@ function corsHeaders(request, env) {
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
-    "access-control-allow-headers": "content-type, x-agent-code, x-agent-mode, x-tsa-code",
+    "access-control-allow-headers": "content-type, x-agent-code, x-agent-mode, x-tsa-code, x-admin-code",
     "access-control-expose-headers": "x-agent-sources, x-agent-model, x-agent-role",
     "access-control-max-age": "86400",
     vary: "origin",
@@ -121,11 +124,8 @@ async function handlePost(request, env, cors) {
   if (!question) return json(400, { error: "La question est vide." }, cors);
   const history = cleanHistory(body?.history, isSim ? 16 : MAX_HISTORY);
 
-  const { config: baseConfig, chunks } = await loadKnowledge(request, env);
-  const T = baseConfig.tsa || {};
-  const config = role === "tsa"
-    ? { ...baseConfig, instructions: T.instructions || TSA_DEFAULT, audience: "techniciens", simulationClient: T.simulationClient || TSA_SIM_DEFAULT, simulationBilan: T.simulationBilan || TSA_BILAN_DEFAULT }
-    : baseConfig;
+  // Chaque espace a sa propre configuration et sa propre base de connaissances
+  const { config, chunks } = await loadRole(request, env, role);
   const ctx = retrieve(chunks, question);
   // Sans extrait pertinent, on n'évoque pas la documentation (sinon l'agent le signale dans sa réponse)
   const ctxText = ctx.length ? ctx.map((c) => `### [${c.title}]\n${c.text}`).join("\n\n") : "";
@@ -322,6 +322,7 @@ async function asset(request, env, path) {
   return res;
 }
 
+// Fichiers du site (configuration de départ + anciens documents publics de la Réception)
 async function loadKnowledge(request, env) {
   if (cache && Date.now() - cache.at < 60 * 1000) return cache;
   let config = {};
@@ -336,14 +337,150 @@ async function loadKnowledge(request, env) {
     if (!file || /[\/\\]|\.\./.test(file)) continue;
     try {
       const text = (await (await asset(request, env, "/agent/docs/" + encodeURIComponent(file))).text()).replace(/\r/g, "");
-      for (let i = 0; i < text.length; i += 1400) {
-        const piece = text.slice(i, i + 1600);
-        chunks.push({ title, text: piece, tf: countTerms(piece + " " + title) });
-      }
+      chunks.push(...chunkText(title, text));
     } catch {}
   }
   cache = { at: Date.now(), config, chunks };
   return cache;
+}
+function chunkText(title, text) {
+  const out = [];
+  for (let i = 0; i < text.length; i += 1400) {
+    const piece = text.slice(i, i + 1600);
+    out.push({ title, text: piece, tf: countTerms(piece + " " + title) });
+  }
+  return out;
+}
+
+/* ---------- configuration privée par espace (Cloudflare KV) ---------- */
+const ROLES = ["reception", "tsa"];
+const SHARED_KEYS = ["apiUrl", "etablissement", "modelesProposes", "tier", "audience"];
+const EDITABLE = ["name", "disclaimer", "instructions", "examples", "scenarios", "simTypes", "simulationClient", "simulationBilan", "tier", "modelesProposes"];
+const roleCache = {};
+async function kvJson(env, key) {
+  if (!env.AGENT_KV) return null;
+  try { return await env.AGENT_KV.get(key, "json"); } catch { return null; }
+}
+// Configuration de départ d'un espace, tirée de agent/config.json
+function fileRoleConfig(file, role) {
+  if (role === "reception") { const { tsa, ...rest } = file; return rest; }
+  const shared = {}; SHARED_KEYS.forEach((k) => { if (file[k] !== undefined) shared[k] = file[k]; });
+  const T = file.tsa || {};
+  return { ...shared, ...T, instructions: T.instructions || TSA_DEFAULT, simulationClient: T.simulationClient || TSA_SIM_DEFAULT, simulationBilan: T.simulationBilan || TSA_BILAN_DEFAULT };
+}
+async function loadRole(request, env, role) {
+  const hit = roleCache[role];
+  if (hit && Date.now() - hit.at < 60 * 1000) return hit;
+  const base = await loadKnowledge(request, env);
+  const kvCfg = (await kvJson(env, "cfg:" + role)) || {};
+  const shared = (await kvJson(env, "cfg:shared")) || {};
+  const config = { ...fileRoleConfig(base.config, role), ...shared, ...kvCfg };
+  if (role === "tsa") config.audience = "techniciens";
+  // Base de connaissances : documents privés de l'espace (+ anciens documents publics pour la Réception)
+  const chunks = role === "reception" ? base.chunks.slice() : [];
+  const index = (await kvJson(env, "docs:" + role)) || [];
+  for (const d of Array.isArray(index) ? index : []) {
+    try { const t = await env.AGENT_KV.get(`doc:${role}:${d.id}`); if (t) chunks.push(...chunkText(d.title || "Document", t)); } catch {}
+  }
+  roleCache[role] = { at: Date.now(), config, chunks, docs: index };
+  return roleCache[role];
+}
+async function publicConfig(request, env) {
+  const out = {};
+  for (const role of ROLES) {
+    const { config } = await loadRole(request, env, role);
+    out[role] = { name: config.name, disclaimer: config.disclaimer, examples: config.examples, scenarios: config.scenarios, simTypes: config.simTypes, tier: config.tier, modelesProposes: config.modelesProposes };
+  }
+  const { config } = await loadRole(request, env, "reception");
+  out.etablissement = config.etablissement;
+  return out;
+}
+
+/* ---------- page de configuration (protégée par ADMIN_CODE) ---------- */
+const adminFails = new Map();
+function adminAuthorized(request, env) {
+  const a = String(request.headers.get("x-admin-code") || ""), b = String(env.ADMIN_CODE || "");
+  if (!a || !b || a.length !== b.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+const str = (v, max) => String(v ?? "").replace(/\r/g, "").slice(0, max);
+const lines = (v, maxN, maxL) => (Array.isArray(v) ? v : String(v || "").split("\n")).map((x) => str(x, maxL).trim()).filter(Boolean).slice(0, maxN);
+function cleanConfig(c) {
+  const out = {};
+  if (c.name !== undefined) out.name = str(c.name, 120).trim();
+  if (c.disclaimer !== undefined) out.disclaimer = str(c.disclaimer, 600).trim();
+  if (c.instructions !== undefined) out.instructions = str(c.instructions, 40000);
+  if (c.simulationClient !== undefined) out.simulationClient = str(c.simulationClient, 8000);
+  if (c.simulationBilan !== undefined) out.simulationBilan = str(c.simulationBilan, 8000);
+  if (c.examples !== undefined) out.examples = lines(c.examples, 80, 300);
+  if (c.scenarios !== undefined) out.scenarios = lines(c.scenarios, 60, 300);
+  if (c.simTypes !== undefined) {
+    out.simTypes = (Array.isArray(c.simTypes) ? c.simTypes : []).map((t) => [str(t?.[0], 60).trim(), str(t?.[1], 400).trim()]).filter((t) => t[0] && t[1]).slice(0, 12);
+  }
+  if (c.tier !== undefined && MODELS[c.tier]) out.tier = c.tier;
+  if (c.modelesProposes !== undefined) out.modelesProposes = (Array.isArray(c.modelesProposes) ? c.modelesProposes : []).filter((t) => MODELS[t]);
+  return out;
+}
+async function handleAdmin(request, env, cors) {
+  if (!env.ADMIN_CODE) return json(503, { error: "La configuration n'est pas activée : ajoutez le secret ADMIN_CODE au relais." }, cors);
+  if (!env.AGENT_KV) return json(503, { error: "Le stockage AGENT_KV n'est pas relié au relais." }, cors);
+  const ip = request.headers.get("cf-connecting-ip") || "?";
+  if (!adminAuthorized(request, env)) {
+    const now = Date.now(); const l = (adminFails.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS); l.push(now); adminFails.set(ip, l);
+    return json(l.length > 10 ? 429 : 401, { error: l.length > 10 ? "Trop d'essais. Attendez quelques minutes." : "Code de configuration invalide." }, cors);
+  }
+  let body; try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
+  const role = ROLES.includes(body?.role) ? body.role : "reception";
+  const KV = env.AGENT_KV;
+  const invalidate = () => { delete roleCache.reception; delete roleCache.tsa; };
+  const idx = async () => (await kvJson(env, "docs:" + role)) || [];
+  switch (body?.action) {
+    case "load": {
+      invalidate();
+      const { config, docs } = await loadRole(request, env, role);
+      const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", docs, customized: !!(await KV.get("cfg:" + role)) }, cors);
+    }
+    case "save": {
+      const clean = cleanConfig(body.config || {});
+      const prev = (await kvJson(env, "cfg:" + role)) || {};
+      await KV.put("cfg:" + role, JSON.stringify({ ...prev, ...clean, updated: new Date().toISOString() }));
+      if (body.etablissement !== undefined) await KV.put("cfg:shared", JSON.stringify({ etablissement: str(body.etablissement, 120).trim() }));
+      invalidate();
+      return json(200, { ok: true }, cors);
+    }
+    case "reset": {
+      await KV.delete("cfg:" + role); invalidate();
+      return json(200, { ok: true }, cors);
+    }
+    case "docGet": {
+      const t = await KV.get(`doc:${role}:${str(body.id, 40)}`);
+      return t === null ? json(404, { error: "Document introuvable." }, cors) : json(200, { text: t }, cors);
+    }
+    case "docSave": {
+      const title = str(body.title, 160).trim() || "Document sans titre";
+      const text = str(body.text, 1500000);
+      if (!text.trim()) return json(400, { error: "Le document est vide." }, cors);
+      const list = await idx();
+      if (list.length >= 200 && !body.id) return json(400, { error: "Limite de 200 documents atteinte." }, cors);
+      const id = /^[a-z0-9]{6,40}$/.test(String(body.id || "")) ? body.id : Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      await KV.put(`doc:${role}:${id}`, text);
+      const entry = { id, title, chars: text.length, source: str(body.source, 160), updated: new Date().toISOString() };
+      const next = [entry, ...list.filter((d) => d.id !== id)];
+      await KV.put("docs:" + role, JSON.stringify(next));
+      invalidate();
+      return json(200, { ok: true, doc: entry }, cors);
+    }
+    case "docDelete": {
+      const id = str(body.id, 40);
+      await KV.delete(`doc:${role}:${id}`);
+      await KV.put("docs:" + role, JSON.stringify((await idx()).filter((d) => d.id !== id)));
+      invalidate();
+      return json(200, { ok: true }, cors);
+    }
+  }
+  return json(400, { error: "Action inconnue." }, cors);
 }
 
 const STOP = new Set("les des une un du de la le et ou en au aux pour par sur dans avec sans que qui quoi est sont pas plus mon ma mes ton ta tes son sa ses notre nos votre vos leur leurs ce cet cette ces il elle ils elles on nous vous je tu me te se lui y a ai as avait avoir etre etait faire fait peut peux doit dois quel quelle quels quelles comment quand pourquoi combien tres bien aussi alors donc mais si ne qu".split(" "));
