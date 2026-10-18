@@ -57,3 +57,15 @@ Sans ces variables, la simulation à la voix utilise les voix du navigateur. Ave
 | `AZURE_SPEECH_REGION` | Text | `canadacentral` |
 
 4. Cliquez **Deploy**. Rechargez l'agent : la liste « Voix du client » propose alors Sylvie, Antoine, Jean et Thierry.
+
+## Espace Équipe technique — TSA (accès protégé)
+
+L'onglet « Équipe technique — TSA » ne s'ouvre qu'avec un code TSA, vérifié par ce relais à chaque demande. Sans ce code, le relais refuse toute demande de l'espace TSA, même si quelqu'un modifie la page.
+
+Dans le Worker `laqualia-agent` → **Settings** → **Variables and Secrets**, ajoutez :
+
+| Nom | Type | Valeur |
+|---|---|---|
+| `TSA_CODE` | Secret | le code remis seulement au personnel technique |
+
+Pour retirer l'accès à quelqu'un, changez la valeur de `TSA_CODE` : tous les appareils devront entrer le nouveau code.

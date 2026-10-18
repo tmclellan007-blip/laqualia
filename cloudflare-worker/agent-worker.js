@@ -55,6 +55,11 @@ const SIM_LEVEL_BILAN = {
   expert: "L'apprenant est de niveau expert : sois exigeant et précis, comme pour un professionnel expérimenté.",
 };
 
+// Espace TSA : textes de repli si agent/config.json n'a pas de bloc « tsa »
+const TSA_DEFAULT = "Tu soutiens les techniciennes et techniciens en santé animale (TSA) d'un établissement vétérinaire au Québec. Tu ne poses pas de diagnostic définitif, ne prescris pas, ne modifies pas un traitement et ne calcules aucune dose individualisée à partir d'hypothèses. Tu n'inventes rien et tu signales ce qui exige la validation d'un médecin vétérinaire. Format : ### Réponse ou action proposée, ### Points à vérifier / validation requise, ### Sources et statut.";
+const TSA_SIM_DEFAULT = "Tu joues UN interlocuteur fictif (médecin vétérinaire, client ou collègue selon le scénario) dans une simulation de formation pour une ou un TSA. Une seule réplique à la fois (1 à 3 phrases). Ne donne jamais la bonne réponse. Termine par [FIN D'APPEL] quand l'échange est terminé. Cas entièrement fictif.";
+const TSA_BILAN_DEFAULT = "Tu es formateur clinique pour des TSA. Évalue la transcription d'une simulation fictive : ### Points forts, ### À améliorer, ### Formulation ou démarche modèle. Signale d'abord en gras toute erreur de sécurité ou toute décision qui exigeait le vétérinaire. 220 mots maximum.";
+
 let cache = null; // { at, config, chunks }
 
 export default {
@@ -62,7 +67,13 @@ export default {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
     if (!cors) return json(403, { error: "Origine non autorisée." }, {});
-    if (request.method === "GET") return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env) }, cors);
+    if (request.method === "GET") {
+      const tsa = !!env.TSA_CODE;
+      // Vérification du code TSA limitée en fréquence (contre les essais en série)
+      if (request.headers.get("x-tsa-code") && rateLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop d'essais. Attendez quelques minutes." }, cors);
+      const tsaOk = tsa && tsaAuthorized(request, env);
+      return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env), tsa, tsaOk }, cors);
+    }
     if (request.method === "POST") {
       const sp = request.headers.get("x-agent-mode");
       if (sp === "tts" || sp === "stt") return handleSpeech(sp, request, env, cors);
@@ -79,8 +90,8 @@ function corsHeaders(request, env) {
   return {
     "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
-    "access-control-allow-headers": "content-type, x-agent-code, x-agent-mode",
-    "access-control-expose-headers": "x-agent-sources, x-agent-model",
+    "access-control-allow-headers": "content-type, x-agent-code, x-agent-mode, x-tsa-code",
+    "access-control-expose-headers": "x-agent-sources, x-agent-model, x-agent-role",
     "access-control-max-age": "86400",
     vary: "origin",
   };
@@ -98,22 +109,38 @@ async function handlePost(request, env, cors) {
 
   let body;
   try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
+  // Espace Équipe technique (TSA) : permission réelle vérifiée ici, pas seulement l'onglet choisi dans la page
+  const role = body?.role === "tsa" ? "tsa" : "reception";
+  if (role === "tsa") {
+    if (!env.TSA_CODE) return json(403, { error: "L'espace Équipe technique — TSA n'est pas activé.", needTsa: true }, cors);
+    if (!tsaAuthorized(request, env)) return json(403, { error: "Code TSA invalide ou manquant : accès à l'espace technique refusé.", needTsa: true }, cors);
+  }
   const isSim = body?.mode === "simulation";
   const simPhase = isSim && body?.phase === "bilan" ? "bilan" : "client";
   const question = String(body?.question || "").trim().slice(0, isSim && simPhase === "bilan" ? 12000 : MAX_QUESTION);
   if (!question) return json(400, { error: "La question est vide." }, cors);
   const history = cleanHistory(body?.history, isSim ? 16 : MAX_HISTORY);
 
-  const { config, chunks } = await loadKnowledge(request, env);
+  const { config: baseConfig, chunks } = await loadKnowledge(request, env);
+  const T = baseConfig.tsa || {};
+  const config = role === "tsa"
+    ? { ...baseConfig, instructions: T.instructions || TSA_DEFAULT, audience: "techniciens", simulationClient: T.simulationClient || TSA_SIM_DEFAULT, simulationBilan: T.simulationBilan || TSA_BILAN_DEFAULT }
+    : baseConfig;
   const ctx = retrieve(chunks, question);
   // Sans extrait pertinent, on n'évoque pas la documentation (sinon l'agent le signale dans sa réponse)
   const ctxText = ctx.length ? ctx.map((c) => `### [${c.title}]\n${c.text}`).join("\n\n") : "";
   const prenom = String(body?.prenom || "").replace(/[^\p{L}\p{M}' -]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
-  const who = prenom
+  const who = role === "tsa"
+    ? (prenom ? `\nTu parles à ${prenom}, technicienne ou technicien en santé animale de l'établissement. Utilise son prénom avec naturel, sans le répéter.` : "")
+    : prenom
     ? `\nTu parles à ${prenom}, membre de l'équipe d'accueil. Utilise son prénom de façon naturelle et chaleureuse : au début de la partie [APPRENTISSAGE] et, au besoin, pour l'encourager en mise en situation. Ne mets pas son prénom dans [EN DIRECT] et ne le répète pas à chaque phrase.`
     : "";
   const system = `${config.instructions}\n\nPublic visé : ${AUD[config.audience] || AUD.telephonistes}.${who}\nÉcris en Markdown simple (titres ###, listes, gras). Pas de tableaux.`;
-  const userContent = ctxText
+  const userContent = role === "tsa"
+    ? (ctxText
+      ? `DOCUMENTS ET PROTOCOLES DE L'ÉTABLISSEMENT EFFECTIVEMENT CONSULTÉS (cite-les seulement s'ils appuient réellement ta réponse)\n\n${ctxText}\n\n---\nDEMANDE\n${question}`
+      : `AUCUN DOCUMENT NI PROTOCOLE INTERNE PERTINENT N'A ÉTÉ TROUVÉ pour cette demande. Dis-le dans « Sources et statut » (statut Général ou À confirmer) et n'invente aucune source.\n\n---\nDEMANDE\n${question}`)
+    : ctxText
     ? `EXTRAITS DES PROCÉDURES DE LA CLINIQUE (à appliquer en priorité)\n\n${ctxText}\n\n---\nQUESTION\n${question}`
     : question;
   let messages = [...history, { role: "user", content: userContent }];
@@ -173,7 +200,7 @@ async function handlePost(request, env, cors) {
   try {
     parts = isSim
       ? [await callSafe(simSystem, simPhase === "client" ? 2000 : cap)]
-      : isScene
+      : isScene || role === "tsa"
       ? [await callSafe(system, cap)]
       : await Promise.all([callSafe(system + LIVE_TASK, Math.min(cap, 3000)), callSafe(system + LEARN_TASK, cap)]);
   } catch {
@@ -192,7 +219,7 @@ async function handlePost(request, env, cors) {
     return json(status === 401 ? 502 : status, { error: msg }, cors);
   }
 
-  const segments = isScene || isSim
+  const segments = isScene || isSim || role === "tsa"
     ? [{ body: parts[0].body }]
     : [{ prefix: "[EN DIRECT]\n", body: parts[0].body }, { prefix: "\n\n[APPRENTISSAGE]\n", body: parts[1].body }];
   const sources = [...new Set(ctx.map((c) => c.title))];
@@ -203,8 +230,17 @@ async function handlePost(request, env, cors) {
       "cache-control": "no-store",
       "x-agent-sources": encodeURIComponent(JSON.stringify(sources)),
       "x-agent-model": model,
+      "x-agent-role": role,
     },
   });
+}
+
+function tsaAuthorized(request, env) {
+  const a = String(request.headers.get("x-tsa-code") || "");
+  const b = String(env.TSA_CODE || "");
+  if (!a || !b || a.length !== b.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
 }
 
 /* ---------- helpers ---------- */
