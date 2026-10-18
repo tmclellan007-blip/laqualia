@@ -70,8 +70,10 @@ export default {
     if (request.method === "GET") {
       const tsa = !!env.TSA_CODE;
       // Vérification du code TSA limitée en fréquence (contre les essais en série)
-      if (request.headers.get("x-tsa-code") && rateLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop d'essais. Attendez quelques minutes." }, cors);
+      const ip0 = request.headers.get("cf-connecting-ip") || "?";
+      if (request.headers.get("x-tsa-code") && (rateLimited(ip0) || (await lockedOut(env, ip0)))) return json(429, { error: LOCK_MSG }, cors);
       const tsaOk = tsa && tsaAuthorized(request, env);
+      if (request.headers.get("x-tsa-code") && tsa && !tsaOk) await recordFail(env, ip0);
       let pub = null;
       try { pub = await publicConfig(request, env); } catch {}
       return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env), tsa, tsaOk, admin: !!(env.ADMIN_CODE && env.AGENT_KV), pub }, cors);
@@ -102,7 +104,10 @@ function corsHeaders(request, env) {
 
 async function handlePost(request, env, cors) {
   if (!env.ANTHROPIC_API_KEY) return json(503, { error: "L'assistant n'est pas encore configuré : la clé API est manquante." }, cors);
-  if (env.AGENT_CODE && request.headers.get("x-agent-code") !== env.AGENT_CODE) {
+  const ip = request.headers.get("cf-connecting-ip") || "?";
+  if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
+  if (!(await teamAuthorized(request, env))) {
+    await recordFail(env, ip);
     return json(401, { error: "Code d'accès invalide." }, cors);
   }
 
@@ -443,9 +448,10 @@ async function handleAdmin(request, env, cors) {
   if (!env.ADMIN_CODE) return json(503, { error: "La configuration n'est pas activée : ajoutez le secret ADMIN_CODE au relais." }, cors);
   if (!env.AGENT_KV) return json(503, { error: "Le stockage AGENT_KV n'est pas relié au relais." }, cors);
   const ip = request.headers.get("cf-connecting-ip") || "?";
+  if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
   if (!adminAuthorized(request, env)) {
-    const now = Date.now(); const l = (adminFails.get(ip) || []).filter((t) => now - t < RATE_WINDOW_MS); l.push(now); adminFails.set(ip, l);
-    return json(l.length > 10 ? 429 : 401, { error: l.length > 10 ? "Trop d'essais. Attendez quelques minutes." : "Code de configuration invalide." }, cors);
+    await recordFail(env, ip);
+    return json(401, { error: "Code de configuration invalide." }, cors);
   }
   let body; try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
   const role = ROLES.includes(body?.role) ? body.role : "reception";
@@ -457,17 +463,18 @@ async function handleAdmin(request, env, cors) {
       invalidate();
       const { config, docs } = await loadRole(request, env, role);
       const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
-      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk, privacy: config.privacy || PRIVACY_DEFAULT, dailyLimit: await dailyLimit(env), usedToday: Number(await KV.get("use:" + torontoDate())) || 0 }, cors);
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk, privacy: config.privacy || PRIVACY_DEFAULT, dailyLimit: await dailyLimit(env), usedToday: Number(await KV.get("use:" + torontoDate())) || 0, rotation: await rotationInfo(env) }, cors);
     }
     case "save": {
       const clean = cleanConfig(body.config || {});
       const prev = (await kvJson(env, "cfg:" + role)) || {};
       await KV.put("cfg:" + role, JSON.stringify({ ...prev, ...clean, updated: new Date().toISOString() }));
-      if (body.etablissement !== undefined || body.logo !== undefined || body.privacy !== undefined || body.dailyLimit !== undefined) {
+      if (body.etablissement !== undefined || body.logo !== undefined || body.privacy !== undefined || body.dailyLimit !== undefined || body.rotate !== undefined) {
         const sh = (await kvJson(env, "cfg:shared")) || {};
         if (body.etablissement !== undefined) sh.etablissement = str(body.etablissement, 120).trim();
         if (body.logo !== undefined) { const u = str(body.logo, 500).trim(); sh.logo = /^https:\/\/[^\s"'<>]+$/.test(u) ? u : ""; }
         if (body.privacy !== undefined) sh.privacy = str(body.privacy, 6000).trim();
+        if (body.rotate !== undefined) sh.rotate = !!body.rotate;
         if (body.dailyLimit !== undefined) { const n = Math.round(Number(body.dailyLimit)); if (n >= 10 && n <= 5000) sh.dailyLimit = n; }
         await KV.put("cfg:shared", JSON.stringify(sh));
       }
@@ -552,7 +559,9 @@ function speechLimited(ip) {
 const xml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 
 async function handleSpeech(kind, request, env, cors) {
-  if (env.AGENT_CODE && request.headers.get("x-agent-code") !== env.AGENT_CODE) return json(401, { error: "Code d'accès invalide." }, cors);
+  const ipS = request.headers.get("cf-connecting-ip") || "?";
+  if (await lockedOut(env, ipS)) return json(429, { error: LOCK_MSG }, cors);
+  if (!(await teamAuthorized(request, env))) { await recordFail(env, ipS); return json(401, { error: "Code d'accès invalide." }, cors); }
   if (!speechReady(env)) return json(503, { error: "La voix Azure n'est pas configurée." }, cors);
   if (speechLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop de requêtes de voix. Attendez un peu." }, cors);
   const region = String(env.AZURE_SPEECH_REGION).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -631,3 +640,59 @@ const PRIVACY_DEFAULT = `Avant de commencer, merci de lire ces quelques règles.
 • Les réponses soutiennent la formation et le travail de l'équipe. Elles ne remplacent ni le jugement d'un médecin vétérinaire ni les procédures de l'établissement.
 
 Responsable de la protection des renseignements personnels : [nom et courriel à compléter dans Admin].`;
+
+
+/* ---------- blocage après plusieurs mauvais codes ---------- */
+const LOCK_MSG = "Trop d'essais avec un mauvais code. Pour votre sécurité, l'accès est bloqué 15 minutes depuis cet appareil.";
+const MAX_FAILS = 5, LOCK_SECONDS = 15 * 60;
+const memFails = new Map(); // filet si le stockage n'est pas relié
+async function lockedOut(env, ip) {
+  if (!env.AGENT_KV) { const l = memFails.get(ip); return !!l && l.n >= MAX_FAILS && Date.now() - l.t < LOCK_SECONDS * 1000; }
+  try { return !!(await env.AGENT_KV.get("lock:" + ip)); } catch { return false; }
+}
+async function recordFail(env, ip) {
+  if (!env.AGENT_KV) { const l = memFails.get(ip) || { n: 0, t: Date.now() }; if (Date.now() - l.t > LOCK_SECONDS * 1000) { l.n = 0; l.t = Date.now(); } l.n++; memFails.set(ip, l); return; }
+  try {
+    const n = (Number(await env.AGENT_KV.get("fail:" + ip)) || 0) + 1;
+    if (n >= MAX_FAILS) { await env.AGENT_KV.put("lock:" + ip, "1", { expirationTtl: LOCK_SECONDS }); await env.AGENT_KV.delete("fail:" + ip); }
+    else await env.AGENT_KV.put("fail:" + ip, String(n), { expirationTtl: LOCK_SECONDS });
+  } catch {}
+}
+
+/* ---------- code d'équipe mensuel (dérivé du secret AGENT_CODE) ---------- */
+const WORDS = ["Lapin", "Chaton", "Moka", "Pomme", "Plume", "Cerise", "Biscuit", "Nuage", "Luna", "Maxou", "Praline", "Soleil", "Caramel", "Pistache", "Bambou", "Noisette", "Fleur", "Rocky", "Simba", "Bijou", "Galet", "Prune", "Kiwi", "Tulipe", "Sapin", "Erable", "Lilas", "Muscade", "Olive", "Perle", "Zebre", "Toutou"];
+const normCode = (c) => String(c || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+async function monthCode(env, ym) {
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("lq-rotation:" + env.AGENT_CODE), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const b = new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(ym)));
+  return `${WORDS[b[0] % WORDS.length]}-${WORDS[b[1] % WORDS.length]}-${String(((b[2] << 8) | b[3]) % 90 + 10)}`;
+}
+const ymOf = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
+function months() {
+  const [y, m, d] = torontoDate().split("-").map(Number);
+  const prev = m === 1 ? ymOf(y - 1, 12) : ymOf(y, m - 1);
+  const next = m === 12 ? ymOf(y + 1, 1) : ymOf(y, m + 1);
+  return { cur: ymOf(y, m), prev, next, day: d };
+}
+const GRACE_DAYS = 7; // l'ancien code reste accepté les 7 premiers jours du mois
+async function rotationOn(env) { const sh = (await kvJson(env, "cfg:shared")) || {}; return !!sh.rotate; }
+async function teamAuthorized(request, env) {
+  if (!env.AGENT_CODE) return true;
+  const given = request.headers.get("x-agent-code") || "";
+  if (!(await rotationOn(env))) return given === env.AGENT_CODE;
+  const M = months(), g = normCode(given);
+  if (!g) return false;
+  if (g === normCode(await monthCode(env, M.cur))) return true;
+  if (M.day <= GRACE_DAYS && g === normCode(await monthCode(env, M.prev))) return true;
+  return false;
+}
+async function rotationInfo(env) {
+  if (!env.AGENT_CODE) return { available: false };
+  const M = months();
+  const [ny, nm] = M.next.split("-").map(Number);
+  return {
+    available: true, enabled: await rotationOn(env),
+    current: await monthCode(env, M.cur), next: await monthCode(env, M.next),
+    month: M.cur, changesOn: `${ny}-${String(nm).padStart(2, "0")}-01`, graceDays: GRACE_DAYS,
+  };
+}
