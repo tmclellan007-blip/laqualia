@@ -1179,6 +1179,11 @@ body.side-mini #privLink span{display:none}
 .alert-card.lock{background:#fff1f2;border-color:#fbc4c9}
 .alert-card.lock .ac-i{background:#fde2e4;color:#b91c1c}
 .alert-card.lock b{color:#7f1d1d}
+
+.model-badge .mb-l{font-weight:600;color:#6b6a72}
+@media (max-width:860px){.model-badge .mb-l{display:none}}
+/* accueil sur ordinateur : bloc centré mais remonté pour être vu plus vite */
+@media (min-width:861px) and (min-height:640px){.main.is-empty .composer{padding-bottom:16vh}}
 </style>
 </head>
 <body>
@@ -1464,7 +1469,7 @@ body.side-mini #privLink span{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181351"></script>
+<script src="app-agent.js?v=202610181358"></script>
 <script src="dashboard.js?v=202610181207"></script>
 </body>
 </html>

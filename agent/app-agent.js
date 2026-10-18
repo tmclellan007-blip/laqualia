@@ -205,7 +205,7 @@
     $("modelWrap").hidden = true; // le choix du modèle reste dans le menu en haut à droite
     const badge = $("modelBadge");
     badge.hidden = list.length < 2;
-    badge.textContent = MODEL_LABELS[tier][0];
+    badge.innerHTML = `<span class="mb-l">Réponse :</span> ${MODEL_LABELS[tier][0]}`;
     badge.setAttribute("aria-label", `Modèle de réponse : ${MODEL_LABELS[tier][0]} (${MODEL_LABELS[tier][1]}). Changer`);
     const pop = $("modelPop"); pop.textContent = "";
     const lab = document.createElement("div"); lab.className = "mp-lab"; lab.textContent = "Modèle de réponse"; pop.append(lab);
