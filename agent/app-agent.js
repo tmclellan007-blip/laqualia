@@ -167,7 +167,7 @@
   /* ---------- config ---------- */
   function applyCfg() {
     $("agentName").textContent = cfg.name || "Assistant La Qualia";
-    $("orgName").textContent = cfg.etablissement || "Clinique vétérinaire virtuelle au Québec";
+    $("orgName").textContent = cfg.etablissement || "Nom de votre établissement";
     // Logo de l'établissement (si l'image ne se charge pas, on garde l'icône)
     const lg = $("orgLogo"), lb = $("orgLogoBox");
     if (cfg.logo && lg.getAttribute("src") !== cfg.logo) {

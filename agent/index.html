@@ -1145,6 +1145,11 @@ body.dash-on .app{display:none}
 #typeBars .hb{grid-template-columns:minmax(0,1.5fr) minmax(50px,1fr) 66px}
 #typeBars .hb-l{white-space:normal;line-height:1.25}
 @media (max-width:860px){#typeBars .hb{grid-template-columns:minmax(0,1.4fr) minmax(40px,1fr) 62px}}
+
+.org-logo-ph{height:42px;min-width:120px;max-width:170px;padding:4px 10px;border:1.5px dashed #c9c6d6;border-radius:12px;display:grid;place-items:center;text-align:center;font-size:11px;font-weight:800;line-height:1.2;color:#7a7884;background:#fff;flex:none}
+body.has-logo .org-logo-ph{display:none}
+body:not(.has-logo) .top-av.org{display:none}
+@media (max-width:860px){#orgName{display:none}.org-logo-ph{height:36px;min-width:84px;max-width:96px;font-size:9.5px;padding:3px 6px}}
 </style>
 </head>
 <body>
@@ -1218,9 +1223,10 @@ body.dash-on .app{display:none}
     <header class="topbar">
       <button class="menu-btn" id="menuBtn" type="button" aria-label="Ouvrir le menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg></button>
       <div class="org-logo" id="orgLogoBox" hidden><img id="orgLogo" alt="" referrerpolicy="no-referrer"></div>
+      <div class="org-logo-ph" id="orgLogoPh" title="Ajoutez votre logo dans Admin › Identité">Votre logo d'entreprise ici</div>
       <div class="top-av org" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V9l7-5 7 5v12"/><path d="M10 21v-5h4v5"/><path d="M12 8v4M10 10h4"/></svg><i class="online"></i></div>
       <div class="top-title">
-        <div class="tt-row"><b id="orgName">Clinique vétérinaire virtuelle au Québec</b><span class="tt-mode" id="modeChip"><span class="mc-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span class="mc-long" id="modeLong">Réception — Assistant d'accueil</span><span class="mc-short" id="modeShort">Réception</span></span></div>
+        <div class="tt-row"><b id="orgName">Nom de votre établissement</b><span class="tt-mode" id="modeChip"><span class="mc-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span class="mc-long" id="modeLong">Réception — Assistant d'accueil</span><span class="mc-short" id="modeShort">Réception</span></span></div>
         <span class="tt-sub" id="convTitle">Nouvelle conversation</span>
         <span hidden><span id="agentName"></span><span id="agentTag"></span></span>
       </div>
@@ -1420,7 +1426,7 @@ body.dash-on .app{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181203"></script>
+<script src="app-agent.js?v=202610181305"></script>
 <script src="dashboard.js?v=202610181207"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "apiUrl": "https://laqualia-agent.tmclellan007.workers.dev",
-  "etablissement": "Clinique vétérinaire virtuelle au Québec",
-  "logo": "https://cdn.prod.website-files.com/66a1067199e858196e98f619/66a11bd04074aeadb1e6a21a_neovet-logo-original.png",
+  "etablissement": "Nom de votre établissement",
+  "logo": "",
   "name": "Assistant La Qualia",
   "tag": "Le coach de l'équipe d'accueil : clients, équipe clinique et lexique",
   "audience": "telephonistes",
