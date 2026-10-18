@@ -1204,6 +1204,74 @@ body.side-mini #privLink span{display:none}
   .under .card.tool .tl-ico svg{width:15px;height:15px}
 }
 
+
+/* ===== Parcours de l'apprenant (démo) ===== */
+body.journey .main > :not(.topbar):not(#journey){display:none!important}
+.journey{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;outline:0}
+.jr-in{max-width:1080px;margin:0 auto;padding:26px 24px 48px;display:flex;flex-direction:column;gap:16px}
+.jr-head h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.5px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;color:#101010}
+.jr-head p{margin:4px 0 0;color:#55565d;font-weight:600;font-size:15px}
+.jr-card{background:#fff;border:1px solid #e6e4dc;border-radius:18px;padding:18px 20px}
+.jr-card h2{margin:0 0 12px;font-size:17px;font-weight:800;color:#101010;display:flex;align-items:center;gap:8px}
+.jr-top{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
+.jr-two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.jr-big{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.jr-big b{font-size:44px;font-weight:800;letter-spacing:-1px;color:var(--role-ink)}
+.jr-big span{color:#55565d;font-weight:600}
+.jr-bar{height:12px;background:#eceae3;border-radius:99px;overflow:hidden}
+.jr-bar i{display:block;height:100%;background:var(--role);border-radius:99px}
+.jr-bar.sm{height:7px;margin-top:7px}
+.jr-stats{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.jr-stats li{background:var(--role-soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.jr-stats b{font-size:19px;font-weight:800;color:var(--role-ink)}
+.jr-stats span{font-size:13px;color:#45464d;font-weight:600}
+.jr-next{background:var(--role-soft);border-color:transparent;display:flex;flex-direction:column}
+.jr-mod{margin:0;font-size:12.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--role)}
+.jr-nt{margin:6px 0 4px;font-size:19px;font-weight:800;color:var(--role-ink);line-height:1.3}
+.jr-nd{margin:0 0 14px;color:#3a3b42;font-size:14.5px;line-height:1.5}
+.jr-cta{margin-top:auto;align-self:flex-start;display:inline-flex;align-items:center;gap:8px;background:var(--role);color:#fff;border:0;border-radius:12px;padding:11px 16px;font-weight:800;font-size:14.5px;cursor:pointer}
+.jr-cta:hover{filter:brightness(1.1)}
+.jr-cta:focus-visible{outline:3px solid var(--role-ink);outline-offset:2px}
+.jr-mods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.jr-col h3{margin:0 0 8px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:6px}
+.jr-col h3 span{background:#eceae3;color:#45464d;border-radius:99px;padding:1px 8px;font-size:12px}
+.jr-doing h3{color:var(--role)}.jr-done h3{color:#15803d}.jr-todo h3{color:#55565d}
+.jr-col ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.jr-col li{border:1px solid #e6e4dc;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.jr-doing li{border-color:var(--role);background:var(--role-soft)}
+.jr-done li{background:#f3faf5;border-color:#cfe9d7}
+.jr-col li b{font-size:14.5px;font-weight:700;color:#101010;line-height:1.35}
+.jr-col li small{font-size:13px;color:#55565d;font-weight:600}
+.jr-skills,.jr-sims{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.jr-skills li{padding:9px 0;border-top:1px solid #efede6;display:grid;grid-template-columns:1fr auto;align-items:center;column-gap:10px}
+.jr-skills li:first-child,.jr-sims li:first-child{border-top:0;padding-top:0}
+.jr-skills .jr-bar{grid-column:1/-1}
+.jr-st{font-weight:700;font-size:14.5px}
+.jr-sv,.jr-res{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.jr-sv b,.jr-res b{font-size:15px;font-weight:800}
+.lv{font-style:normal;font-size:12px;font-weight:800;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.lv.ok{background:#e3f5e9;color:#166534}.lv.mid{background:#fff4e0;color:#8a4b00}.lv.low{background:#fde8e8;color:#9b1c1c}
+.jr-sims li{display:grid;grid-template-columns:62px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #efede6}
+.jr-date{font-size:13px;font-weight:800;color:var(--role)}
+.jr-sim{display:flex;flex-direction:column;min-width:0}
+.jr-sim b{font-size:14.5px;font-weight:700;line-height:1.3}
+.jr-sim small{font-size:12.5px;color:#55565d;font-weight:600}
+.jr-fb ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:14.5px;line-height:1.5;color:#2a2b30}
+.jr-fb.good h2{color:#166534}.jr-fb.grow h2{color:#8a4b00}
+.jr-fb.good{border-left:5px solid #22a35a}.jr-fb.grow{border-left:5px solid #e0952b}
+#sideJourney[aria-pressed="true"]{background:#fff;color:#1b1147}
+body.tsa #sideJourney[aria-pressed="true"]{color:#0b3b37}
+@media (max-width:860px){
+  .jr-in{padding:18px 14px 36px;gap:12px}
+  .jr-head h1{font-size:24px}
+  .jr-top,.jr-two,.jr-mods{grid-template-columns:1fr}
+  .jr-big b{font-size:38px}
+  .jr-stats{gap:8px}.jr-stats li{padding:8px 9px}.jr-stats b{font-size:17px}.jr-stats span{font-size:12px}
+  .jr-card{padding:15px 14px;border-radius:16px}
+  .jr-cta{align-self:stretch;justify-content:center}
+  .jr-sims li{grid-template-columns:52px 1fr;row-gap:4px}
+  .jr-res{grid-column:2;justify-content:flex-start}
+}
 /* ===== Grands écrans : tout est agrandi proportionnellement pour rester lisible ===== */
 @media (min-width:1560px) and (min-height:800px){:root{--z:1.1}body{zoom:1.1}}
 @media (min-width:1840px) and (min-height:920px){:root{--z:1.2}body{zoom:1.2}}
@@ -1246,6 +1314,7 @@ body.side-mini #privLink span{display:none}
       <div class="side-label" id="navTrainLab">S'entraîner</div>
       <button class="nav-item normal-only" id="sideTrain" type="button" title="Mise en situation"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="ni-txt"><b>Mise en situation</b><small id="sideTrainSub">Un appel court, avec quiz</small></span></button>
       <button class="nav-item" id="learnToggle" type="button" aria-pressed="false" title="Simulation complète"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg></span><span class="ni-txt"><b id="learnToggleText">Simulation complète</b><small id="learnToggleSub">Appel fictif avec sonnerie</small></span><em class="ni-badge" aria-hidden="true">Actif</em></button>
+      <button class="nav-item" id="sideJourney" type="button" aria-pressed="false" title="Parcours de l'apprenant"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8.2 19H15a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.8"/></svg></span><span class="ni-txt"><b>Parcours de l'apprenant</b><small>Progression et compétences</small></span></button>
     </div>
 
     <section class="side-group side-faq normal-only">
@@ -1301,6 +1370,7 @@ body.side-mini #privLink span{display:none}
         <button class="top-new" id="clear" type="button" aria-label="Nouvelle conversation" title="Nouvelle conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="top-new-l">Nouvelle conversation</span><span class="top-new-sim">Nouvel appel</span></button>
       </div>
     </header>
+    <section class="journey" id="journey" hidden tabindex="-1" aria-label="Parcours de l'apprenant"></section>
     <div class="learn-banner learn-only" id="learnBanner" role="status">
       <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg>Mode simulation complète</span>
       <span class="lb-role" id="lbRole">Réception</span><span class="lb-txt">Appels et données fictifs — rien n'est envoyé à l'équipe</span>
@@ -1498,7 +1568,8 @@ body.side-mini #privLink span{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181445"></script>
+<script src="app-agent.js?v=202610181510"></script>
+<script src="journey.js?v=202610181510"></script>
 <script src="dashboard.js?v=202610181445"></script>
 </body>
 </html>

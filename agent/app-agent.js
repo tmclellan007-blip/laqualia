@@ -1879,6 +1879,7 @@
     const learn = document.body.classList.contains("learn");
     $("modeLong").textContent = isTsa() ? (learn ? "Mode TSA — Simulation" : "Mode TSA — Soutien clinique") : (learn ? "Réception — Simulation" : "Réception — Assistant d'accueil");
     $("modeShort").textContent = isTsa() ? (learn ? "TSA · Simulation" : "Mode TSA") : (learn ? "Simulation" : "Réception");
+    if (document.body.classList.contains("journey")) { $("convTitle").textContent = "Parcours de l'apprenant"; return; }
     if (learn) { $("convTitle").textContent = isTsa() ? "Simulation complète · cas fictifs" : "Simulation complète · appels fictifs"; return; }
     const first = $("thread").querySelector(".msg.q .qbub");
     const t = first ? first.textContent.replace(/\s+/g, " ").trim() : "";
