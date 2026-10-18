@@ -922,6 +922,7 @@
   try { TTS?.getVoices(); TTS?.addEventListener?.("voiceschanged", () => TTS.getVoices()); } catch {}
 
   function renderInput() {
+    try { renderVoiceSel(); } catch {}
     document.querySelectorAll("#inputSeg button").forEach((b) => {
       b.setAttribute("aria-checked", String(b.dataset.input === inputMode));
       if (b.dataset.input === "voix" && !vc.ttsOK) { b.disabled = true; b.title = "Non disponible dans ce navigateur"; }
@@ -935,15 +936,61 @@
     b.onclick = () => { if (sim.active || b.disabled) return; inputMode = b.dataset.input; store.set("lq-input", inputMode); renderInput(); };
   });
 
-  function pickVoice() {
-    const all = (TTS?.getVoices() || []).filter((v) => /^fr/i.test(v.lang));
-    if (!all.length) return null;
-    const ca = all.filter((v) => /CA/i.test(v.lang));
-    const pool = ca.length ? ca : all;
-    const good = pool.filter((v) => /natural|neural|online|premium|enhanced|google|amélior/i.test(v.name));
-    const p = good.length ? good : pool;
-    return p[Math.floor(Math.random() * p.length)];
+  // Classe les voix françaises de l'appareil, des plus naturelles aux plus « robot »
+  function voiceScore(v) {
+    const n = v.name;
+    let sc = 0;
+    if (/natural|neural/i.test(n)) sc += 60;          // Edge : voix neuronales (Sylvie, Antoine, Jean, Thierry…)
+    else if (/online/i.test(n)) sc += 45;
+    if (/premium|enhanced|amélior|siri/i.test(n)) sc += 40; // Safari / macOS / iOS : voix téléchargées de qualité
+    if (/google/i.test(n)) sc += 20;
+    if (/CA/i.test(v.lang)) sc += 15;                   // accent québécois en priorité
+    if (/espeak|compact|eloquence|robot|novelty|grandma|grandpa|rocko|shelley|flo|eddy|reed|sandy/i.test(n)) sc -= 50;
+    if (!v.localService) sc += 5;
+    return sc;
   }
+  function frVoices() {
+    return (TTS?.getVoices() || []).filter((v) => /^fr/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
+  }
+  function voiceLabel(v) {
+    const sc = voiceScore(v);
+    const nm = v.name.replace(/^(Microsoft|Google)\s+/i, "").replace(/\s*-\s*French.*$/i, "").replace(/\s*\((Natural|Online)\)/gi, "").replace(/\s+Online/i, "").trim();
+    const reg = /CA/i.test(v.lang) ? "Québec" : /FR/i.test(v.lang) ? "France" : /BE/i.test(v.lang) ? "Belgique" : /CH/i.test(v.lang) ? "Suisse" : v.lang;
+    return `${nm} · ${reg}${sc >= 55 ? " · très naturelle" : sc >= 35 ? " · naturelle" : ""}`;
+  }
+  function pickVoice() {
+    const all = frVoices();
+    if (!all.length) return null;
+    const chosen = store.get("lq-voice-name");
+    if (chosen) { const v = all.find((x) => x.name === chosen); if (v) return v; }
+    // Automatique : une des meilleures voix, différente d'un appel à l'autre quand il y en a plusieurs
+    const top = voiceScore(all[0]);
+    const best = all.filter((v) => voiceScore(v) >= top - 10);
+    return best[Math.floor(Math.random() * best.length)];
+  }
+  function renderVoiceSel() {
+    const box = $("voicePick"), sel = $("voiceSel");
+    box.hidden = inputMode !== "voix" || !vc.ttsOK;
+    const all = frVoices();
+    const cur = store.get("lq-voice-name") || "";
+    sel.textContent = "";
+    sel.append(new Option(all.length ? "Automatique · la plus naturelle disponible" : "Voix française par défaut", ""));
+    all.forEach((v) => sel.append(new Option(voiceLabel(v), v.name)));
+    sel.value = all.some((v) => v.name === cur) ? cur : "";
+    const top = all[0] ? voiceScore(all[0]) : 0;
+    $("voiceTip").hidden = top >= 55;
+  }
+  $("voiceSel").onchange = () => { store.set("lq-voice-name", $("voiceSel").value); };
+  $("voiceTest").onclick = () => {
+    if (!TTS) return;
+    try { TTS.cancel(); } catch {}
+    vc.voice = pickVoice();
+    const u = new SpeechSynthesisUtterance("Oui, bonjour! Je vous appelle pour mon chien, Max. Il boite depuis hier, pis là je commence à être pas mal inquiète.");
+    if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
+    u.rate = 1; u.pitch = 1;
+    TTS.speak(u);
+  };
+  try { TTS?.addEventListener?.("voiceschanged", renderVoiceSel); } catch {}
 
   function voiceStartCall() {
     sim.voice = inputMode === "voix" && vc.ttsOK;
@@ -952,7 +999,6 @@
     vc.spoken = 0; vc.pending = 0; vc.utts = []; vc.after = null; vc.restarts = 0;
     if (!sim.voice) { micUI(); return; }
     vc.voice = pickVoice();
-    vc.pitch = 0.92 + Math.random() * 0.16; // un client ne ressemble pas à l'autre
     // Débloque la synthèse dans le geste « Répondre » (exigé par Safari iOS)
     try { TTS.cancel(); const u = new SpeechSynthesisUtterance(" "); u.volume = 0; TTS.speak(u); } catch {}
     // Demande l'accès au micro tout de suite, pendant le geste « Répondre »
@@ -971,16 +1017,16 @@
   }
 
   // Ce qui se lit à voix haute : sans indications de jeu ni guillemets
-  const forTTS = (t) => t.replace(/\([^)]*\)/g, " ").replace(/\*[^*]*\*/g, " ").replace(/[«»"“”_#>]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
+  const forTTS = (t) => t.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "").replace(/\.{3,}/g, "…").replace(/\s+-\s+/g, ", ").replace(/\([^)]*\)/g, " ").replace(/\*[^*]*\*/g, " ").replace(/[«»"“”_#>]/g, " ").replace(/\s+/g, " ").replace(/\s+([.,!?…])/g, "$1").trim();
 
-  // Lit le client au fil du texte, phrase par phrase, pour réduire l'attente
+  // Lit la réplique d'un seul souffle (intonation plus naturelle) ; une très longue réplique commence plus tôt
   function voiceFeed(clean, final) {
     if (!sim.voice || !sim.active || sim.ended) return;
     if (vc.spoken === -1) vc.spoken = 0;
     const rest = clean.slice(vc.spoken);
     let cut = 0;
     if (final) cut = rest.length;
-    else { const re = /[.!?…]+[»")]?\s+/g; let m; while ((m = re.exec(rest))) cut = m.index + m[0].length; }
+    else if (rest.length > 180) { const re = /[.!?…]+[»")]?\s+/g; let m; while ((m = re.exec(rest))) cut = m.index + m[0].length; }
     if (!cut) return;
     vc.spoken += cut;
     say(rest.slice(0, cut));
@@ -992,7 +1038,7 @@
     voiceStopListening();
     const u = new SpeechSynthesisUtterance(t);
     if (vc.voice) { u.voice = vc.voice; u.lang = vc.voice.lang; } else u.lang = "fr-CA";
-    u.rate = 1.02; u.pitch = vc.pitch;
+    u.rate = 1; u.pitch = 1; // modifier le ton ou la vitesse rend la voix plus artificielle
     vc.pending++; vc.utts.push(u); // garder une référence (sinon Chrome perd la fin)
     const done = () => {
       if (u._done) return; u._done = true;
