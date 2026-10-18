@@ -240,7 +240,8 @@
     const notes = [];
     const kept = [];
     for (const para of live.split(/\n\s*\n/)) {
-      const lines = para.split("\n").filter((l) => !/^\s*#{1,4}\s+/.test(l));
+      // Retire aussi un marqueur répété par le modèle ([EN DIRECT], [APPRENTISSAGE]) qui n'a rien à faire à l'écran
+      const lines = para.split("\n").filter((l) => !/^\s*#{1,4}\s+/.test(l) && !LIVE_RE.test(l) && !LEARN_RE.test(l));
       const keptLines = [];
       for (const line of lines) {
         if (!line.trim()) continue;
@@ -285,6 +286,7 @@
       const lm = after.match(LEARN_RE);
       r = lm ? { live: after.slice(0, lm.index).trim(), learn: after.slice(lm.index + lm[0].length).trim() } : { live: after.trim(), learn: null };
     }
+    if (r.learn) r.learn = r.learn.split("\n").filter((l) => !LIVE_RE.test(l) && !LEARN_RE.test(l)).join("\n").trim();
     const out = cleanLive(r.live, r.learn);
     // Hors périmètre ou question de clarification : pas de réponse complète
     if (out.learn !== null && /^\s*\[?\s*SANS APPRENTISSAGE\s*\]?/i.test(out.learn)) { out.learn = null; out.noLearn = true; }
