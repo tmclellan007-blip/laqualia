@@ -158,7 +158,7 @@
     closeMenu();
     hideCarry();
     inScenario = true;
-    const list = isTsa() ? SCENARIOS_TSA : SCENARIOS;
+    const list = RP().scenarios?.length ? RP().scenarios : isTsa() ? SCENARIOS_TSA : SCENARIOS;
     const sc = list[Math.floor(Math.random() * list.length)];
     const label = isTsa() ? `Mets-moi en situation : je suis TSA et je gère ${sc}.` : `Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`;
     send(label + sceneFormat(), label);
@@ -177,8 +177,10 @@
     renderModels();
   }
   function allowedTiers() {
-    const list = Array.isArray(cfg.modelesProposes) ? cfg.modelesProposes.filter((t) => MODEL_LABELS[t]) : [];
-    return list.length ? list : [MODEL_LABELS[cfg.tier] ? cfg.tier : "default"];
+    const src = Array.isArray(RP().modelesProposes) && RP().modelesProposes.length ? RP().modelesProposes : cfg.modelesProposes;
+    const list = Array.isArray(src) ? src.filter((t) => MODEL_LABELS[t]) : [];
+    const def = RP().tier || cfg.tier;
+    return list.length ? list : [MODEL_LABELS[def] ? def : "default"];
   }
   function renderModels() {
     const list = allowedTiers();
@@ -931,7 +933,7 @@
     ["Client inquiet post-op", "un client signale des signes après une chirurgie, dont certains peuvent exiger le vétérinaire ; tu joues le client"],
     ["Urgence en hospitalisation", "un collègue signale qu'un patient hospitalisé fictif se dégrade rapidement ; tu joues le collègue"],
   ];
-  const simTypes = () => (isTsa() ? SIM_TYPES_TSA : SIM_TYPES);
+  const simTypes = () => (RP().simTypes?.length ? RP().simTypes : isTsa() ? SIM_TYPES_TSA : SIM_TYPES);
   const themesKey = () => (isTsa() ? "lq-themes-tsa" : "lq-themes");
   function loadThemes() { try { themes = JSON.parse(store.get(themesKey()) || "[]").filter((k) => simTypes().some(([n]) => n === k)); } catch { themes = []; } }
   const SIM_TYPES = [
@@ -1785,6 +1787,15 @@
         setStatus("ok", "En ligne");
         setVoiceService(!!s.voice);
         tsaEnabled = !!s.tsa; tsaVerified = !!s.tsaOk;
+        // Configuration enregistrée dans la page de configuration (prioritaire sur config.json)
+        if (s.pub) {
+          const pick = (o) => Object.fromEntries(Object.entries(o || {}).filter(([, v]) => v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && !v.length)));
+          cfg = { ...cfg, ...pick(s.pub.reception) };
+          if (s.pub.etablissement) cfg.etablissement = s.pub.etablissement;
+          cfg.tsa = { ...(cfg.tsa || {}), ...pick(s.pub.tsa) };
+          applyCfg();
+        }
+        $("adminLink").hidden = !s.admin;
         if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
         $("tsaLock").hidden = tsaVerified;
         if (store.get("lq-role") === "tsa" && tsaVerified && !isTsa()) switchRole("tsa", { silent: true });

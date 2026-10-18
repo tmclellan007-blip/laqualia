@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Configuration · Assistant La Qualia</title>
+<meta name="theme-color" content="#04081a">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+[hidden]{display:none!important}
+:root{--ink:#101010;--muted:#55565d;--paper:#f6f6f2;--line:#e4e3dd;--role:#401098;--role-soft:#ede5ff;--role-ink:#2b0f6e;--danger:#b91c1c}
+body.tsa{--role:#0f766e;--role-soft:#ddf3ef;--role-ink:#134e4a}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:Manrope,system-ui,sans-serif;background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--role)}
+
+/* onglets d'application */
+.tabs{position:sticky;top:0;z-index:30;height:52px;background:#04081a;display:flex;align-items:flex-end;gap:6px;padding:0 14px;border-bottom:4px solid var(--role)}
+.tab{height:42px;display:flex;align-items:center;gap:10px;padding:0 18px 0 12px;border:0;border-radius:12px 12px 0 0;background:#ffffff0d;color:#ffffffa6;min-width:210px;text-align:left}
+.tab:hover{background:#ffffff1a;color:#fff}
+.tab .ti{width:26px;height:26px;border-radius:8px;background:#ffffff14;display:grid;place-items:center;flex:none}
+.tab .ti svg{width:15px;height:15px}
+.tab b{display:block;font-size:14px;font-weight:800;line-height:1.15}
+.tab small{display:block;font-size:11px;opacity:.75}
+.tab.rec[aria-selected="true"]{background:#401098;color:#fff}
+.tab.tsa[aria-selected="true"]{background:#0f766e;color:#fff}
+.tabs .right{margin-left:auto;align-self:center;display:flex;gap:6px}
+.tlink{color:#ffffffc2;text-decoration:none;font-size:13px;font-weight:700;padding:7px 10px;border-radius:9px;background:none;border:0}
+.tlink:hover{background:#ffffff14;color:#fff}
+
+/* connexion */
+.login{min-height:calc(100vh - 52px);display:grid;place-items:center;padding:20px}
+.sheet{background:#fff;border-radius:22px;padding:28px;width:min(440px,100%);box-shadow:0 30px 60px rgb(0 0 0/.12);display:flex;flex-direction:column;gap:14px}
+.sheet img{width:52px;height:52px}
+.sheet h1{font-size:24px;letter-spacing:-.6px;margin:0}
+.sheet p{margin:0;color:var(--muted)}
+
+/* mise en page */
+.wrap{display:grid;grid-template-columns:230px 1fr;gap:28px;max-width:1180px;margin:0 auto;padding:26px 20px 120px}
+.toc{position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:2px}
+.toc .rb{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:#fff;background:var(--role);border-radius:999px;padding:4px 11px;margin:0 0 12px;align-self:flex-start}
+.toc a{color:#3f3d56;text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-radius:10px;display:flex;justify-content:space-between;gap:8px}
+.toc a:hover{background:#fff}
+.toc a small{color:var(--muted);font-weight:700}
+.head h1{font-size:clamp(26px,3vw,34px);letter-spacing:-1px;margin:0}
+.head p{margin:4px 0 0;color:var(--muted)}
+.cards{display:flex;flex-direction:column;gap:18px;margin-top:20px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;scroll-margin-top:76px}
+.card h2{font-size:18px;margin:0;letter-spacing:-.3px;display:flex;align-items:center;gap:10px}
+.card h2 .n{width:26px;height:26px;border-radius:8px;background:var(--role-soft);color:var(--role);display:grid;place-items:center;font-size:13px;flex:none}
+.card .lead{margin:4px 0 16px;color:var(--muted);font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.f:last-child{margin-bottom:0}
+.f label,.f .lab{font-weight:800;font-size:13.5px}
+.f .hint{font-size:12.5px;color:var(--muted)}
+.f .lab-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.f .count{font-size:12px;color:var(--muted);font-weight:700}
+input[type=text],input[type=password],select,textarea{width:100%;border:1.5px solid #dcdbe3;border-radius:12px;padding:11px 13px;background:#fff;font-size:14.5px}
+textarea{resize:vertical;min-height:110px;line-height:1.5}
+textarea.big{min-height:420px;font-size:13.5px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);box-shadow:0 0 0 4px color-mix(in srgb,var(--role) 14%,transparent)}
+.shared{display:inline-block;font-size:11px;font-weight:800;color:#7a4b00;background:#fff4e0;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:1px}
+.checks{display:flex;gap:10px;flex-wrap:wrap}
+.chk{display:flex;align-items:center;gap:8px;border:1.5px solid #dcdbe3;border-radius:12px;padding:10px 14px;font-weight:700;font-size:14px;cursor:pointer}
+.chk input{accent-color:var(--role);width:16px;height:16px}
+.chk small{color:var(--muted);font-weight:600}
+
+/* types de simulation */
+.st-row{display:grid;grid-template-columns:220px 1fr 40px;gap:8px;margin-bottom:8px}
+.st-row input{padding:9px 11px;font-size:14px}
+.icon-btn{border:0;background:#f3f2f7;border-radius:10px;display:grid;place-items:center;color:#55565d}
+.icon-btn:hover{background:#fde2e2;color:var(--danger)}
+.icon-btn svg{width:16px;height:16px}
+.add{border:1.5px dashed color-mix(in srgb,var(--role) 50%,#fff);background:none;color:var(--role);font-weight:800;border-radius:12px;padding:9px 14px;font-size:13.5px}
+.add:hover{background:var(--role-soft)}
+
+/* base de connaissances */
+.kb-head{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.btn{border:0;border-radius:12px;padding:11px 16px;font-weight:800;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.btn svg{width:17px;height:17px}
+.btn.pri{background:var(--role);color:#fff}
+.btn.pri:hover{filter:brightness(1.1)}
+.btn.sec{background:#fff;border:1.5px solid var(--role);color:var(--role-ink)}
+.btn.sec:hover{background:var(--role-soft)}
+.btn.ghost{background:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.drop{border:2px dashed #d6d3e2;border-radius:14px;padding:18px;text-align:center;color:var(--muted);font-size:13.5px;margin-bottom:14px;transition:background .15s,border-color .15s}
+.drop.over{border-color:var(--role);background:var(--role-soft);color:var(--role-ink)}
+.privacy{display:flex;gap:10px;align-items:flex-start;background:#f2fbf6;border:1px solid #bfe8cf;color:#14532d;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+.privacy svg{flex:none;width:18px;height:18px;margin-top:1px}
+.docs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.doc{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.doc:first-child{border-top:0}
+.doc .di{width:34px;height:34px;border-radius:10px;background:var(--role-soft);color:var(--role);display:grid;place-items:center}
+.doc .di svg{width:17px;height:17px}
+.doc b{display:block;font-size:14.5px}
+.doc small{color:var(--muted);font-size:12.5px}
+.doc .acts{display:flex;gap:4px}
+.doc .acts button{border:0;background:none;font-weight:800;font-size:13px;color:var(--role-ink);padding:7px 10px;border-radius:9px}
+.doc .acts button:hover{background:var(--role-soft)}
+.doc .acts button.del:hover{background:#fde2e2;color:var(--danger)}
+.empty{padding:22px;text-align:center;color:var(--muted);font-size:14px}
+.legacy{font-size:12.5px;color:var(--muted);margin-top:10px}
+
+/* éditeur de document */
+.modal{position:fixed;inset:0;z-index:60;background:rgb(10 20 48/.55);display:grid;place-items:center;padding:20px}
+.dlg{background:#fff;border-radius:20px;width:min(860px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;overflow:hidden}
+.dlg header{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.dlg header h3{margin:0;font-size:18px}
+.dlg .body{padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.dlg textarea{min-height:380px;font-size:13.5px}
+.dlg footer{padding:14px 22px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;align-items:center}
+.dlg footer .info{margin-right:auto;font-size:12.5px;color:var(--muted)}
+
+/* barre d'enregistrement */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgb(0 0 0/.06);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px))}
+.savebar .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.state{font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px}
+.state i{width:9px;height:9px;border-radius:50%;background:#16a34a}
+.state.dirty i{background:#f59e0b}
+.state.err{color:var(--danger)}.state.err i{background:var(--danger)}
+.savebar .sp{margin-left:auto}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:#101010;color:#fff;font-weight:700;border-radius:12px;padding:10px 16px;z-index:70;font-size:14px}
+
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr;gap:12px}
+  .toc{position:static;flex-direction:row;flex-wrap:wrap}
+  .toc a{padding:6px 10px;font-size:13px;background:#fff}
+  .grid2{grid-template-columns:1fr}
+  .st-row{grid-template-columns:1fr 40px}
+  .st-row input:nth-child(2){grid-column:1}
+  .tab{min-width:0;flex:1}
+  .tab small,.tabs .right .hide-m{display:none}
+}
+</style>
+</head>
+<body>
+<div class="tabs" role="tablist" aria-label="Espace à configurer">
+  <button class="tab rec" role="tab" id="tabRec" aria-selected="true"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/></svg></span><span><b>Réception</b><small>Configuration de l'agent d'accueil</small></span></button>
+  <button class="tab tsa" role="tab" id="tabTsa" aria-selected="false"><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg></span><span><b>Équipe technique — TSA</b><small>Configuration de l'agent clinique</small></span></button>
+  <div class="right"><a class="tlink" href="./">← <span class="hide-m">Retour à l'agent</span></a><button class="tlink" id="out" hidden>Quitter</button></div>
+</div>
+
+<section class="login" id="login">
+  <form class="sheet" id="loginForm">
+    <img src="../assets/icone-clair.svg" alt="">
+    <h1>Configuration de l'agent</h1>
+    <p>Réservé au responsable. Entrez le code de configuration (secret ADMIN_CODE du relais). Il n'est retenu que jusqu'à la fermeture de l'onglet.</p>
+    <input type="password" id="adminCode" placeholder="Code de configuration" aria-label="Code de configuration" autocomplete="off">
+    <p class="err" id="loginErr" hidden style="color:var(--danger);font-weight:700"></p>
+    <button class="btn pri" type="submit" id="loginGo" style="justify-content:center">Ouvrir la configuration</button>
+  </form>
+</section>
+
+<main class="wrap" id="app" hidden>
+  <nav class="toc" aria-label="Sections">
+    <span class="rb" id="roleBadge">Réception</span>
+    <a href="#s-id">Identité</a>
+    <a href="#s-rules">Règles de l'agent</a>
+    <a href="#s-faq">Questions fréquentes <small id="nFaq"></small></a>
+    <a href="#s-scene">Mises en situation <small id="nScene"></small></a>
+    <a href="#s-sim">Simulation complète</a>
+    <a href="#s-model">Modèles</a>
+    <a href="#s-kb">Base de connaissances <small id="nKb"></small></a>
+  </nav>
+  <div>
+    <div class="head">
+      <h1 id="title">Agent Réception</h1>
+      <p id="sub">Ces réglages s'appliquent seulement à cet espace. Ils prennent effet dans l'agent environ une minute après l'enregistrement.</p>
+    </div>
+    <div class="cards">
+      <section class="card" id="s-id">
+        <h2><span class="n">1</span>Identité</h2>
+        <p class="lead">Ce que l'équipe voit dans l'application.</p>
+        <div class="grid2">
+          <div class="f"><label for="etab">Nom de l'établissement <span class="shared">commun aux deux espaces</span></label><input type="text" id="etab" maxlength="120"></div>
+          <div class="f"><label for="name">Nom de l'assistant</label><input type="text" id="name" maxlength="120"></div>
+        </div>
+        <div class="f"><label for="disclaimer">Avertissement affiché sous la zone de saisie</label><textarea id="disclaimer" maxlength="600" style="min-height:70px"></textarea></div>
+      </section>
+
+      <section class="card" id="s-rules">
+        <h2><span class="n">2</span>Règles de l'agent</h2>
+        <p class="lead">Les consignes que l'agent suit pour chaque réponse : rôle, limites, format, ton. C'est le réglage le plus important.</p>
+        <div class="f"><div class="lab-row"><label for="instructions">Instructions</label><span class="count" id="cInstr"></span></div><textarea id="instructions" class="big" maxlength="40000"></textarea></div>
+      </section>
+
+      <section class="card" id="s-faq">
+        <h2><span class="n">3</span>Questions fréquentes</h2>
+        <p class="lead">Proposées dans le menu et sur l'écran d'accueil, en rotation. Une question par ligne.</p>
+        <div class="f"><div class="lab-row"><label for="examples">Questions</label><span class="count" id="cFaq"></span></div><textarea id="examples" style="min-height:260px"></textarea></div>
+      </section>
+
+      <section class="card" id="s-scene">
+        <h2><span class="n">4</span>Mises en situation</h2>
+        <p class="lead">Les situations tirées au hasard pour « Mise en situation » (quiz). Une par ligne, écrite comme la fin de la phrase : <em id="sceneExample">« je reçois un appel de … »</em>.</p>
+        <div class="f"><div class="lab-row"><label for="scenarios">Situations</label><span class="count" id="cScene"></span></div><textarea id="scenarios" style="min-height:220px"></textarea></div>
+      </section>
+
+      <section class="card" id="s-sim">
+        <h2><span class="n">5</span>Simulation complète</h2>
+        <p class="lead">Les types d'appels proposés à l'étape 2 de la simulation, et la façon dont l'interlocuteur fictif et la rétroaction se comportent.</p>
+        <div class="f"><span class="lab">Types d'appel <span class="hint">(nom court + description pour l'agent)</span></span><div id="simTypes"></div><button type="button" class="add" id="addType">+ Ajouter un type d'appel</button></div>
+        <div class="f"><label for="simClient">Comportement de l'interlocuteur fictif</label><textarea id="simClient" style="min-height:160px"></textarea></div>
+        <div class="f"><label for="simBilan">Rétroaction à la fin de l'appel</label><textarea id="simBilan" style="min-height:140px"></textarea></div>
+      </section>
+
+      <section class="card" id="s-model">
+        <h2><span class="n">6</span>Modèles</h2>
+        <p class="lead">Les profondeurs de réponse que l'équipe peut choisir, et celle utilisée par défaut.</p>
+        <div class="f"><span class="lab">Proposés à l'équipe</span><div class="checks" id="models"></div></div>
+        <div class="f"><label for="tier">Par défaut</label><select id="tier" style="max-width:320px"></select></div>
+      </section>
+
+      <section class="card" id="s-kb">
+        <h2><span class="n">7</span>Base de connaissances</h2>
+        <p class="lead" id="kbLead">Les procédures et documents propres à cet espace. L'agent les consulte avant de répondre et les cite.</p>
+        <div class="privacy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>Privé :</b> les documents sont stockés dans votre compte Cloudflare, pas sur GitHub, et ne sont lus que par l'agent de cet espace. N'y mettez pas de renseignements personnels sur des clients.</span></div>
+        <div class="kb-head">
+          <button type="button" class="btn pri" id="upBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>Téléverser des fichiers</button>
+          <button type="button" class="btn sec" id="pasteBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Écrire ou coller un texte</button>
+          <input type="file" id="file" multiple accept=".pdf,.docx,.txt,.md,.csv,.html,.htm" hidden>
+        </div>
+        <div class="drop" id="drop">Glissez-déposez ici des fichiers PDF, Word (.docx), texte (.txt, .md) ou CSV. Le texte est extrait dans votre navigateur.</div>
+        <div class="docs" id="docs"></div>
+        <p class="legacy" id="legacy" hidden>Les documents publics du dossier <code>agent/docs/</code> du site restent aussi consultés par l'agent Réception.</p>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <span class="state" id="state"><i></i><span id="stateTxt">Tout est enregistré</span></span>
+    <button type="button" class="btn ghost sp" id="resetBtn" title="Revenir aux réglages du fichier config.json">Rétablir les réglages d'origine</button>
+    <button type="button" class="btn pri" id="saveBtn" disabled>Enregistrer</button>
+  </div>
+</div>
+
+<div class="modal" id="docModal" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dmTitle">
+    <header><h3 id="dmTitle">Document</h3></header>
+    <div class="body">
+      <div class="f"><label for="dmName">Titre (cité par l'agent)</label><input type="text" id="dmName" maxlength="160" placeholder="Ex. : Protocole de surveillance post-anesthésie — v2, 2026"></div>
+      <div class="f"><label for="dmText">Contenu</label><textarea id="dmText" placeholder="Collez ou écrivez le texte du document…"></textarea></div>
+    </div>
+    <footer><span class="info" id="dmInfo"></span><button type="button" class="btn ghost" id="dmCancel">Annuler</button><button type="button" class="btn pri" id="dmSave">Enregistrer le document</button></footer>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="admin.js?v=202610181049"></script>
+</body>
+</html>

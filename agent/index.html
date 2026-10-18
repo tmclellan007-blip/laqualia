@@ -925,6 +925,11 @@ body.tsa .app-tabs{border-bottom-color:#0f766e}
   .scrim{top:var(--tabs-h)!important}
 }
 @media (max-width:420px){.app-tabs .rt-tsa .rt-short::after{content:""}}
+
+.side-admin{text-decoration:none}
+.side-admin[hidden]{display:none}
+body.side-mini .side-admin{width:40px;height:40px;justify-content:center;padding:0;border-radius:12px}
+body.side-mini .side-admin span{display:none}
 </style>
 </head>
 <body>
@@ -985,6 +990,7 @@ body.tsa .app-tabs{border-bottom-color:#0f766e}
       <div class="model-lab">Modèle de Claude</div>
       <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
     </div>
+      <a class="side-out side-admin" id="adminLink" href="admin.html" hidden title="Configuration"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Configuration</span></a>
       <button type="button" class="side-out" id="logout" title="Se déconnecter"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Se déconnecter</span></button>
     </div>
   </aside>
@@ -1147,6 +1153,6 @@ body.tsa .app-tabs{border-bottom-color:#0f766e}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610181032"></script>
+<script src="app-agent.js?v=202610181049"></script>
 </body>
 </html>
