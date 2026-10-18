@@ -63,6 +63,8 @@ const TSA_BILAN_DEFAULT = "Tu es formateur clinique pour des TSA. Évalue la tra
 let cache = null; // { at, config, chunks }
 
 export default {
+  // Vérification automatique toutes les 6 heures : site, clé API, stockage
+  async scheduled(event, env, ctx) { ctx.waitUntil(healthCheck(env)); },
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
@@ -73,7 +75,7 @@ export default {
       const ip0 = request.headers.get("cf-connecting-ip") || "?";
       if (request.headers.get("x-tsa-code") && (rateLimited(ip0) || (await lockedOut(env, ip0)))) return json(429, { error: LOCK_MSG }, cors);
       const tsaOk = tsa && tsaAuthorized(request, env);
-      if (request.headers.get("x-tsa-code") && tsa && !tsaOk) await recordFail(env, ip0);
+      if (request.headers.get("x-tsa-code") && tsa && !tsaOk) await recordFail(env, ip0, "TSA");
       let pub = null;
       try { pub = await publicConfig(request, env); } catch {}
       return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: !!env.AGENT_CODE, voice: speechReady(env), tsa, tsaOk, admin: !!(env.ADMIN_CODE && env.AGENT_KV), pub }, cors);
@@ -107,7 +109,7 @@ async function handlePost(request, env, cors) {
   const ip = request.headers.get("cf-connecting-ip") || "?";
   if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
   if (!(await teamAuthorized(request, env))) {
-    await recordFail(env, ip);
+    await recordFail(env, ip, "d'équipe");
     return json(401, { error: "Code d'accès invalide." }, cors);
   }
 
@@ -220,6 +222,8 @@ async function handlePost(request, env, cors) {
     parts.forEach((r) => { try { r.body?.cancel().catch(() => {}); } catch {} });
     clearTimeout(total);
     const status = bad.status;
+    if (status === 401 || status === 403) await sendAlert(env, "apikey", "La clé API Anthropic est refusée", ["L'agent ne peut plus répondre : la clé ANTHROPIC_API_KEY est invalide, révoquée ou sans crédit.", "Vérifiez la clé et le solde dans https://console.anthropic.com, puis mettez à jour le secret dans Cloudflare."], 3 * 3600);
+    else if (status === 429 || status >= 500) await sendAlert(env, "api" + (status === 429 ? "429" : "5xx"), status === 429 ? "Anthropic limite les demandes (429)" : `Anthropic indisponible (erreur ${status})`, [status === 429 ? "Le service refuse des demandes : limite de débit ou de dépenses atteinte dans la console Anthropic." : "Le service d'Anthropic a répondu par une erreur. C'est souvent passager.", "Si cela dure, vérifiez https://status.anthropic.com et les limites de votre compte."], 3600);
     const msg = status === 401 ? "La clé API est invalide. Vérifiez ANTHROPIC_API_KEY dans Cloudflare."
       : status === 429 ? "Trop de questions en même temps. Réessayez dans une minute."
       : status === 400 ? "La demande a été refusée par le service. Raccourcissez la question ou commencez une nouvelle conversation."
@@ -450,7 +454,7 @@ async function handleAdmin(request, env, cors) {
   const ip = request.headers.get("cf-connecting-ip") || "?";
   if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
   if (!adminAuthorized(request, env)) {
-    await recordFail(env, ip);
+    await recordFail(env, ip, "Admin");
     return json(401, { error: "Code de configuration invalide." }, cors);
   }
   let body; try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
@@ -463,9 +467,10 @@ async function handleAdmin(request, env, cors) {
       invalidate();
       const { config, docs } = await loadRole(request, env, role);
       const edit = {}; EDITABLE.forEach((k) => { if (config[k] !== undefined) edit[k] = config[k]; });
-      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk, privacy: config.privacy || PRIVACY_DEFAULT, dailyLimit: await dailyLimit(env), usedToday: Number(await KV.get("use:" + torontoDate())) || 0, rotation: await rotationInfo(env) }, cors);
+      return json(200, { role, config: edit, etablissement: config.etablissement || "", logo: config.logo || "", docs, customized: !!(await KV.get("cfg:" + role)), fileOk: !!cache?.fileOk, privacy: config.privacy || PRIVACY_DEFAULT, dailyLimit: await dailyLimit(env), usedToday: Number(await KV.get("use:" + torontoDate())) || 0, rotation: await rotationInfo(env), alerts: { ready: !!env.ALERT_EMAIL, to: ALERT_TO, lastError: (await KV.get("alert:lastError")) || "" } }, cors);
     }
     case "save": {
+      await sendAlert(env, "cfg-" + role, `Configuration modifiée (${role === "tsa" ? "TSA" : "Réception"})`, [`Les réglages de l'espace ${role === "tsa" ? "Équipe technique — TSA" : "Réception"} ont été enregistrés depuis la page Admin.`, `Adresse IP : ${ip}`, "Si ce n'est pas vous, changez ADMIN_CODE dans Cloudflare."], 30 * 60);
       const clean = cleanConfig(body.config || {});
       const prev = (await kvJson(env, "cfg:" + role)) || {};
       await KV.put("cfg:" + role, JSON.stringify({ ...prev, ...clean, updated: new Date().toISOString() }));
@@ -488,6 +493,10 @@ async function handleAdmin(request, env, cors) {
     case "docGet": {
       const t = await KV.get(`doc:${role}:${str(body.id, 40)}`);
       return t === null ? json(404, { error: "Document introuvable." }, cors) : json(200, { text: t }, cors);
+    }
+    case "testAlert": {
+      const r = await sendAlert(env, "test-" + Date.now(), "Courriel de test", ["Les alertes de l'agent fonctionnent : vous recevrez un courriel si quelque chose cloche."], 0, true);
+      return json(r.ok ? 200 : 503, r.ok ? { ok: true } : { error: r.error }, cors);
     }
     case "docSave": {
       const title = str(body.title, 160).trim() || "Document sans titre";
@@ -561,7 +570,7 @@ const xml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, 
 async function handleSpeech(kind, request, env, cors) {
   const ipS = request.headers.get("cf-connecting-ip") || "?";
   if (await lockedOut(env, ipS)) return json(429, { error: LOCK_MSG }, cors);
-  if (!(await teamAuthorized(request, env))) { await recordFail(env, ipS); return json(401, { error: "Code d'accès invalide." }, cors); }
+  if (!(await teamAuthorized(request, env))) { await recordFail(env, ipS, "d'équipe (voix)"); return json(401, { error: "Code d'accès invalide." }, cors); }
   if (!speechReady(env)) return json(503, { error: "La voix Azure n'est pas configurée." }, cors);
   if (speechLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop de requêtes de voix. Attendez un peu." }, cors);
   const region = String(env.AZURE_SPEECH_REGION).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -626,7 +635,11 @@ async function dailyGate(env) {
     const key = "use:" + torontoDate();
     const limit = await dailyLimit(env);
     const used = Number(await env.AGENT_KV.get(key)) || 0;
-    if (used >= limit) return { ok: false, limit };
+    if (used >= limit) {
+      await sendAlert(env, "limit", "Limite quotidienne de questions atteinte", [`L'équipe a utilisé les ${limit} questions permises aujourd'hui. L'agent refuse les nouvelles questions jusqu'à minuit.`, "Si c'est normal, augmentez la limite dans Admin › Sécurité et confidentialité. Sinon, un code a peut-être été partagé."], 20 * 3600);
+      return { ok: false, limit };
+    }
+    if (used + 1 === Math.ceil(limit * 0.8)) await sendAlert(env, "limit80", "80 % de la limite quotidienne utilisée", [`${used + 1} questions sur ${limit} ont été utilisées aujourd'hui.`], 20 * 3600);
     await env.AGENT_KV.put(key, String(used + 1), { expirationTtl: 3 * 86400 });
     return { ok: true, limit, used: used + 1 };
   } catch { return { ok: true }; } // le stockage ne doit jamais bloquer l'agent par erreur
@@ -650,11 +663,18 @@ async function lockedOut(env, ip) {
   if (!env.AGENT_KV) { const l = memFails.get(ip); return !!l && l.n >= MAX_FAILS && Date.now() - l.t < LOCK_SECONDS * 1000; }
   try { return !!(await env.AGENT_KV.get("lock:" + ip)); } catch { return false; }
 }
-async function recordFail(env, ip) {
+async function recordFail(env, ip, kind = "") {
   if (!env.AGENT_KV) { const l = memFails.get(ip) || { n: 0, t: Date.now() }; if (Date.now() - l.t > LOCK_SECONDS * 1000) { l.n = 0; l.t = Date.now(); } l.n++; memFails.set(ip, l); return; }
   try {
     const n = (Number(await env.AGENT_KV.get("fail:" + ip)) || 0) + 1;
-    if (n >= MAX_FAILS) { await env.AGENT_KV.put("lock:" + ip, "1", { expirationTtl: LOCK_SECONDS }); await env.AGENT_KV.delete("fail:" + ip); }
+    if (n >= MAX_FAILS) {
+      await env.AGENT_KV.put("lock:" + ip, "1", { expirationTtl: LOCK_SECONDS }); await env.AGENT_KV.delete("fail:" + ip);
+      await sendAlert(env, "lock", `Blocage : ${MAX_FAILS} mauvais codes ${kind}`, [
+        `Un appareil a entré ${MAX_FAILS} mauvais codes ${kind} de suite. Il est bloqué ${LOCK_SECONDS / 60} minutes.`,
+        `Adresse IP : ${ip}`,
+        kind === "Admin" ? "Il s'agit du code de configuration : si ce n'est pas vous, changez ADMIN_CODE dans Cloudflare." : "Si cela se répète, changez le code concerné (ou activez le code d'équipe mensuel dans Admin).",
+      ], 15 * 60);
+    }
     else await env.AGENT_KV.put("fail:" + ip, String(n), { expirationTtl: LOCK_SECONDS });
   } catch {}
 }
@@ -695,4 +715,43 @@ async function rotationInfo(env) {
     current: await monthCode(env, M.cur), next: await monthCode(env, M.next),
     month: M.cur, changesOn: `${ny}-${String(nm).padStart(2, "0")}-01`, graceDays: GRACE_DAYS,
   };
+}
+
+
+/* ---------- alertes par courriel (Cloudflare Email Service) ---------- */
+const ALERT_TO = "tmclellan007@gmail.com";
+// Envoie au plus un courriel par type d'alerte et par période (throttle), pour ne jamais inonder la boîte
+async function sendAlert(env, type, subject, lines, throttleSec = 3600, force = false) {
+  if (!env.ALERT_EMAIL) return { ok: false, error: "La liaison ALERT_EMAIL n'est pas active : configurez Email Service dans Cloudflare." };
+  try {
+    if (!force && env.AGENT_KV && throttleSec > 0) {
+      const k = "alert:" + type;
+      if (await env.AGENT_KV.get(k)) return { ok: true, skipped: true };
+      await env.AGENT_KV.put(k, "1", { expirationTtl: Math.max(60, throttleSec) });
+    }
+    const when = new Intl.DateTimeFormat("fr-CA", { timeZone: "America/Toronto", dateStyle: "long", timeStyle: "short" }).format(new Date());
+    const text = `${lines.join("\n\n")}\n\n— ${when}\nAgent La Qualia · alerte automatique (relais Cloudflare laqualia-agent)`;
+    await env.ALERT_EMAIL.send({ to: ALERT_TO, from: { email: env.ALERT_FROM || "alertes@laqualia.com", name: "Agent La Qualia" }, subject: "⚠️ Agent La Qualia : " + subject, text });
+    if (env.AGENT_KV) await env.AGENT_KV.delete("alert:lastError");
+    return { ok: true };
+  } catch (e) {
+    const err = String(e?.message || e).slice(0, 300);
+    try { if (env.AGENT_KV) await env.AGENT_KV.put("alert:lastError", err, { expirationTtl: 7 * 86400 }); } catch {}
+    return { ok: false, error: "Envoi impossible : " + err };
+  }
+}
+async function healthCheck(env) {
+  const problems = [];
+  try { const r = await asset(null, env, "/agent/config.json"); const c = await r.json(); if (!c.instructions) problems.push("Le fichier agent/config.json est lisible mais sans instructions."); }
+  catch { problems.push("Le fichier agent/config.json du site est inaccessible (site GitHub Pages en panne ou SITE_URL incorrect)."); }
+  if (!env.ANTHROPIC_API_KEY) problems.push("Le secret ANTHROPIC_API_KEY est absent.");
+  else {
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/models?limit=1", { headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" } });
+      if (r.status === 401 || r.status === 403) problems.push("La clé API Anthropic est refusée (invalide ou révoquée).");
+      else if (!r.ok && r.status >= 500) problems.push(`Anthropic répond par une erreur ${r.status}.`);
+    } catch { problems.push("Impossible de joindre l'API Anthropic."); }
+  }
+  if (env.AGENT_KV) { try { await env.AGENT_KV.get("cfg:shared"); } catch { problems.push("Le stockage AGENT_KV ne répond pas."); } }
+  if (problems.length) await sendAlert(env, "health", "Problème détecté lors de la vérification automatique", problems, 6 * 3600);
 }

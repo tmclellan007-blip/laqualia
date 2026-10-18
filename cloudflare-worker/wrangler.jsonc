@@ -9,6 +9,12 @@
   "compatibility_date": "2026-10-01",
   "keep_vars": true,
   "workers_dev": true,
+  // Vérification automatique du site, de la clé API et du stockage toutes les 6 heures
+  "triggers": { "crons": ["17 */6 * * *"] },
+  // Alertes par courriel (Cloudflare Email Service) vers le propriétaire
+  "send_email": [
+    { "name": "ALERT_EMAIL" }
+  ],
   // Stockage privé de la configuration et des bases de connaissances (Réception et TSA)
   "kv_namespaces": [
     { "binding": "AGENT_KV", "id": "47cb1b37991646f786a2ec7d00ed659e" }
