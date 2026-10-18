@@ -49,10 +49,10 @@
 
   /* ---------- exemples qui tournent ---------- */
   function pool() { return (Array.isArray(cfg.examples) ? cfg.examples : String(cfg.examples || "").split("\n")).map((s) => String(s).trim()).filter(Boolean); }
-  function pickExamples(n) {
-    const all = pool();
+  function pickExamples(n, filter) {
+    const all = filter ? pool().filter(filter) : pool();
     let fresh = all.filter((t) => !shown.has(t));
-    if (fresh.length < n) { shown = new Set(); fresh = all.slice(); }
+    if (fresh.length < n) { all.forEach((t) => shown.delete(t)); fresh = all.slice(); }
     for (let i = fresh.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [fresh[i], fresh[j]] = [fresh[j], fresh[i]]; }
     const out = fresh.slice(0, n);
     out.forEach((t) => shown.add(t));
@@ -65,7 +65,12 @@
     t.type = "button"; t.className = "card train";
     t.innerHTML = '<span class="tag">Entraînement</span>Me mettre en situation d\'appel';
     t.onclick = startScenario; el.append(t);
-    pickExamples(3).forEach((q) => {
+    // Toujours une question de lexique parmi les suggestions, à une place qui varie
+    const isLex = (q) => tagFor(q) === "Lexique";
+    const picks = [...pickExamples(1, isLex), ...pickExamples(2, (q) => !isLex(q))];
+    const at = Math.floor(Math.random() * 3);
+    picks.splice(at, 0, picks.shift());
+    picks.forEach((q) => {
       const b = document.createElement("button");
       b.type = "button"; b.className = "card";
       const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = tagFor(q);
