@@ -683,13 +683,17 @@ body.voice-call .sim-hint.on{color:#b91c1c}
 
 .mic[data-state="listening"]{box-shadow:0 0 0 calc(var(--lvl,0) * 9px) rgb(220 38 38/.28);transition:box-shadow .08s}
 .mic[data-state="busy"]{background:#ede5ff;color:#401098;opacity:.7;cursor:progress}
+
+.home-logo{border:0;background:none;padding:4px;margin:-4px;border-radius:10px;cursor:pointer;display:inline-flex;transition:opacity .15s}
+.home-logo:hover{opacity:.85}
+.home-logo:focus-visible{outline:2px solid #ff5a00;outline-offset:2px}
 </style>
 </head>
 <body>
 <div class="app" id="app">
   <aside class="side" id="side" aria-label="Menu">
     <div class="side-brand">
-      <img src="../assets/logo-sombre.svg" width="150" height="48" alt="La Qualia">
+      <button type="button" class="home-logo" id="homeLogo" title="Retour à l'accueil" aria-label="Retour à l'accueil"><img src="../assets/logo-sombre.svg" width="150" height="48" alt="La Qualia"></button>
       <button class="side-close" id="closeMenu" type="button" aria-label="Fermer le menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="side-user">
@@ -863,6 +867,6 @@ body.voice-call .sim-hint.on{color:#b91c1c}
   </div>
 </div>
 
-<script src="app-agent.js?v=202610180902"></script>
+<script src="app-agent.js?v=202610180909"></script>
 </body>
 </html>

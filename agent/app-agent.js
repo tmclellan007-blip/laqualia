@@ -562,6 +562,8 @@
   $("stop").onclick = () => ctl?.abort();
   $("sideTrain").onclick = startScenario;
   $("sideNew").onclick = resetConversation;
+  // Logo : retour à l'interface de départ (quitte la simulation au besoin)
+  $("homeLogo").onclick = () => { if (sim.on) setLearn(false); resetConversation(); };
   $("clear").onclick = resetConversation;
   $("shuffleBtn").onclick = () => { renderSideList(); if (!$("empty").hidden) renderWelcomeCards(); };
 
