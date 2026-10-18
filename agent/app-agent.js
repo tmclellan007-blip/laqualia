@@ -526,6 +526,13 @@
           if (!$("thread").children.length) $("empty").hidden = false;
           $("q").value = q; autosize(); askCode(true); return;
         }
+        if (res.status === 429) {
+          const lock = /bloqu/i.test(msg), day = /quotidienne/i.test(msg);
+          const ico = lock ? '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>' : '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>';
+          const title = lock ? "Accès temporairement bloqué" : day ? "Limite quotidienne atteinte" : "Un instant";
+          body.innerHTML = `<div class="alert-card ${lock ? "lock" : ""}"><span class="ac-i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ico}</svg></span><div><b>${title}</b><p>${esc(msg)}</p></div></div>`;
+          return;
+        }
         body.innerHTML = `<p class="err">${esc(msg)}</p>`;
         return;
       }
