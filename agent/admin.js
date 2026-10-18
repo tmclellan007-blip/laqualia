@@ -78,7 +78,7 @@
     dirty = false;
     if (seeded && orig.instructions) {
       try {
-        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim(), logo: $("logo").value.trim() });
+        await call({ action: "save", config: collect(), etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined });
         data.customized = true;
         setState("", stale ? "Instructions mises à jour vers la nouvelle version" : j.customized ? "Vos instructions d'origine ont été restaurées" : "Configuration d'origine copiée dans l'interface");
         toast(stale ? "Nouvelles instructions installées" : j.customized ? "Instructions d'origine restaurées depuis config.json" : "Configuration d'origine copiée : vous partez de vos réglages actuels");
@@ -98,6 +98,9 @@
     $("legacy").hidden = tsa;
     $("etab").value = data.etablissement || "";
     $("logo").value = data.logo ?? fileCfg.logo ?? "";
+    $("dailyLimit").value = data.dailyLimit || 300;
+    $("usage").textContent = `Aujourd'hui : ${data.usedToday || 0} question${(data.usedToday || 0) > 1 ? "s" : ""} utilisée${(data.usedToday || 0) > 1 ? "s" : ""} sur ${data.dailyLimit || 300}. Au-delà, l'agent répond que la limite est atteinte jusqu'à minuit.`;
+    $("privacy").value = data.privacy || "";
     logoPreview();
     $("name").value = c.name || "";
     $("disclaimer").value = c.disclaimer || "";
@@ -168,9 +171,11 @@
     const c = collect();
     if (!c.instructions.trim()) return toast("Les instructions ne peuvent pas être vides.");
     if (!c.modelesProposes.length) return toast("Cochez au moins un modèle.");
+    const lim = Number($("dailyLimit").value);
+    if (!(lim >= 10 && lim <= 5000)) return toast("La limite quotidienne doit être entre 10 et 5000.");
     busy = true; setState("dirty", "Enregistrement…"); $("saveBtn").disabled = true;
     try {
-      await call({ action: "save", config: c, etablissement: $("etab").value.trim(), logo: $("logo").value.trim() });
+      await call({ action: "save", config: c, etablissement: $("etab").value.trim(), logo: $("logo").value.trim(), privacy: $("privacy").value.trim(), dailyLimit: Number($("dailyLimit").value) || undefined });
       dirty = false; setState("", "Enregistré · actif dans l'agent d'ici une minute");
       toast("Configuration enregistrée");
     } catch (e) { setState("err", e.message); }
@@ -184,7 +189,7 @@
   };
   function logoPreview() { const u = $("logo").value.trim(), im = $("logoPv"); if (!/^https:\/\//.test(u)) { im.hidden = true; return; } im.onload = () => (im.hidden = false); im.onerror = () => (im.hidden = true); im.src = u; }
   $("logo").addEventListener("input", logoPreview);
-  ["etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
+  ["dailyLimit", "privacy", "etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
   /* ---------- onglets ---------- */

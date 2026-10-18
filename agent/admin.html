@@ -168,6 +168,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
   <nav class="toc" aria-label="Sections">
     <span class="rb" id="roleBadge">Réception</span>
     <a href="#s-id">Identité</a>
+    <a href="#s-sec">Sécurité et confidentialité</a>
     <a href="#s-rules">Règles de l'agent</a>
     <a href="#s-faq">Questions fréquentes <small id="nFaq"></small></a>
     <a href="#s-scene">Mises en situation <small id="nScene"></small></a>
@@ -190,6 +191,16 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
         </div>
         <div class="f"><label for="logo">Logo de l'établissement <span class="shared">commun aux deux espaces</span></label><div class="logo-row"><input type="text" id="logo" maxlength="500" placeholder="https://… (adresse d'une image PNG ou SVG)"><span class="logo-pv"><img id="logoPv" alt="" referrerpolicy="no-referrer" hidden></span></div><span class="hint">Affiché à gauche du nom de l'établissement, en haut de l'agent. Laissez vide pour retirer le logo.</span></div>
         <div class="f"><label for="disclaimer">Avertissement affiché sous la zone de saisie</label><textarea id="disclaimer" maxlength="600" style="min-height:70px"></textarea></div>
+      </section>
+
+      <section class="card" id="s-sec">
+        <h2><span class="n">★</span>Sécurité et confidentialité <span class="shared">commun aux deux espaces</span></h2>
+        <p class="lead">Protège vos crédits Anthropic et informe l'équipe avant la première utilisation.</p>
+        <div class="grid2">
+          <div class="f"><label for="dailyLimit">Limite quotidienne de questions (toute l'équipe)</label><input type="text" inputmode="numeric" id="dailyLimit" maxlength="5" style="max-width:160px"><span class="hint" id="usage">—</span></div>
+          <div class="f"><span class="lab">Aussi recommandé</span><span class="hint">Fixez une limite de dépenses mensuelle dans la console Anthropic (Settings › Limits). C'est le seul plafond qui protège à coup sûr votre carte de crédit.</span></div>
+        </div>
+        <div class="f"><label for="privacy">Avis de confidentialité affiché à la première connexion</label><textarea id="privacy" style="min-height:240px"></textarea><span class="hint">Chaque personne doit l'accepter une fois par appareil, puis de nouveau si vous le modifiez. Complétez le nom et le courriel du responsable de la protection des renseignements personnels.</span></div>
       </section>
 
       <section class="card" id="s-rules">
@@ -263,6 +274,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="admin.js?v=202610181149"></script>
+<script src="admin.js?v=202610181319"></script>
 </body>
 </html>

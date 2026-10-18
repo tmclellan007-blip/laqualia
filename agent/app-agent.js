@@ -912,6 +912,20 @@
     openTsaBox(msg);
   }
 
+
+  /* ---------- avis de confidentialité (Loi 25) : à lire et accepter une fois par appareil ---------- */
+  let privacyText = "";
+  const fnv1 = (t) => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h.toString(16); };
+  function showPrivacy() { if (!privacyText) return; $("privText").textContent = privacyText; $("privbox").hidden = false; setTimeout(() => $("privOk").focus(), 30); }
+  function setPrivacy(text) {
+    privacyText = String(text || "").trim();
+    if (!privacyText || store.get("lq-privacy-ok") === fnv1(privacyText)) return;
+    // Après la fenêtre du prénom et du code, si elle est ouverte
+    if (!$("codebox").hidden) { const mo = new MutationObserver(() => { if ($("codebox").hidden) { mo.disconnect(); showPrivacy(); } }); mo.observe($("codebox"), { attributes: true, attributeFilter: ["hidden"] }); }
+    else showPrivacy();
+  }
+  $("privOk").onclick = () => { store.set("lq-privacy-ok", fnv1(privacyText)); $("privbox").hidden = true; $("q").focus(); };
+  $("privLink").onclick = () => { closeMenu(); showPrivacy(); };
   $("sideNew").onclick = resetConversation;
   // Menu réduit (ordinateur) : icônes seulement, choix mémorisé
   function setSideMini(on) {
@@ -1907,6 +1921,7 @@
           applyCfg();
         }
         $("adminLink").hidden = !s.admin;
+        if (s.pub && s.pub.privacy) setPrivacy(s.pub.privacy);
         if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
         $("tsaLock").hidden = tsaVerified;
         if (store.get("lq-role") === "tsa" && tsaVerified && !isTsa()) switchRole("tsa", { silent: true });

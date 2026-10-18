@@ -1163,6 +1163,13 @@ body:not(.has-logo) .top-av.org{display:none}
 /* outils TSA plus compacts : icône à gauche du titre */
 .under .card.tool{flex-direction:row;align-items:center;gap:12px;padding:12px 14px}
 .under .card.tool .tl-ico{width:32px;height:32px}
+
+.priv-sheet{width:min(560px,100%);max-height:calc(100vh - 40px);overflow:auto}
+.priv-ico{width:52px;height:52px;border-radius:16px;background:#ecfdf3;color:#15803d;display:grid;place-items:center}
+.priv-ico svg{width:26px;height:26px}
+.priv-text{white-space:pre-line;font-size:14.5px;line-height:1.55;color:#2a2a33;background:#f8f7f4;border:1px solid #ebe9e3;border-radius:14px;padding:14px 16px}
+body.side-mini #privLink{width:40px;height:40px;justify-content:center;padding:0;border-radius:12px}
+body.side-mini #privLink span{display:none}
 </style>
 </head>
 <body>
@@ -1227,6 +1234,7 @@ body:not(.has-logo) .top-av.org{display:none}
       <div class="model-lab">Modèle de Claude</div>
       <div class="model-seg" id="modelSeg" role="radiogroup" aria-label="Modèle de Claude"></div>
     </div>
+      <button type="button" class="side-out" id="privLink" title="Confidentialité et bon usage"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/></svg><span>Confidentialité</span></button>
       <button type="button" class="side-out" id="logout" title="Se déconnecter"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg><span>Se déconnecter</span></button>
     </div>
   </aside>
@@ -1378,6 +1386,14 @@ body:not(.has-logo) .top-av.org{display:none}
   </div>
 </div>
 
+<div class="modal" id="privbox" hidden>
+  <div class="sheet priv-sheet" role="dialog" aria-modal="true" aria-labelledby="privTitle">
+    <div class="priv-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+    <h2 id="privTitle">Confidentialité et bon usage</h2>
+    <div class="priv-text" id="privText"></div>
+    <button class="go" type="button" id="privOk">J'ai lu et je comprends</button>
+  </div>
+</div>
 <div class="modal" id="tsabox" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tsaTitle">
     <div class="tsa-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v6a4 4 0 0 0 8 0V3"/><path d="M10 13v3a5 5 0 0 0 10 0v-2"/><circle cx="20" cy="12" r="2"/></svg></div>
@@ -1439,7 +1455,7 @@ body:not(.has-logo) .top-av.org{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181306"></script>
+<script src="app-agent.js?v=202610181319"></script>
 <script src="dashboard.js?v=202610181207"></script>
 </body>
 </html>
