@@ -383,6 +383,8 @@ async function loadRole(request, env, role) {
   // Une copie abîmée (texte de remplacement) ne doit jamais remplacer de vraies instructions
   if (/^Tu es un assistant pour l'équipe d'accueil d'un établissement vétérinaire\. Réponds en français\.?\s*$/.test(String(kvCfg.instructions || "").trim())) delete kvCfg.instructions;
   const shared = (await kvJson(env, "cfg:shared")) || {};
+  // Ancien nom par défaut, jamais choisi par l'équipe : on laisse le nom à jour de config.json
+  if (shared.etablissement === "Hôpital vétérinaire du Ruisseau") delete shared.etablissement;
   const config = { ...fileRoleConfig(base.config, role), ...shared, ...kvCfg };
   if (role === "tsa") config.audience = "techniciens";
   // Base de connaissances : documents privés de l'espace (+ anciens documents publics pour la Réception)
