@@ -248,8 +248,8 @@ async function handlePost(request, env, cors) {
 }
 
 function tsaAuthorized(request, env) {
-  const a = String(request.headers.get("x-tsa-code") || "");
-  const b = String(env.TSA_CODE || "");
+  const a = String(request.headers.get("x-tsa-code") || "").trim();
+  const b = String(env.TSA_CODE || "").trim();
   if (!a || !b || a.length !== b.length) return false;
   let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
@@ -425,7 +425,7 @@ async function publicConfig(request, env) {
 /* ---------- page de configuration (protégée par ADMIN_CODE) ---------- */
 const adminFails = new Map();
 function adminAuthorized(request, env) {
-  const a = String(request.headers.get("x-admin-code") || ""), b = String(env.ADMIN_CODE || "");
+  const a = String(request.headers.get("x-admin-code") || "").trim(), b = String(env.ADMIN_CODE || "").trim();
   if (!a || !b || a.length !== b.length) return false;
   let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
@@ -699,7 +699,8 @@ async function rotationOn(env) { const sh = (await kvJson(env, "cfg:shared")) ||
 async function teamAuthorized(request, env) {
   if (!env.AGENT_CODE) return true;
   const given = request.headers.get("x-agent-code") || "";
-  if (!(await rotationOn(env))) return given === env.AGENT_CODE;
+  // Espaces ou retour de ligne collés par mégarde dans le secret : ignorés
+  if (!(await rotationOn(env))) return given.trim() === String(env.AGENT_CODE).trim();
   const M = months(), g = normCode(given);
   if (!g) return false;
   if (g === normCode(await monthCode(env, M.cur))) return true;
