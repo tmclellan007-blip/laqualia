@@ -221,7 +221,7 @@
     $("schedFilter").querySelectorAll("button").forEach((b) => (b.onclick = () => { schedFilter = b.dataset.f; renderSchedule(); }));
     const list = rows.filter((r) => schedFilter === "all" || (schedFilter === "off" ? r.st[0] === "off" : r.u.role === schedFilter));
     const ST = { on: "st-on", day: "st-day", week: "st-week", off: "st-off" };
-    $("sched").innerHTML = list.map((r) => `<li><span class="av2 ${r.u.role}" aria-hidden="true">${r.u.initials}</span><span class="w"><b>${esc(r.u.name)} <small style="font-weight:700;color:var(--muted)">· ${r.u.role === "rec" ? "Réception" : "TSA"} · ${r.u.level}</small></b><span class="meta"><span>${fmt(r.q)} questions</span><span>${r.sims} simulation${r.sims > 1 ? "s" : ""}</span><span>${r.score === null ? "score —" : "score " + r.score + " %"}${r.score === null ? "" : `<span class="prog" aria-hidden="true"><i style="width:${r.score}%"></i></span>`}</span></span></span><span class="st2 ${ST[r.st[0]]}"><i aria-hidden="true"></i>${esc(r.st[1])}</span></li>`).join("") || '<li class="empty2">Personne dans cette catégorie.</li>';
+    $("sched").innerHTML = list.map((r) => `<li${r.u.id === DEMO_ID ? ` class="p-link" tabindex="0" role="button" aria-label="Voir le profil de ${esc(r.u.name)}"` : ""}><span class="av2 ${r.u.role}" aria-hidden="true">${r.u.initials}</span><span class="w"><b>${esc(r.u.name)} <small style="font-weight:700;color:var(--muted)">· ${r.u.role === "rec" ? "Réception" : "TSA"} · ${r.u.level}</small></b><span class="meta"><span>${fmt(r.q)} questions</span><span>${r.sims} simulation${r.sims > 1 ? "s" : ""}</span><span>${r.score === null ? "score —" : "score " + r.score + " %"}${r.score === null ? "" : `<span class="prog" aria-hidden="true"><i style="width:${r.score}%"></i></span>`}</span></span></span><span class="st2 ${ST[r.st[0]]}"><i aria-hidden="true"></i>${esc(r.st[1])}</span>${r.u.id === DEMO_ID ? '<span class="p-go">Voir le profil <b aria-hidden="true">›</b></span>' : ""}</li>`).join("") || '<li class="empty2">Personne dans cette catégorie.</li>';
   }
 
   /* ---------- réussite par thème ---------- */
@@ -237,6 +237,101 @@
       ? `<div class="th"><span class="th-l">${esc(r.t)}</span><span class="th-v"><small>aucune simulation</small></span><span class="th-t"></span></div>`
       : `<div class="th"><span class="th-l">${esc(r.t)} <small>· ${r.n} essai${r.n > 1 ? "s" : ""}</small></span><span class="th-v">${r.score} %<span class="lvl ${lvl(r.score)[0]}">${lvl(r.score)[1]}</span></span><span class="th-t" aria-hidden="true"><i style="width:${r.score}%"></i></span></div>`).join("");
   }
+
+
+  /* ---------- profil individuel (exemple : une seule personne, données entièrement fictives) ---------- */
+  const DEMO_ID = 1; // Marc-André B.
+  const PROFILE = {
+    since: "mars 2026", poste: "Réceptionniste · quart de jour",
+    path: { pct: 58, done: ["Accueil téléphonique et identification", "Lexique vétérinaire de base", "Prise de rendez-vous"], doing: [["Triage téléphonique", 60], ["Client mécontent ou inquiet", 35]], todo: ["Facturation et dépôts", "Deuil et euthanasie", "Urgences et transferts"] },
+    strengths: ["Accueil chaleureux, identifie toujours le client et l'animal dès le début de l'appel.", "Utilise le bon vocabulaire (NPO, vaccins, castration) avec aisance."],
+    work: ["Repérer plus tôt les signes d'urgence quand le client minimise.", "Expliquer les dépôts de chirurgie avec un montant clair et sans se justifier."],
+    next: "Terminer le module « Triage téléphonique », puis refaire une simulation « Urgence potentielle » au niveau Intermédiaire.",
+    meeting: "jeudi 23 octobre, 14 h — suivi avec la gestionnaire",
+  };
+  function personData(u) {
+    const days = Array.from({ length: 28 }, (_, i) => addDays(today, i - 27));
+    const per = days.map((d) => ({ d, x: userDay(u, d) }));
+    const hist = []; for (let i = 0; i < 60; i++) { const d = addDays(today, -i); userDay(u, d).sims.forEach((sm) => hist.push({ d, ...sm })); }
+    const q = sum(per, (p) => p.x.q), sims = sum(per, (p) => p.x.sims.length), mins = sum(per, (p) => p.x.min);
+    const sc = sum(per, (p) => sum(p.x.sims, (s) => s.score));
+    const active = per.filter((p) => p.x.q || p.x.sims.length).length;
+    const prev = Array.from({ length: 28 }, (_, i) => userDay(u, addDays(today, i - 55)));
+    const prevSims = sum(prev, (x) => x.sims.length), prevSc = sum(prev, (x) => sum(x.sims, (s) => s.score));
+    return { per, hist, q, sims, mins, active, avg: sims ? Math.round(sc / sims) : null, prevAvg: prevSims ? Math.round(prevSc / prevSims) : null, prevQ: sum(prev, (x) => x.q) };
+  }
+  const lvlOf = (s) => (s >= 80 ? ["ok", "Solide"] : s >= 68 ? ["mid", "À consolider"] : ["low", "À renforcer"]);
+  function renderPerson() {
+    const u = TEAM[DEMO_ID], P = personData(u), st = seenStatus(lastSeen(u));
+    const ST = { on: "st-on", day: "st-day", week: "st-week", off: "st-off" };
+    // Activité : 28 jours
+    const W = 760, H = 190, pl = 30, pb = 26, pt = 10, bw = (W - pl) / 28;
+    const mx = Math.max(6, ...P.per.map((p) => p.x.q));
+    const y = (v) => H - pb - (v / mx) * (H - pb - pt);
+    let g = [0, Math.round(mx / 2), mx].map((v) => `<line class="gl" x1="${pl}" x2="${W}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${pl - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join("");
+    P.per.forEach((p, i) => {
+      const x = pl + i * bw + bw * 0.18, w = bw * 0.64;
+      if (p.x.q) g += `<rect x="${x}" y="${y(p.x.q)}" width="${w}" height="${H - pb - y(p.x.q)}" rx="3" fill="#6250d6"/>`;
+      p.x.sims.forEach((_, k) => (g += `<circle cx="${x + w / 2}" cy="${y(p.x.q) - 7 - k * 9}" r="3.6" fill="#eb6834"/>`));
+      if (i % 7 === 0 || i === 27) g += `<text class="ax${i === 27 ? " cur" : ""}" x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${i === 27 ? "auj." : p.d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" })}</text>`;
+    });
+    // Thèmes (60 jours)
+    const th = THEMES.rec.map(([t]) => { const xs = P.hist.filter((h) => h.theme === t); return { t, n: xs.length, score: xs.length ? Math.round(sum(xs, (h) => h.score) / xs.length) : null }; }).sort((a, b) => (a.score ?? 101) - (b.score ?? 101));
+    const topics = TOPICS.rec.map(([t, w], i) => [t, Math.max(1, Math.round(P.q * w * [1.3, 1.25, 0.8, 0.7, 1.1, 0.6][i]))]).sort((a, b) => b[1] - a[1]);
+    const tmax = topics[0][1];
+    const hdate = (d) => { const n = Math.round((today - d) / 86400000); return n === 0 ? "Aujourd'hui" : n === 1 ? "Hier" : d.toLocaleDateString("fr-CA", { day: "numeric", month: "short" }); };
+    const dAvg = P.avg !== null && P.prevAvg !== null ? P.avg - P.prevAvg : 0;
+    const box = $("dashPerson");
+    box.innerHTML = `
+      <button type="button" class="dp-back" id="dpBack"><span aria-hidden="true">‹</span> Retour au tableau de bord</button>
+      <header class="dp-head">
+        <span class="av2 rec dp-av" aria-hidden="true">${u.initials}</span>
+        <div class="dp-id"><h1 id="dpTitle">${esc(u.name)} <span class="demo-pill" title="Profil fictif">Démo</span></h1>
+          <p>${PROFILE.poste} · niveau ${u.level} · dans l'équipe depuis ${PROFILE.since}</p></div>
+        <span class="st2 ${ST[st[0]]}"><i aria-hidden="true"></i>${esc(st[1])}</span>
+      </header>
+      <p class="dp-note">Exemple de profil individuel : toutes les données sont inventées. 30 derniers jours, sauf mention contraire.</p>
+      <section class="kpis" aria-label="Indicateurs de ${esc(u.name)}">
+        ${kpi("chat", "Questions aux agents", fmt(P.q), delta(P.q, P.prevQ))}
+        ${kpi("phone", "Simulations et quiz", P.sims, `<b>${P.per.filter((p) => p.x.sims.length).length}</b> jours d'entraînement`)}
+        ${kpi("star", "Score moyen", P.avg === null ? "—" : P.avg + " %", dAvg ? `<b>${dAvg > 0 ? "+" : "−"}${Math.abs(dAvg)} pt</b> vs mois précédent` : "stable", P.avg ?? 0)}
+        ${kpi("clock", "Temps de formation", hm(P.mins), `≈ <b>${Math.round(P.mins / Math.max(1, P.active))} min</b> par jour actif`)}
+        ${kpi("users", "Jours actifs", `${P.active}<small>sur 28</small>`, `Parcours complété à <b>${PROFILE.path.pct} %</b>`, PROFILE.path.pct)}
+      </section>
+      <div class="dgrid">
+        <section class="dcard d-wide" aria-labelledby="dpAct"><div class="dc-h"><div><h2 id="dpAct">Activité des 4 dernières semaines</h2><p class="dc-sub">Questions posées par jour · un point par simulation ou quiz</p></div></div>
+          <div class="legend"><span><i style="background:#6250d6"></i>Questions</span><span><i style="background:#eb6834;border-radius:50%"></i>Simulations et quiz</span></div>
+          <div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Activité quotidienne de ${esc(u.name)} sur 28 jours">${g}</svg></div></section>
+        <section class="dcard" aria-labelledby="dpTop"><div class="dc-h"><div><h2 id="dpTop">Sujets les plus consultés</h2><p class="dc-sub">${fmt(P.q)} questions · 30 jours</p></div></div>
+          <div class="hbars">${topics.map(([t, n]) => `<div class="hb"><span class="hb-l">${esc(t)}</span><span class="hb-t"><i style="width:${Math.round((n / tmax) * 100)}%"></i></span><span class="hb-v">${n}</span></div>`).join("")}</div></section>
+        <section class="dcard" aria-labelledby="dpTh"><div class="dc-h"><div><h2 id="dpTh">Réussite par thème</h2><p class="dc-sub">Simulations des 60 derniers jours · du plus faible au plus fort</p></div></div>
+          <div class="tasks">${th.map((r) => r.score === null ? `<div class="th"><span class="th-l">${esc(r.t)}</span><span class="th-v"><small>aucune simulation</small></span><span class="th-t"></span></div>` : `<div class="th"><span class="th-l">${esc(r.t)} <small>· ${r.n} essai${r.n > 1 ? "s" : ""}</small></span><span class="th-v">${r.score} %<span class="lvl ${lvlOf(r.score)[0]}">${lvlOf(r.score)[1]}</span></span><span class="th-t" aria-hidden="true"><i style="width:${r.score}%"></i></span></div>`).join("")}</div></section>
+        <section class="dcard" aria-labelledby="dpSim"><div class="dc-h"><div><h2 id="dpSim">Dernières simulations</h2><p class="dc-sub">Les plus récentes en premier</p></div></div>
+          <ol class="dp-sims">${P.hist.slice(0, 6).map((h) => `<li><span class="dp-d">${hdate(h.d)}</span><span class="dp-t">${esc(h.theme)}</span><span class="th-v">${h.score} %<span class="lvl ${lvlOf(h.score)[0]}">${lvlOf(h.score)[1]}</span></span></li>`).join("") || '<li class="empty2">Aucune simulation récente.</li>'}</ol></section>
+        <section class="dcard" aria-labelledby="dpPath"><div class="dc-h"><div><h2 id="dpPath">Parcours de formation</h2><p class="dc-sub">${PROFILE.path.done.length} modules terminés sur ${PROFILE.path.done.length + PROFILE.path.doing.length + PROFILE.path.todo.length}</p></div></div>
+          <div class="dp-bar" role="progressbar" aria-valuenow="${PROFILE.path.pct}" aria-valuemin="0" aria-valuemax="100" aria-label="Progression du parcours"><i style="width:${PROFILE.path.pct}%"></i></div>
+          <ul class="dp-mods">${PROFILE.path.doing.map(([t, p]) => `<li class="doing"><b>${esc(t)}</b><small>En cours · ${p} %</small></li>`).join("")}${PROFILE.path.done.map((t) => `<li class="done"><b>${esc(t)}</b><small>Terminé</small></li>`).join("")}${PROFILE.path.todo.map((t) => `<li><b>${esc(t)}</b><small>À commencer</small></li>`).join("")}</ul></section>
+        <section class="dcard" aria-labelledby="dpFollow"><div class="dc-h"><div><h2 id="dpFollow">Suivi et accompagnement</h2><p class="dc-sub">Prochain point : ${PROFILE.meeting}</p></div></div>
+          <div class="dp-fb good"><b>Points forts</b><ul>${PROFILE.strengths.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+          <div class="dp-fb grow"><b>À travailler</b><ul>${PROFILE.work.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+          <p class="dp-next"><b>Prochaine étape suggérée</b>${esc(PROFILE.next)}</p></section>
+      </div>`;
+    $("dpBack").onclick = closePerson;
+  }
+  function openPerson() {
+    if (!$("dashPerson")) { const sct = document.createElement("section"); sct.id = "dashPerson"; sct.className = "dp"; sct.setAttribute("aria-labelledby", "dpTitle"); document.querySelector("#dash .dash-in").append(sct); }
+    renderPerson();
+    $("dash").classList.add("dp-on"); $("dash").scrollTop = 0;
+    $("dpBack").focus();
+  }
+  function closePerson() {
+    if (!$("dash").classList.contains("dp-on")) return;
+    $("dash").classList.remove("dp-on");
+    const li = document.querySelector("#sched .p-link");
+    if (li) { li.scrollIntoView({ block: "center" }); li.focus(); }
+  }
+  $("sched").addEventListener("click", (e) => { if (e.target.closest(".p-link")) openPerson(); });
+  $("sched").addEventListener("keydown", (e) => { if ((e.key === "Enter" || e.key === " ") && e.target.closest(".p-link")) { e.preventDefault(); openPerson(); } });
 
   function render() {
     $("dashOrg").textContent = document.getElementById("orgName")?.textContent || "";
@@ -267,7 +362,7 @@
   function closeDash() {
     if (!document.body.classList.contains("dash-on")) return;
     document.body.classList.remove("dash-on");
-    $("dash").hidden = true; $("dashTip").hidden = true;
+    $("dash").hidden = true; $("dashTip").hidden = true; $("dash").classList.remove("dp-on");
     tab.setAttribute("aria-selected", "false");
     const tsa = document.body.classList.contains("tsa");
     $("roleRec").setAttribute("aria-selected", String(!tsa)); $("roleTsa").setAttribute("aria-selected", String(tsa));

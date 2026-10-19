@@ -1275,6 +1275,52 @@ body.tsa #sideJourney[aria-pressed="true"]{color:#0b3b37}
 .ni-demo{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;background:#ffffff1f;color:#ffffffd9;border-radius:5px;padding:1px 5px;margin-right:6px;vertical-align:1px;display:inline-block;line-height:1.5}
 .nav-item[aria-pressed="true"] .ni-demo{background:var(--role-soft);color:var(--role)}
 body.side-mini .ni-demo{display:none}
+
+/* ===== Profil individuel (exemple) ===== */
+#sched li.p-link{cursor:pointer;border-radius:12px;background:#f3efff;box-shadow:inset 0 0 0 1.5px #c9b8ff;grid-template-columns:52px 1fr auto auto;transition:background .15s}
+#sched li.p-link:hover{background:#ebe4ff}
+#sched li.p-link:focus-visible{outline:3px solid #401098;outline-offset:2px}
+.p-go{font-size:12px;font-weight:800;color:#401098;white-space:nowrap;display:inline-flex;align-items:center;gap:4px}
+.p-go b{font-size:16px;line-height:1}
+#dash.dp-on .dash-in > :not(#dashPerson){display:none!important}
+.dp{display:flex;flex-direction:column;gap:16px}
+.dp-back{align-self:flex-start;border:0;background:none;color:#401098;font-weight:800;font-size:14px;padding:6px 2px;display:inline-flex;align-items:center;gap:6px}
+.dp-back span{font-size:20px;line-height:1}
+.dp-back:hover{text-decoration:underline}
+.dp-head{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.dp-av{width:64px;height:64px;font-size:22px}
+.dp-id{flex:1;min-width:220px}
+.dp-id h1{margin:0;font-size:30px;letter-spacing:-.6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dp-id p{margin:4px 0 0;color:var(--muted,#55565d);font-weight:600;font-size:14.5px}
+.dp-note{margin:-4px 0 0;font-size:13px;color:var(--muted,#55565d)}
+.dp .dgrid > .dcard{grid-column:span 3}
+.dp .dgrid > .d-wide{grid-column:span 4}
+.dp .dgrid > .d-wide + .dcard{grid-column:span 2}
+.dp-sims{list-style:none;margin:0;padding:0}
+.dp .tasks{display:flex;flex-direction:column;gap:12px;max-height:none}
+.dp .hb{grid-template-columns:minmax(0,1fr) 34% 30px}
+.dp .hb .hb-l{white-space:normal;line-height:1.25}
+.dp-sims li{display:grid;grid-template-columns:96px 1fr auto;gap:10px;align-items:center;padding:10px 2px;border-top:1px solid var(--line,#e4e3dd)}
+.dp-sims li:first-child{border-top:0}
+.dp-d{font-size:13px;font-weight:800;color:#401098}
+.dp-t{font-weight:700;font-size:14px}
+.dp-bar{height:10px;border-radius:99px;background:#eceae3;overflow:hidden}
+.dp-bar i{display:block;height:100%;background:#401098;border-radius:99px}
+.dp-mods{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dp-mods li{border:1px solid var(--line,#e4e3dd);border-radius:12px;padding:9px 12px;display:flex;flex-direction:column;gap:2px}
+.dp-mods li b{font-size:13.5px}
+.dp-mods li small{font-size:12px;color:var(--muted,#55565d);font-weight:600}
+.dp-mods li.doing{background:#f3efff;border-color:#c9b8ff}
+.dp-mods li.done{background:#f3faf5;border-color:#cfe9d7}
+.dp-fb{border-radius:12px;padding:12px 14px}
+.dp-fb b{font-size:14px}
+.dp-fb ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.5;display:flex;flex-direction:column;gap:4px}
+.dp-fb.good{background:#f0faf3;border-left:4px solid #22a35a}
+.dp-fb.grow{background:#fff7ec;border-left:4px solid #e0952b}
+.dp-next{margin:0;background:#f3efff;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.5}
+.dp-next b{display:block;color:#401098;margin-bottom:2px}
+@media (max-width:1100px){.dp .dgrid > .d-wide,.dp .dgrid > .d-wide + .dcard{grid-column:span 6}}
+@media (max-width:860px){.dp .dgrid > .dcard,.dp .dgrid > .d-wide,.dp .dgrid > .d-wide + .dcard{grid-column:auto}.dp-id h1{font-size:24px}.dp-mods{grid-template-columns:1fr}#sched li.p-link{grid-template-columns:44px 1fr auto}.p-go{grid-column:2/-1}.dp-sims li{grid-template-columns:70px 1fr}.dp-sims .th-v{grid-column:2}}
 /* ===== Grands écrans : tout est agrandi proportionnellement pour rester lisible ===== */
 @media (min-width:1560px) and (min-height:800px){:root{--z:1.1}body{zoom:1.1}}
 @media (min-width:1840px) and (min-height:920px){:root{--z:1.2}body{zoom:1.2}}
@@ -1573,6 +1619,6 @@ body.side-mini .ni-demo{display:none}
 </main>
 <script src="app-agent.js?v=202610181510"></script>
 <script src="journey.js?v=202610181510"></script>
-<script src="dashboard.js?v=202610181445"></script>
+<script src="dashboard.js?v=20261019p"></script>
 </body>
 </html>
