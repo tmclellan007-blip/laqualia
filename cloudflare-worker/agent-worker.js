@@ -658,12 +658,16 @@ Responsable de la protection des renseignements personnels : [nom et courriel à
 /* ---------- blocage après plusieurs mauvais codes ---------- */
 const LOCK_MSG = "Trop d'essais avec un mauvais code. Pour votre sécurité, l'accès est bloqué 15 minutes depuis cet appareil.";
 const MAX_FAILS = 5, LOCK_SECONDS = 15 * 60;
+// Blocage après 5 mauvais codes : désactivé pour le moment (remettre à true pour le réactiver)
+const LOCKOUT_ON = false;
 const memFails = new Map(); // filet si le stockage n'est pas relié
 async function lockedOut(env, ip) {
+  if (!LOCKOUT_ON) return false;
   if (!env.AGENT_KV) { const l = memFails.get(ip); return !!l && l.n >= MAX_FAILS && Date.now() - l.t < LOCK_SECONDS * 1000; }
   try { return !!(await env.AGENT_KV.get("lock:" + ip)); } catch { return false; }
 }
 async function recordFail(env, ip, kind = "") {
+  if (!LOCKOUT_ON) return;
   if (!env.AGENT_KV) { const l = memFails.get(ip) || { n: 0, t: Date.now() }; if (Date.now() - l.t > LOCK_SECONDS * 1000) { l.n = 0; l.t = Date.now(); } l.n++; memFails.set(ip, l); return; }
   try {
     const n = (Number(await env.AGENT_KV.get("fail:" + ip)) || 0) + 1;
