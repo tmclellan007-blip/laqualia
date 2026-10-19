@@ -1012,7 +1012,7 @@ html.lb-open{overflow:hidden}
 @media(max-width:900px){.hx-photo{object-position:30% 50%}}
 
 /* ===== Pleine largeur : les contenus occupent tout l'écran (marges proportionnelles) ===== */
-:root{--gut:clamp(16px,4.5vw,88px);--page:min(1720px,calc(100% - 2 * var(--gut)))}
+:root{--gut:clamp(20px,7vw,140px);--page:min(1480px,calc(100% - 2 * var(--gut)))}
 .wrap,.hx-copy.wrap,.nav-wrap,.pil-inner,.lev .pil-inner{width:var(--page)}
 .hub,.impact-fig{width:min(1400px,100%)}
 @media(min-width:1300px){.lev-panel{grid-template-columns:minmax(0,.72fr) minmax(0,1.5fr)}}
