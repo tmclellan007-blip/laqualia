@@ -1,4 +1,4 @@
-/* Trois leviers : onglets + galerie de captures + agrandissement (sans défilement automatique) */
+/* Trois leviers à la suite : galerie de captures + agrandissement (sans défilement automatique) */
 (() => {
   const sec = document.getElementById('leviers');
   if (!sec) return;

@@ -993,3 +993,6 @@ html.lb-open{overflow:hidden}
  .lev-copy{order:1}
  .lev-panel{display:flex;flex-direction:column}
 }
+/* Trois leviers à la suite (plus d'onglets) */
+.lev-stack > .lev .lev-panel{animation:none}
+.lev-stack > .lev{padding:clamp(56px,6.5vw,96px) 0}
