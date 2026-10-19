@@ -1065,3 +1065,27 @@ html.lb-open{overflow:hidden}
 .lev.pil--formed{background:#efe9fb}
 .lev.pil--tooled{background:#0b1433}
 .lev.pil--encadre{background:#fdebdf}
+
+/* ===== Lisibilité : tailles minimales (texte courant ≥ 15 px, petits libellés ≥ 13 px) ===== */
+nav>a{font-size:14px}
+.nav-wrap .button.small{font-size:14px}
+.eyebrow,.hx-eyebrow,.approach-heading .eyebrow{font-size:13px}
+.hx-tx strong{font-size:15px}
+.hx-tx small{font-size:13.5px}
+.lev-count{font-size:13px}
+.lev-fig figcaption,.lev-cap{font-size:15px}
+.ls-t strong{font-size:15px}
+.ls-t small{font-size:14px}
+.hc-title{font-size:15px}
+.chart-legend button{font-size:14px}
+.growth-chart figcaption{font-size:14px}
+.faq-list summary{font-size:16px}
+.faq-list p{font-size:15.5px;line-height:1.65}
+.contact-data-note,.contact-data-note .footer-link{font-size:14px}
+.contact-reveal,.linkedin-link span{font-size:14.5px}
+.founder-card p,.founder-card li{font-size:15px;line-height:1.6}
+.footer>p,.footer>div,.footer-link,.footer a,.footer span{font-size:14px}
+.lev-cta-t p{font-size:15px}
+@media(max-width:900px){.ls-t strong{font-size:13.5px}.hx-tx small{font-size:13.5px}}
+.founder-card ul li,.founder-card ul ul li{font-size:14.5px}
+a.linkedin-link span,.linkedin-link>span{font-size:14.5px!important}
