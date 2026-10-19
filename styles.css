@@ -996,3 +996,11 @@ html.lb-open{overflow:hidden}
 /* Trois leviers à la suite (plus d'onglets) */
 .lev-stack > .lev .lev-panel{animation:none}
 .lev-stack > .lev{padding:clamp(56px,6.5vw,96px) 0}
+
+/* ===== Typographie éditoriale pour les grands titres (Manrope reste pour le texte) ===== */
+:root{--display:'Fraunces',Georgia,'Times New Roman',serif}
+#hero-title,.section-title,#approach-title,#cta-title,.mc-main h2,.lev h3,.lev-copy h3{font-family:var(--display);font-weight:600;font-optical-sizing:auto;font-variation-settings:"SOFT" 60;letter-spacing:-.022em;line-height:1.02}
+#hero-title{font-weight:600}
+.mc-main h2{letter-spacing:-.015em}
+.lev .lev-copy h3{letter-spacing:-.025em}
+/* Le point final coloré et les surlignages restent ceux de la marque */
