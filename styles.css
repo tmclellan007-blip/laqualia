@@ -1060,3 +1060,8 @@ html.lb-open{overflow:hidden}
 .approach-heading h2{text-wrap:wrap}
 @media(min-width:901px){.approach-heading h2 span{white-space:nowrap}}
 .approach-heading h2{font-size:clamp(37px,3.9vw,62px)}
+/* ===== Décor allégé : plus de taches floues ni de confettis, aplats de couleur francs ===== */
+.pil-deco,.pil-blob,.pil-slash,.fr{display:none!important}
+.lev.pil--formed{background:#efe9fb}
+.lev.pil--tooled{background:#0b1433}
+.lev.pil--encadre{background:#fdebdf}
