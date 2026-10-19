@@ -1017,3 +1017,9 @@ html.lb-open{overflow:hidden}
 .hub,.impact-fig{width:min(1400px,100%)}
 @media(min-width:1300px){.lev-panel{grid-template-columns:minmax(0,.72fr) minmax(0,1.5fr)}}
 @media(max-width:760px){:root{--gut:20px}}
+/* « Vos réalités » : bloc resserré et centré dans la page */
+@media(min-width:761px){
+ .approach-bridge{max-width:1180px;margin-inline:auto;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:clamp(32px,4vw,64px)}
+ .approach-heading{text-align:right}
+ .approach-copy{border-left:2px solid #e2dff0;padding-left:clamp(28px,3vw,48px)}
+}
