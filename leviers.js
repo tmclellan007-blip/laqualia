@@ -4,7 +4,10 @@
   if (!sec) return;
   const tabs = [...sec.querySelectorAll('.lev-tab')];
   const THEMES = ['pil--formed', 'pil--tooled', 'pil--encadre'];
-  const src = (n, w) => `assets/app/${n}-${w}.webp`;
+  const BASE = sec.dataset.base || '';
+  const EN = /^en/i.test(document.documentElement.lang);
+  const L = EN ? { enlarge: 'Enlarge screenshot: ' } : { enlarge: 'Agrandir la capture : ' };
+  const src = (n, w) => `${BASE}assets/app/${n}-${w}.webp`;
   const shotsOf = (panel) => panel.dataset.shots.split('|').map((x) => { const [n, t, c] = x.split('::'); return { n, t, c }; });
 
   /* ---------- onglets ---------- */
@@ -50,7 +53,7 @@
         requestAnimationFrame(() => img.classList.remove('is-swap'));
       };
       next.src = src(s.n, 1200);
-      zoom.setAttribute('aria-label', `Agrandir la capture : ${s.t}`);
+      zoom.setAttribute('aria-label', L.enlarge + s.t);
       cap.querySelector('.lev-count').textContent = `${cur + 1} / ${shots.length}`;
       cap.querySelector('strong').textContent = s.t;
       cap.querySelector('.lev-cap').textContent = s.c;
