@@ -1004,3 +1004,11 @@ html.lb-open{overflow:hidden}
 .mc-main h2{letter-spacing:-.01em}
 .lev .lev-copy h3{letter-spacing:-.015em}
 /* Le point final coloré et les surlignages restent ceux de la marque */
+/* Nouvelle photo d'accueil : bulles replacées pour ne pas cacher les visages ni l'écran */
+@media(min-width:901px){
+ .hx-c1{left:45%;top:8%}
+ .hx-c3{left:79%;top:9%}
+ .hx-c2{left:39%;top:31%}
+ .hx-c4{left:70%;top:84%}
+}
+@media(max-width:900px){.hx-photo{object-position:30% 50%}}
