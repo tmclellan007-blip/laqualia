@@ -658,8 +658,8 @@ Responsable de la protection des renseignements personnels : [nom et courriel à
 /* ---------- blocage après plusieurs mauvais codes ---------- */
 const LOCK_MSG = "Trop d'essais avec un mauvais code. Pour votre sécurité, l'accès est bloqué 15 minutes depuis cet appareil.";
 const MAX_FAILS = 5, LOCK_SECONDS = 15 * 60;
-// Blocage après 5 mauvais codes : désactivé pour le moment (remettre à true pour le réactiver)
-const LOCKOUT_ON = false;
+// Blocage après 5 mauvais codes (mettre à false pour le désactiver temporairement)
+const LOCKOUT_ON = true;
 const memFails = new Map(); // filet si le stockage n'est pas relié
 async function lockedOut(env, ip) {
   if (!LOCKOUT_ON) return false;
