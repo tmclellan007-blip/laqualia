@@ -1004,19 +1004,9 @@ html.lb-open{overflow:hidden}
 .mc-main h2{letter-spacing:-.01em}
 .lev .lev-copy h3{letter-spacing:-.015em}
 /* Le point final coloré et les surlignages restent ceux de la marque */
-/* Nouvelle photo d'accueil : bulles dans la zone toujours visible (haut et bas de la photo), jamais sur les visages ni l'écran */
+/* Nouvelle photo d'accueil : photo entière en hauteur (moins zoomée), fondue à gauche ; bulles aux positions d'origine */
 @media(min-width:901px){
- .hx-ui{z-index:5}
- .hx-c1{left:44%;top:17%}
- .hx-c3{left:auto;right:3%;top:17%}
- .hx-c2{left:47%;top:71%}
- .hx-c4{left:auto;right:4%;top:70%}
- .hx-stage::after{height:11%}
-}
-@media(min-width:901px) and (max-width:1180px){
- .hx-c1{left:50%;top:15%}
- .hx-c3{display:none}
- .hx-c2{left:50%;top:68%}
- .hx-c4{right:3%;top:70%}
+ .hx-photo{inset:auto;top:50%;right:0;left:auto;transform:translateY(-50%);height:100cqh;width:auto;aspect-ratio:1672/941;max-width:none;object-fit:cover;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 22%);mask-image:linear-gradient(90deg,transparent 0,#000 22%)}
 }
 @media(max-width:900px){.hx-photo{object-position:30% 50%}}
