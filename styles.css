@@ -1047,3 +1047,15 @@ html.lb-open{overflow:hidden}
 .approach-copy p{max-width:58ch}
 .approach-note{margin-top:24px;max-width:58ch}
 @media(max-width:900px){.approach-bridge{grid-template-columns:1fr;gap:22px}}
+/* « Vos réalités » : plus grand */
+.approach-heading .eyebrow{font-size:13px;margin-bottom:20px}
+.approach-heading h2{font-size:clamp(40px,4.6vw,72px);line-height:1.04}
+.approach-copy p{font-size:clamp(17px,1.35vw,20px);line-height:1.7}
+.approach-copy .approach-note p{font-size:clamp(16px,1.2vw,18px)}
+.approach-copy .approach-note strong{font-size:1.08em}
+@media(max-width:760px){.approach-heading h2{font-size:clamp(34px,9vw,44px)}.approach-copy p{font-size:16.5px}}
+@media(min-width:901px){.approach-bridge{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(32px,4.5vw,96px)}}
+.approach-heading h2{font-size:clamp(40px,4.3vw,68px)}
+.approach-heading,.approach-heading h2{max-width:none}
+.approach-heading h2{text-wrap:wrap}
+@media(min-width:901px){.approach-heading h2 span{white-space:nowrap}}
