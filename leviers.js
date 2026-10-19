@@ -66,6 +66,12 @@
     swipe(panel.querySelector('.lev-shot'), (d) => show(cur + d));
   });
 
+  /* ---------- appel à l'action : pré-remplit le message du formulaire ---------- */
+  sec.querySelectorAll('[data-prefill]').forEach((a) => a.addEventListener('click', () => {
+    const m = document.getElementById('message');
+    if (m && !m.value.trim()) m.value = a.dataset.prefill;
+  }));
+
   /* ---------- agrandissement ---------- */
   const lb = document.getElementById('lev-lb');
   const lbImg = document.getElementById('lev-lb-img');

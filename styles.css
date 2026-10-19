@@ -956,3 +956,40 @@ html.lb-open{overflow:hidden}
  .lb-scroll img{width:250%;max-width:none;max-height:none}
  .lb-hint{display:block;margin:0;padding:8px 16px 0;font-size:12px;color:#a9a6c0;text-align:center}
 }
+
+/* ===== Grands écrans : tout le site s'agrandit proportionnellement (texte lisible, moins de vide) ===== */
+@media(min-width:1800px) and (min-height:860px){:root{--z:1.12}body{zoom:1.12}}
+@media(min-width:2200px) and (min-height:1000px){:root{--z:1.28}body{zoom:1.28}}
+@media(min-width:2500px) and (min-height:1200px){:root{--z:1.4}body{zoom:1.4}}
+@media(min-width:3200px) and (min-height:1600px){:root{--z:1.75}body{zoom:1.75}}
+@media(min-width:1800px) and (min-height:860px){
+ .hx-stage{max-height:max(640px,calc(92vh / var(--z)))}
+ dialog{max-height:calc(100dvh / var(--z) - 40px)}
+ .lev-lb{width:min(1680px,calc(96vw / var(--z)));max-height:calc(96dvh / var(--z))}
+ .lb-in img{max-height:calc(96dvh / var(--z) - 86px)}
+}
+/* Appel à l'action des trois leviers */
+.lev-media{grid-area:fig;position:sticky;top:110px;display:flex;flex-direction:column;gap:22px}
+.lev-media .lev-fig{position:static}
+.lev-cta{display:flex;align-items:center;gap:16px;padding:18px 20px;border-radius:18px;background:#fff;border:1px solid #00000010;box-shadow:0 14px 34px #1a0b4a14}
+.lev-cta-ic{flex:none;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:var(--lime);color:#173300}
+.lev-cta-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.lev-cta-t{flex:1;min-width:0}
+.lev-cta-t strong{display:block;font-size:17px;letter-spacing:-.3px;color:#16161c;line-height:1.3}
+.lev-cta-t p{margin:3px 0 0;font-size:14px;color:#55565d;line-height:1.45}
+.lev-cta-btn{flex:none;display:inline-flex;align-items:center;gap:10px;padding:13px 18px;border-radius:10px;background:var(--band);color:#fff;font-weight:800;font-size:14px;text-decoration:none;box-shadow:0 8px 18px color-mix(in srgb,var(--band),transparent 65%);transition:transform .2s,box-shadow .2s}
+.lev-cta-btn:hover{transform:translateY(-2px)}
+.lev-cta-btn svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.lev.pil--tooled .lev-cta{background:#16213f;border-color:#ffffff22;box-shadow:0 14px 34px #0005}
+.lev.pil--tooled .lev-cta-t strong{color:#fff}
+.lev.pil--tooled .lev-cta-t p{color:#c4cce2}
+.lev.pil--tooled .lev-cta-btn{background:var(--lime);color:#0a1230;box-shadow:0 8px 18px #c7ff0033}
+@media(max-width:1180px){.lev-cta{flex-wrap:wrap}.lev-cta-btn{width:100%;justify-content:center}}
+@media(max-width:900px){
+ .lev-media{display:contents}
+ .lev-cta{order:5;margin-top:18px;text-align:left}
+ .lev-steps{order:4}
+ .lev-fig{order:3}
+ .lev-copy{order:1}
+ .lev-panel{display:flex;flex-direction:column}
+}
