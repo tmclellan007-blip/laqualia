@@ -1023,3 +1023,27 @@ html.lb-open{overflow:hidden}
  .approach-heading{text-align:right}
  .approach-copy{border-left:2px solid #e2dff0;padding-left:clamp(28px,3vw,48px)}
 }
+/* ===== Audit multi-écrans : lisibilité et proportions ===== */
+/* Longueur de ligne confortable (65–75 caractères) */
+.faq-list p,.founder-card p,.founder-card li{max-width:72ch}
+.hx-desc{max-width:min(480px,40vw)}
+/* Tablette et petit portable : « Vos réalités » empilé, aligné à gauche */
+@media(min-width:761px) and (max-width:1100px){
+ .approach-bridge{grid-template-columns:1fr;max-width:760px;gap:22px}
+ .approach-heading{text-align:left}
+ .approach-copy{border-left:0;padding-left:0}
+}
+/* Trois leviers : colonne de texte assez large pour garder le titre sur une ligne */
+@media(min-width:1300px){.lev-panel{grid-template-columns:minmax(0,.82fr) minmax(0,1.5fr)}}
+.lev .lev-copy h3{font-size:clamp(36px,3.6vw,60px)}
+/* Écrans ultra-larges : la mission suit la largeur du contenu */
+.values.wrap{max-width:none}
+@media(max-width:900px){.hx .hx-copy .hx-desc{max-width:62ch!important}}
+.faq-list summary{max-width:80ch}
+.form-privacy{max-width:80ch}
+/* Petit portable (901–1180) : deux bulles seulement, dans les coins, loin des visages */
+@media(min-width:901px) and (max-width:1180px){
+ .hx-c1,.hx-c2{display:none!important}
+ .hx-c3{display:flex;left:auto;right:2.5%;top:6%}
+ .hx-c4{left:auto;right:2.5%;top:auto;bottom:17%}
+}
