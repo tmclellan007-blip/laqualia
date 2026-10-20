@@ -203,7 +203,26 @@ const EMAIL_COOKIE = "__Secure-lq_ecode";
 const EMAIL_RE = /^[^\s@<>"',;()]{1,64}@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
 export const normEmail = (e) => String(e || "").trim().toLowerCase();
 const emailSender = (env) => env.AUTH_EMAIL || env.ALERT_EMAIL || null;
-export const providers = (env) => ({ ...providersStatus(env), email: !!emailSender(env) });
+// Protection anti-robots (Cloudflare Turnstile). La clé de site est publique ; la vérification ne s'active
+// que lorsque le secret TURNSTILE_SECRET est ajouté au relais. Sans lui, rien ne change.
+const TURNSTILE_SITEKEY = "0x4AAAAAAFeXR1_bJkXdINQm";
+const turnstileOn = (env) => !!env.TURNSTILE_SECRET;
+export const providers = (env) => ({ ...providersStatus(env), email: !!emailSender(env), turnstile: turnstileOn(env) ? (env.TURNSTILE_SITEKEY || TURNSTILE_SITEKEY) : null });
+async function checkHuman(ctx, token) {
+  if (!turnstileOn(ctx.env)) return;
+  const bad = () => { throw new HttpError(400, "La vérification anti-robots n'a pas abouti. Patientez un instant, puis réessayez.", "robot"); };
+  if (!token || typeof token !== "string" || token.length > 2048) bad();
+  let out = {};
+  try {
+    const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ secret: ctx.env.TURNSTILE_SECRET, response: token, remoteip: ctx.request.headers.get("cf-connecting-ip") || undefined }),
+    });
+    out = await r.json();
+  } catch (e) { console.error("turnstile", e && e.message); throw new HttpError(503, "La vérification anti-robots est momentanément indisponible. Réessayez dans un instant.", "robot_unavailable"); }
+  // Jeton valide, à usage unique, émis pour ce site
+  if (!out.success || (out.hostname && out.hostname !== new URL(ctx.origin).hostname)) bad();
+}
 
 function sixDigits() {
   const a = new Uint32Array(1);
@@ -231,6 +250,8 @@ async function emailStart(ctx) {
     if (rec.email !== email) throw new HttpError(400, "Utilisez l'adresse indiquée par l'administrateur dans le lien de récupération.", "recuperation_courriel");
     recoveryId = rec.id;
   }
+  // Anti-robots avant tout envoi (l'association depuis Mon profil exige déjà une session)
+  if (mode !== "link") await checkHuman(ctx, b.turnstile);
   // Limites : contre l'envoi massif et le harcèlement d'une boîte courriel.
   const ip = ctx.request.headers.get("cf-connecting-ip") || "?";
   await rateLimit(ctx, "ecode:mail:" + email, 5, 3600e3);
@@ -818,6 +839,7 @@ async function inviteSignup(ctx) {
   if (!first) throw new HttpError(400, "Entrez votre prénom.", "prenom_requis", { field: "first_name" });
   const email = normEmail(b.email);
   if (!EMAIL_RE.test(email) || email.length > 254) throw new HttpError(400, "Entrez une adresse courriel valide.", "courriel_invalide", { field: "email" });
+  await checkHuman(ctx, b.turnstile);
   const c = await findActiveCode(ctx, b.code);
   await consumeCode(ctx, c);
   const { env, now } = ctx;

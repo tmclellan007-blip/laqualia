@@ -127,6 +127,7 @@ dialog::backdrop{background:#040f32a6}
 .prov svg{width:20px;height:20px}
 .prov[aria-disabled="true"]{opacity:.5;pointer-events:none}
 .fine{font-size:13.5px;color:var(--muted)}
+.ts:empty{display:none}.ts{display:flex;justify-content:center}
 .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px;font-weight:700}
 .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .mailform{display:flex;flex-direction:column;gap:12px}

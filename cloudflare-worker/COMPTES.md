@@ -53,6 +53,13 @@
   - la page Admin de l'agent est réservée à l'administrateur de la plateforme.
 - **Miroir** : le miroir GitHub Pages `nc` garde l'ancien accès par codes d'équipe.
 
+### Protection anti-robots (Cloudflare Turnstile)
+- **Où** : la page d'accès (« Accéder au portail ») et l'envoi du code par courriel de la Connexion administrateur.
+- **Vérification** : le jeton Turnstile est vérifié côté serveur, avant toute vérification de code ou tout envoi de courriel ; le domaine qui a émis le jeton est contrôlé.
+- **Clé de site** (publique) : `0x4AAAAAAFeXR1_bJkXdINQm`, dans `accounts/index.js`. On peut la remplacer par la variable `TURNSTILE_SITEKEY`.
+- **Activation** : seulement quand le secret `TURNSTILE_SECRET` est ajouté au relais. Sans lui, rien n'est demandé.
+- **Exception** : l'association d'une adresse depuis Mon profil exige déjà une session et n'est pas concernée.
+
 ## Sécurité, en bref
 
 - **Identité du compte** : le compte est identifié par `(fournisseur, sub)`, l'identifiant vérifié du fournisseur. Il n'y a jamais de fusion par adresse courriel.
@@ -132,7 +139,7 @@ Aujourd'hui, le responsable copie le lien d'invitation et le transmet lui-même.
 ## Essais
 
 ```
-node --test tests/accounts.test.mjs tests/email.test.mjs tests/portal.test.mjs tests/premier-acces.test.mjs  # 30 essais serveur
+node --test tests/accounts.test.mjs tests/email.test.mjs tests/portal.test.mjs tests/premier-acces.test.mjs tests/turnstile.test.mjs  # 33 essais serveur
 node tests/ui.mjs <dossier du site> <captures>            # parcours d'interface Playwright
 node tests/ui-email.mjs <dossier du site> <captures>      # parcours de connexion par code courriel
 node tests/ui-portal.mjs <dossier du site> <captures>     # premier accès, codes expirés ou déjà utilisés, reconnexion, retrait, accès administrateur

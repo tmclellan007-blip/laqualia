@@ -60,6 +60,7 @@ a{color:var(--purple)}
 .admin a:hover{border-color:var(--purple)}
 .admin a svg{width:17px;height:17px}
 .admin .also{flex-basis:100%;font-size:13px}
+.ts:empty{display:none}.ts{display:flex;justify-content:center;margin:4px 0 6px}
 .skel{height:18px;border-radius:9px;background:linear-gradient(90deg,#eceae3,#f6f5f1,#eceae3);background-size:200% 100%;animation:sk 1.2s linear infinite;margin:12px 0}
 @keyframes sk{to{background-position:-200% 0}}
 @media (prefers-reduced-motion:reduce){.skel{animation:none}}
@@ -106,6 +107,7 @@ a{color:var(--purple)}
           <input id="code" type="text" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXX-XXXX-XXXX" required aria-describedby="codeHint codeErr">
           <span class="hint" id="codeHint">Valable 24 heures. Les tirets sont facultatifs.</span>
           <span class="err" id="codeErr" hidden></span></div>
+        <div id="ts" class="ts" aria-live="polite"></div>
         <button class="btn" id="go">Accéder au portail<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         <p class="fine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Aucun courriel ne vous sera envoyé. Votre adresse sert seulement à vous reconnaître au sein de votre équipe.</span></p>
       </form>
@@ -137,6 +139,7 @@ a{color:var(--purple)}
     </nav>
   </section>
 </main>
+<script src="turnstile.js?v=1"></script>
 <script>
 (() => {
   "use strict";
@@ -177,7 +180,10 @@ a{color:var(--purple)}
     if (bad) { $(bad).focus(); return; }
     busy($("go"), true);
     try {
-      const { r, d } = await post("/auth/invite", { first_name: first, email, code });
+      const turnstile = await LQHuman.get();
+      if (LQHuman.active && !turnstile) { $("formErr").textContent = "La vérification anti-robots n'a pas abouti. Cochez la case si elle apparaît, puis réessayez."; $("formErr").hidden = false; return; }
+      const { r, d } = await post("/auth/invite", { first_name: first, email, code, turnstile });
+      LQHuman.reset();
       if (r.ok) return welcome(first, d.orgName);
       if (r.status === 429) { $("formErr").textContent = "Trop d'essais depuis cet appareil. Patientez quelques minutes, puis réessayez."; $("formErr").hidden = false; return; }
       if (d.field && FIELD[d.field]) return fieldErr(FIELD[d.field], d.error);
@@ -211,6 +217,7 @@ a{color:var(--purple)}
     if (matchMedia("(min-width: 901px)").matches) $("first").focus();
   }
   let joinName = "";
+  fetch("/auth/providers", { credentials: "same-origin" }).then((r) => r.json()).then((p) => LQHuman.init(p.turnstile, "#ts")).catch(() => {});
   async function start() {
     let r, d = {};
     try { r = await fetch("/api/access/status", { credentials: "same-origin", cache: "no-store" }); d = await r.json(); }

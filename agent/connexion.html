@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="compte.css?v=3">
+<link rel="stylesheet" href="compte.css?v=4">
 </head>
 <body>
 <header class="topbar">
@@ -44,6 +44,7 @@
       <button class="btn" id="codeBtn">Se connecter</button>
       <div class="row" style="justify-content:space-between"><button type="button" class="linkbtn" id="resend">Renvoyer un code</button><button type="button" class="linkbtn" id="change">Changer d'adresse</button></div>
     </form>
+    <div id="ts" class="ts" aria-live="polite"></div>
     <p class="fine" id="cfg" hidden></p>
     <details class="fine" id="dApple">
       <summary><b>Vous utilisez « Masquer mon adresse » avec Apple ?</b></summary>
@@ -56,6 +57,7 @@
     <p class="fine">Accès perdu ? Si vous avez associé un autre moyen de connexion, utilisez-le. Sinon, demandez à l'administrateur de la plateforme un lien de récupération.</p>
   </section>
 </main>
+<script src="turnstile.js?v=1"></script>
 <script>
 (() => {
   "use strict";
@@ -92,6 +94,7 @@
       if (p[k]) { $(id).href = link(k); $(id).removeAttribute("aria-disabled"); }
       else { $(id).title = "Pas encore configuré"; $(id).textContent += " (bientôt)"; }
     });
+    LQHuman.init(p.turnstile, "#ts");
     if (p.email) { $("fEmail").hidden = false; $("orSep").hidden = !(p.google || p.apple); }
     if (!p.google && !p.apple && !p.email) { $("cfg").textContent = "La connexion n'est pas encore configurée pour ce site."; $("cfg").hidden = false; }
     else if (p.email && !p.google && !p.apple) { $("buttons").hidden = $("dApple").hidden = $("dBoth").hidden = true; }
@@ -119,7 +122,10 @@
     const btn = $("fCode").hidden ? $("sendBtn") : $("resend"), label = btn.textContent;
     busy(btn, true, "Envoi…");
     try {
-      const r = await post("/auth/email/start", { email, mode, next, ...(rec ? { token: rec } : {}) });
+      const turnstile = await LQHuman.get();
+      if (LQHuman.active && !turnstile) { showErr("La vérification anti-robots n'a pas abouti. Cochez la case si elle apparaît, puis réessayez."); return; }
+      const r = await post("/auth/email/start", { email, mode, next, turnstile, ...(rec ? { token: rec } : {}) });
+      LQHuman.reset();
       if (!r.ok) { showErr(ERR[r.d.code] && r.d.code !== "recuperation_courriel" ? ERR[r.d.code] : (r.d.error || "L'envoi a échoué. Réessayez.")); if (r.d.code === "courriel_invalide") $("email").focus(); return; }
       lastEmail = email;
       $("sentTo").textContent = `Code envoyé à ${r.d.emailHint}.`;

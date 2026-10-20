@@ -13,7 +13,11 @@ for (const k of ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "APPLE_CLIENT_ID", 
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "application/javascript", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".json": "application/json" };
 let persona = null;
 const errors = [];
+// Turnstile actif, avec un faux script Cloudflare (aucun appel réel) qui délivre un jeton « humain ».
+const FAKE_TS = `window.turnstile={render:function(el,o){var n=document.querySelector(el);n.textContent="Vérification anti-robots réussie";n.dataset.ok="1";setTimeout(function(){o.callback("humain-ui-"+Date.now())},50);return 1},reset:function(){var w=window.__tsw;setTimeout(function(){w&&w.callback("humain-ui-"+Date.now())},50)}};(function(){var r=window.turnstile.render;window.turnstile.render=function(el,o){window.__tsw=o;return r(el,o)}})();var q=new URL(document.currentScript.src).searchParams.get("onload");q&&window[q]&&window[q]();`;
+let tsLoads = 0;
 async function wire(ctx) {
+  await ctx.route("https://challenges.cloudflare.com/**", (route) => { tsLoads++; return route.fulfill({ status: 200, contentType: "application/javascript", body: FAKE_TS }); });
   await ctx.route(`${ORIGIN}/**`, async (route) => { try { return await handle(route); } catch (e) { console.log('ROUTE ERR', route.request().url(), e.message); return route.abort(); } });
   async function handle(route) {
     const req = route.request(); const u = new URL(req.url());
@@ -60,6 +64,7 @@ async function emailLogin(p, email) {
   await p.waitForSelector("#fCode:not([hidden])");
   await p.fill("#code", env.AUTH_EMAIL.lastCodeFor(email));
 }
+env.TURNSTILE_SECRET = "secret-turnstile-essai"; // actif pour tout le parcours dans le navigateur
 const browser = await chromium.launch();
 
 // 1. L'administratrice génère un code (24 h, usage unique par défaut)
@@ -190,6 +195,9 @@ await p.goto(ORIGIN + "/agent/compte.html#plateforme"); await p.waitForTimeout(8
 ok(!(await p.locator("#navPlat").isHidden()), "plateforme : section Plateforme accessible");
 await shot(p, "10-admin-plateforme");
 await browser.close();
+ok(tsLoads > 0, "Turnstile chargé sur la page d'accès et la connexion administrateur");
+const { turnstileLog } = await import("./harness.mjs");
+ok(turnstileLog.length >= 4 && turnstileLog.every((x) => x.secret === "secret-turnstile-essai"), "chaque premier accès et chaque envoi de code a été vérifié côté serveur");
 const dump = JSON.stringify(env.DB.raw("SELECT * FROM audit_log")) + JSON.stringify(env.DB.raw("SELECT * FROM access_codes"));
 ok(!dump.includes(CODE) && !dump.includes(CODE.replace(/-/g, "")), "le code n'est ni dans le journal ni en clair dans la base");
 console.log(errors.length ? `\n${errors.length} problème(s)` : "\nParcours du portail : tout est conforme.");

@@ -36,6 +36,7 @@ const gJwk = { ...(await exportJWK(google.publicKey)), kid: "g1", alg: "RS256", 
 const aJwk = { ...(await exportJWK(apple.publicKey)), kid: "a1", alg: "ES256", use: "sig" };
 export const providerLog = [];
 export const modelLog = [];
+export const turnstileLog = [];
 export class FakeKV {
   constructor() { this.m = new Map(); }
   async get(k) { return this.m.has(k) ? this.m.get(k) : null; }
@@ -68,6 +69,12 @@ globalThis.fetch = async (input, init = {}) => {
     const body = JSON.parse(String(init.body)); modelLog.push(body);
     const sse = `data: ${JSON.stringify({ type: "content_block_delta", delta: { type: "text_delta", text: "Réponse simulée." } })}\n\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`;
     return new Response(sse, { headers: { "content-type": "text/event-stream" } });
+  }
+  // Turnstile simulé : « humain… » réussit ; « humain-autre-site » est émis pour un autre domaine
+  if (url === "https://challenges.cloudflare.com/turnstile/v0/siteverify") {
+    const b = JSON.parse(String(init.body)); turnstileLog.push(b);
+    const ok = String(b.response).startsWith("humain") && b.secret === "secret-turnstile-essai";
+    return Response.json({ success: ok, hostname: b.response === "humain-autre-site" ? "pirate.example" : "laqualia.com" });
   }
   if (url.endsWith("/agent/config.json")) return Response.json({ name: "Assistant La Qualia", instructions: "Instructions d'essai.", examples: ["Exemple"] });
   if (url.endsWith("/agent/docs/index.json")) return Response.json([]);
