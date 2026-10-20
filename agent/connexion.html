@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="compte.css?v=1">
+<link rel="stylesheet" href="compte.css?v=2">
 </head>
 <body>
 <header class="topbar">
@@ -21,17 +21,36 @@
 <main class="auth">
   <section class="sheet" aria-labelledby="t">
     <h1 id="t">Connexion</h1>
-    <p id="intro">Connectez-vous avec le compte que vous utilisez déjà. Aucun mot de passe à créer.</p>
+    <p id="intro">Connectez-vous avec Google, Apple ou un code reçu par courriel. Aucun mot de passe à créer.</p>
     <div class="notice err" id="err" role="alert" hidden></div>
     <div class="notice info" id="info" hidden></div>
     <div id="buttons" class="cards" style="gap:10px">
       <a class="prov" id="btnGoogle" href="#" aria-disabled="true">Continuer avec Google</a>
       <a class="prov apple" id="btnApple" href="#" aria-disabled="true">Continuer avec Apple</a>
     </div>
+    <div class="or" id="orSep" hidden><span>ou</span></div>
+    <form id="fEmail" class="mailform" novalidate hidden>
+      <div class="f" style="margin:0"><label for="email">Adresse courriel</label>
+        <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" aria-describedby="emailHint">
+        <span class="hint" id="emailHint">Nous vous envoyons un code à 6 chiffres. Nouveau ? Votre compte est créé à la première connexion.</span></div>
+      <button class="btn" id="sendBtn">Recevoir un code</button>
+    </form>
+    <form id="fCode" class="mailform" novalidate hidden>
+      <div class="notice ok" id="sentTo" role="status"></div>
+      <div class="f" style="margin:0"><label for="code">Code reçu par courriel</label>
+        <input type="text" id="code" name="code" class="codein" autocomplete="one-time-code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required aria-describedby="codeHint">
+        <span class="hint" id="codeHint">Valable 10 minutes. Vérifiez vos courriels indésirables si vous ne le voyez pas.</span></div>
+      <button class="btn" id="codeBtn">Se connecter</button>
+      <div class="row" style="justify-content:space-between"><button type="button" class="linkbtn" id="resend">Renvoyer un code</button><button type="button" class="linkbtn" id="change">Changer d'adresse</button></div>
+    </form>
     <p class="fine" id="cfg" hidden></p>
-    <details class="fine">
+    <details class="fine" id="dApple">
       <summary><b>Vous utilisez « Masquer mon adresse » avec Apple ?</b></summary>
       <p style="margin-top:8px">Apple transmet alors une adresse de relais (…@privaterelay.appleid.com). Votre compte fonctionne normalement, mais une invitation envoyée à votre adresse habituelle ne pourra pas être acceptée avec ce compte Apple. Deux solutions sûres : acceptez l'invitation en vous connectant avec Google à cette adresse, puis associez Apple depuis <em>Mon profil</em> ; ou demandez une invitation à l'adresse de relais affichée dans votre profil.</p>
+    </details>
+    <details class="fine" id="dBoth">
+      <summary><b>Vous utilisez déjà Google ou Apple ?</b></summary>
+      <p style="margin-top:8px">Continuez avec le même moyen. Un code par courriel ouvre un compte distinct, même si l'adresse est identique : La Qualia ne fusionne jamais deux comptes à partir d'une adresse. Pour utiliser les deux, connectez-vous d'abord, puis associez l'adresse depuis <em>Mon profil</em>.</p>
     </details>
     <p class="fine">Accès perdu ? Si vous avez associé un autre moyen de connexion, utilisez-le. Sinon, demandez à l'administrateur de la plateforme un lien de récupération.</p>
   </section>
@@ -50,6 +69,7 @@
     recuperation_invalide: "Ce lien de récupération est invalide, expiré ou déjà utilisé.",
     recuperation_courriel: "Le moyen de connexion choisi n'utilise pas l'adresse vérifiée prévue dans le lien de récupération.",
     identite_deja_utilisee: "Ce moyen de connexion est déjà relié à un autre compte La Qualia. Les comptes ne sont jamais fusionnés automatiquement.",
+    code_expire: "Ce code n'est plus valide. Demandez-en un nouveau.", trop_essais: "Trop d'essais. Demandez un nouveau code.",
   };
   const qs = new URLSearchParams(location.search);
   const code = qs.get("erreur");
@@ -62,6 +82,7 @@
   if (rec) {
     $("t").textContent = "Récupérer l'accès à votre compte";
     $("intro").textContent = "Choisissez le nouveau moyen de connexion. Son adresse vérifiée doit correspondre à celle indiquée par l'administrateur.";
+    $("sendBtn").textContent = "Recevoir un code de récupération";
   }
   const link = (p) => `/auth/${p}/start?` + new URLSearchParams({ mode, next, ...(rec ? { token: rec } : {}) });
   fetch("/auth/providers", { credentials: "same-origin" }).then((r) => (r.ok ? r.json() : Promise.reject(r.status))).then((p) => {
@@ -69,14 +90,66 @@
       if (p[k]) { $(id).href = link(k); $(id).removeAttribute("aria-disabled"); }
       else { $(id).title = "Pas encore configuré"; $(id).textContent += " (bientôt)"; }
     });
-    if (!p.google && !p.apple) { $("cfg").textContent = "La connexion n'est pas encore configurée pour ce site."; $("cfg").hidden = false; }
+    if (p.email) { $("fEmail").hidden = false; $("orSep").hidden = !(p.google || p.apple); }
+    if (!p.google && !p.apple && !p.email) { $("cfg").textContent = "La connexion n'est pas encore configurée pour ce site."; $("cfg").hidden = false; }
+    else if (p.email && !p.google && !p.apple) { $("buttons").hidden = $("dApple").hidden = $("dBoth").hidden = true; }
+    if (!p.apple) $("dApple").hidden = true;
     return fetch("/api/me", { credentials: "same-origin" });
   }).then((r) => {
     if (r && r.ok && !rec && !code) { $("info").innerHTML = 'Vous êtes déjà connecté. <a href="' + next + '">Continuer</a>'; $("info").hidden = false; }
   }).catch(() => {
+    $("buttons").hidden = false;
     $("cfg").textContent = "Le module de comptes est disponible sur laqualia.com seulement.";
     $("cfg").hidden = false;
   });
+
+  // Connexion par code courriel
+  const post = async (path, body) => {
+    const r = await fetch(path, { method: "POST", credentials: "same-origin", headers: { "x-lq-csrf": "1", "content-type": "application/json" }, body: JSON.stringify(body) });
+    let d = {}; try { d = await r.json(); } catch {}
+    return { ok: r.ok, status: r.status, d };
+  };
+  const showErr = (msg) => { $("err").textContent = msg; $("err").hidden = !msg; };
+  const busy = (btn, on, label) => { btn.disabled = on; if (label) btn.textContent = label; };
+  let lastEmail = "";
+  async function sendCode(email) {
+    showErr("");
+    const btn = $("fCode").hidden ? $("sendBtn") : $("resend"), label = btn.textContent;
+    busy(btn, true, "Envoi…");
+    try {
+      const r = await post("/auth/email/start", { email, mode, next, ...(rec ? { token: rec } : {}) });
+      if (!r.ok) { showErr(ERR[r.d.code] && r.d.code !== "recuperation_courriel" ? ERR[r.d.code] : (r.d.error || "L'envoi a échoué. Réessayez.")); if (r.d.code === "courriel_invalide") $("email").focus(); return; }
+      lastEmail = email;
+      $("sentTo").textContent = `Code envoyé à ${r.d.emailHint}.`;
+      $("fEmail").hidden = true; $("fCode").hidden = false; $("buttons").hidden = true; $("orSep").hidden = true;
+      $("code").value = ""; $("code").focus();
+    } catch { showErr("Connexion au serveur impossible. Vérifiez votre connexion Internet."); }
+    finally { busy(btn, false, label); }
+  }
+  $("fEmail").onsubmit = (e) => {
+    e.preventDefault();
+    const v = $("email").value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) { showErr("Entrez une adresse courriel valide."); $("email").setAttribute("aria-invalid", "true"); $("email").focus(); return; }
+    $("email").removeAttribute("aria-invalid");
+    sendCode(v);
+  };
+  $("code").addEventListener("input", (e) => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); if (e.target.value.length === 6) $("fCode").requestSubmit(); });
+  $("fCode").onsubmit = async (e) => {
+    e.preventDefault();
+    const code = $("code").value;
+    if (code.length !== 6) { showErr("Le code compte 6 chiffres."); $("code").focus(); return; }
+    showErr(""); busy($("codeBtn"), true, "Vérification…");
+    try {
+      const r = await post("/auth/email/verify", { code });
+      if (r.ok) { location.href = r.d.next || next; return; }
+      showErr(r.d.code === "code_incorrect" ? r.d.error : (ERR[r.d.code] || r.d.error || "La connexion a échoué."));
+      $("code").value = ""; $("code").focus();
+      if (r.d.code === "code_expire" || r.d.code === "trop_essais") $("codeHint").textContent = "Utilisez « Renvoyer un code » pour en recevoir un nouveau.";
+    } catch { showErr("Connexion au serveur impossible. Vérifiez votre connexion Internet."); }
+    finally { busy($("codeBtn"), false, "Se connecter"); }
+  };
+  $("resend").onclick = () => lastEmail && sendCode(lastEmail);
+  $("change").onclick = () => { $("fCode").hidden = true; $("fEmail").hidden = false; showErr(""); $("email").focus(); };
 })();
 </script>
 </body>

@@ -10,7 +10,7 @@
   const S = { me: null, meta: null, orgId: null };
   const ROLE_BADGE = { owner: "b-owner", admin: "b-admin", member: "b-role" };
   const STATUS = { active: ["b-active", "Actif"], disabled: ["b-disabled", "Désactivé"], invited: ["b-invited", "Invité"], expired: ["b-expired", "Invitation expirée"] };
-  const PROV = { google: "Google", apple: "Apple" };
+  const PROV = { google: "Google", apple: "Apple", email: "Code par courriel" };
 
   /* ---------- outils ---------- */
   class ApiError extends Error { constructor(status, data) { super((data && data.error) || "Erreur."); this.status = status; this.data = data || {}; } }
@@ -31,7 +31,7 @@
   let toastT;
   function toast(msg, err) { const t = $("toast"); t.textContent = msg; t.className = "toast" + (err ? " err" : ""); t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (t.hidden = true), 4200); }
   const fail = (e) => toast(e.message || "L'action a échoué.", true);
-  const initials = (u) => ((u.first_name || "?")[0] + (u.last_name || "")[0] || "").toUpperCase();
+  const initials = (u) => ((u.first_name || "")[0] || "") + ((u.last_name || "")[0] || "") ? (((u.first_name || "")[0] || "") + ((u.last_name || "")[0] || "")).toUpperCase() : "?";
   const avatar = (u, cls = "") => `<span class="av ${cls}" aria-hidden="true">${u.photo ? `<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">` : esc(initials(u))}</span>`;
   const fullName = (u) => [u.first_name, u.last_name].filter(Boolean).join(" ") || "(sans nom)";
   const roleLabel = (r) => (S.meta?.roleLabels?.[r] || r);
@@ -69,7 +69,7 @@
     renderChrome();
     window.addEventListener("hashchange", route);
     const qs = new URLSearchParams(location.search);
-    if (qs.get("associe")) toast(`${PROV[qs.get("associe")] || "Moyen de connexion"} est maintenant associé à votre compte.`);
+    if (qs.get("associe")) toast(qs.get("associe") === "email" ? "L'adresse courriel est maintenant associée à votre compte." : `${PROV[qs.get("associe")] || "Moyen de connexion"} est maintenant associé à votre compte.`);
     if (qs.get("erreur") === "identite_deja_utilisee") toast("Ce moyen de connexion est déjà relié à un autre compte. Les comptes ne sont jamais fusionnés.", true);
     if (qs.toString()) history.replaceState(null, "", location.pathname + location.hash);
     route();
@@ -81,7 +81,7 @@
     const u = S.me.user;
     $("chip").hidden = false; $("logout").hidden = false;
     $("chipAv").outerHTML = avatar(u).replace('class="av ', 'id="chipAv" class="av ');
-    $("chipName").textContent = fullName(u);
+    $("chipName").textContent = u.first_name || u.last_name ? fullName(u) : (S.me.identities.find((i) => i.email)?.email || fullName(u));
     const act = S.me.memberships.filter((m) => m.status === "active");
     $("orgpick").hidden = act.length < 1;
     $("orgSel").innerHTML = act.map((m) => `<option value="${esc(m.org_id)}"${m.org_id === S.orgId ? " selected" : ""}>${esc(m.org_name)}</option>`).join("")
@@ -107,6 +107,28 @@
     return `<div class="card">${off.length ? `<div class="notice warn" role="alert">Votre accès à ${off.map((m) => "<b>" + esc(m.org_name) + "</b>").join(", ")} a été désactivé par un responsable. Communiquez avec lui pour le rétablir.</div>` : ""}<div class="empty"><b>Aucun établissement actif</b>Ouvrez le lien d'invitation reçu de votre responsable pour rejoindre un établissement.</div></div>`;
   };
 
+  /* ---------- Associer une adresse courriel (code à usage unique) ---------- */
+  async function linkEmail() {
+    const v = await dialog(`<h2>Associer une adresse courriel</h2><p>Vous pourrez ensuite vous connecter avec un code envoyé à cette adresse, et accepter les invitations qui lui sont destinées. Nous vérifions d'abord qu'elle vous appartient.</p>
+      <div class="f" style="margin:0"><label for="lkEmail">Adresse courriel</label><input type="email" id="lkEmail" name="email" autocomplete="email" required maxlength="254"></div>
+      <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Annuler</button><button class="btn" value="ok">Envoyer un code</button></div>`);
+    if (!v) return;
+    let sent;
+    try { sent = await api("/auth/email/start", { method: "POST", body: { email: v.email, mode: "link", next: "/agent/compte.html#profil" } }); }
+    catch (e) {
+      if (e.data.code === "reauth") { await confirmBox("Reconnexion nécessaire", "Par sécurité, reconnectez-vous avant d'associer un nouveau moyen de connexion. Revenez ensuite ici.", "Me reconnecter") && (await api("/auth/logout", { method: "POST" }).catch(() => {}), location.href = "connexion.html?suite=" + encodeURIComponent("/agent/compte.html#profil")); return; }
+      return fail(e);
+    }
+    for (let tries = 0; tries < 6; tries++) {
+      const c = await dialog(`<h2>Entrez le code</h2><p>Code envoyé à <b>${esc(sent.emailHint)}</b>. Il est valable 10 minutes.</p>
+        <div class="f" style="margin:0"><label for="lkCode">Code à 6 chiffres</label><input type="text" id="lkCode" name="code" class="codein" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></div>
+        <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Annuler</button><button class="btn" value="ok">Associer</button></div>`);
+      if (!c) return;
+      try { const r = await api("/auth/email/verify", { method: "POST", body: { code: c.code } }); location.href = r.next; return; }
+      catch (e) { toast(e.message, true); if (e.data.code !== "code_incorrect") return; }
+    }
+  }
+
   /* ---------- Mon profil ---------- */
   function viewProfile() {
     const { user: u, identities, memberships } = S.me;
@@ -117,6 +139,7 @@
       <div class="head"><div><h1>Mon profil</h1><p>Vos informations personnelles, vos établissements et vos moyens de connexion.</p></div></div>
       <div class="cards">
         ${deact ? `<div class="notice warn" role="alert"><div><b>Votre compte est désactivé.</b> Vos accès sont suspendus. Vous pouvez le réactiver maintenant.</div><button class="btn sm" id="react">Réactiver mon compte</button></div>` : ""}
+        ${!u.first_name && !u.last_name && !deact ? '<div class="notice info" role="status"><div><b>Bienvenue !</b> Ajoutez votre prénom et votre nom : vos responsables vous reconnaîtront plus facilement.</div></div>' : ""}
         <section class="card" aria-labelledby="h-id">
           <h2 id="h-id">Identité</h2><p class="lead">Ces informations sont visibles par les responsables de vos établissements.</p>
           <form id="fProfile">
@@ -149,10 +172,10 @@
         </section>
         <section class="card" aria-labelledby="h-ids">
           <h2 id="h-ids">Moyens de connexion</h2><p class="lead">Associez un deuxième moyen de connexion : il vous servira si vous perdez l'accès au premier.</p>
-          <ul class="list">${identities.map((i) => `<li class="item"><div class="who"><span class="av" aria-hidden="true" style="background:#101010">${i.provider === "google" ? "G" : "A"}</span><div><b>${PROV[i.provider]}</b><small>${esc(i.email || "Adresse non transmise")}${i.email_verified ? "" : " · non vérifiée"}</small></div></div>
+          <ul class="list">${identities.map((i) => `<li class="item"><div class="who"><span class="av" aria-hidden="true" style="background:#101010">${i.provider === "google" ? "G" : i.provider === "apple" ? "A" : "@"}</span><div><b>${PROV[i.provider]}</b><small>${esc(i.email || "Adresse non transmise")}${i.email_verified ? "" : " · non vérifiée"}</small></div></div>
             <div class="tags">${i.is_private_email ? '<span class="badge b-warn">Adresse masquée Apple</span>' : ""}<span class="badge b-role">Dernière connexion : ${fmtDate(i.last_login_at)}</span></div>
             <div class="acts"><button class="btn danger ghost sm" data-unlink="${esc(i.id)}" ${identities.length < 2 || deact ? 'disabled title="Gardez au moins un moyen de connexion"' : ""}>Retirer</button></div></li>`).join("")}</ul>
-          <div class="row" style="margin-top:12px">${["google", "apple"].filter(canLink).map((p) => `<a class="btn ghost" href="/auth/${p}/start?mode=link&next=${encodeURIComponent("/agent/compte.html#profil")}">Associer ${PROV[p]}</a>`).join("") || '<span class="fine">Aucun autre moyen de connexion disponible.</span>'}</div>
+          <div class="row" style="margin-top:12px">${["google", "apple"].filter(canLink).map((p) => `<a class="btn ghost" href="/auth/${p}/start?mode=link&next=${encodeURIComponent("/agent/compte.html#profil")}">Associer ${PROV[p]}</a>`).join("")}${S.me.providers.email && !deact ? '<button class="btn ghost" type="button" id="linkEmail">Associer une adresse courriel</button>' : ""}${!["google", "apple"].some(canLink) && !(S.me.providers.email && !deact) ? '<span class="fine">Aucun autre moyen de connexion disponible.</span>' : ""}</div>
           ${identities.some((i) => i.is_private_email) ? `<div class="notice info" style="margin-top:14px"><div><b>Adresse masquée Apple.</b> Les invitations doivent être envoyées à <b>${esc(identities.find((i) => i.is_private_email).email)}</b>, ou acceptées avec un autre moyen de connexion qui utilise l'adresse invitée. Pour associer un autre moyen en toute sécurité : connectez-vous d'abord ici, puis utilisez « Associer » ; La Qualia ne fusionne jamais deux comptes à partir d'une adresse courriel.</div></div>` : ""}
         </section>
         <section class="card" aria-labelledby="h-sess">
@@ -192,6 +215,7 @@
       if (!(await confirmBox("Retirer ce moyen de connexion ?", "Vous ne pourrez plus vous connecter avec lui, sauf en l'associant de nouveau.", "Retirer", true))) return;
       try { S.me = await api(`/api/me/identities/${b.dataset.unlink}`, { method: "DELETE" }); viewProfile(); toast("Moyen de connexion retiré."); } catch (e) { fail(e); }
     }));
+    $("linkEmail") && ($("linkEmail").onclick = linkEmail);
     $("logoutAll").onclick = async () => {
       if (!(await confirmBox("Se déconnecter partout ?", "Toutes vos sessions ouvertes, y compris celle-ci, seront fermées.", "Se déconnecter partout"))) return;
       try { await api("/auth/logout-all", { method: "POST" }); } catch {} location.href = "connexion.html";

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="compte.css?v=1">
+<link rel="stylesheet" href="compte.css?v=2">
 </head>
 <body>
 <header class="topbar">
@@ -44,7 +44,7 @@
       if (inv.state !== "pending") { done(); show(`<div class="notice err">${esc(STATES[inv.state] || STATES.invalid)}</div><a class="btn ghost" href="./">Retour</a>`); return; }
       const what = `<p>Vous êtes invité(e) à rejoindre <b>${esc(inv.orgName)}</b> comme <b>${esc(inv.roleLabel)}</b> (fonction : ${esc(FN[inv.function] || inv.function)}).</p>
         <p class="fine">Destinataire : ${esc(inv.emailHint)} · valable jusqu'au ${new Date(inv.expiresAt).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" })}</p>`;
-      if (!me) { show(what + `<p>Connectez-vous avec le compte qui utilise cette adresse courriel.</p><a class="btn" href="connexion.html?suite=${encodeURIComponent("/agent/invitation.html")}">Se connecter pour accepter</a>`); return; }
+      if (!me) { show(what + `<p>Connectez-vous avec le compte qui utilise cette adresse, ou recevez un code de connexion à cette adresse.</p><a class="btn" href="connexion.html?suite=${encodeURIComponent("/agent/invitation.html")}">Se connecter pour accepter</a>`); return; }
       show(what + `<div class="row"><button class="btn" id="ok">Accepter l'invitation</button><a class="btn ghost" href="compte.html">Plus tard</a></div><div id="msg"></div>`);
       $("ok").onclick = async () => {
         $("ok").disabled = true;
@@ -53,7 +53,7 @@
         if (r.ok) { done(); show(`<div class="notice ok">Bienvenue dans ${esc(d.orgName)} !</div><a class="btn" href="compte.html#etablissement">Ouvrir mon établissement</a>`); return; }
         $("ok").disabled = false;
         let extra = "";
-        if (d.code === "email_mismatch") extra = `<p class="fine" style="margin-top:8px">Adresses de votre compte : ${(d.yourEmails || []).map((e) => esc(e.email || "—") + (e.private ? " (adresse masquée Apple)" : "")).join(", ")}. Connectez-vous avec un autre moyen de connexion, ou demandez une invitation à l'une de ces adresses.</p>`;
+        if (d.code === "email_mismatch") extra = `<p class="fine" style="margin-top:8px">Adresses de votre compte : ${(d.yourEmails || []).map((e) => esc(e.email || "—") + (e.private ? " (adresse masquée Apple)" : "")).join(", ")}. Si l'adresse invitée est bien la vôtre, associez-la à ce compte depuis <a href="compte.html#profil">Mon profil</a> (un code vous sera envoyé), puis revenez ici. Sinon, demandez une invitation à l'une de ces adresses.</p>`;
         if (/invitation_/.test(d.code || "")) done();
         $("msg").innerHTML = `<div class="notice err" role="alert">${esc(d.error || "L'invitation n'a pas pu être acceptée.")}</div>` + extra;
       };

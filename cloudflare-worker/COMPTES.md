@@ -5,8 +5,9 @@
 - **Serveur** : le relais existant `laqualia-agent` (Cloudflare Worker). Le module vit dans `accounts/` :
   - `index.js` gère les routes `/auth/*` (connexion) et `/api/*` (comptes, établissements, membres, invitations, plateforme) ;
   - `oidc.js` gère Google et Apple en OpenID Connect ;
+  - le code par courriel (sans mot de passe) est dans `index.js` (routes `/auth/email/start` et `/auth/email/verify`) ;
   - `perms.js` contient la matrice des permissions.
-- **Données** : la base Cloudflare D1 `laqualia-comptes`, reliée sous le nom `DB`. Le schéma est dans `migrations/0001_comptes.sql`.
+- **Données** : la base Cloudflare D1 `laqualia-comptes`, reliée sous le nom `DB`. Le schéma est dans `migrations/0001_comptes.sql` et `migrations/0002_connexion_courriel.sql`.
 - **Routes** : `laqualia.com/auth/*` et `laqualia.com/api/*` passent par le relais, déclarées dans `wrangler.jsonc`. La session est un témoin `__Host-lq_sess` (HttpOnly, Secure, SameSite=Lax) du même site.
 - **Pages** : `agent/connexion.html`, `agent/invitation.html` et `agent/compte.html` (avec `compte.js` et `compte.css`). Le lien « Mon compte » est dans le menu de l'assistant.
 - **Bibliothèque** : `vendor/jose.js` est la version 5.9.6 de jose (licence MIT). Elle vérifie les jetons d'identité : signature, émetteur, audience, expiration et nonce.
@@ -18,6 +19,12 @@
   - flux « authorization code » côté serveur, avec PKCE pour Google et un secret client JWT ES256 pour Apple ;
   - `state` à usage unique, lié au navigateur par un témoin ;
   - `nonce` vérifié dans le jeton d'identité.
+- **Code par courriel** :
+  - 6 chiffres tirés sans biais, valables 10 minutes, 5 essais au plus (compteur incrémenté avant la comparaison), usage unique ;
+  - lié au navigateur qui l'a demandé par un témoin `__Secure-lq_ecode` (HttpOnly, SameSite=Strict) ; la base ne garde que SHA-256(jeton) et SHA-256(jeton + code) ;
+  - un nouveau code annule le précédent ; 5 envois par adresse et 20 par adresse IP, par heure ;
+  - même réponse que l'adresse ait un compte ou non ;
+  - le compte est identifié par l'adresse ainsi vérifiée (fournisseur `email`) et n'est jamais fusionné avec un compte Google ou Apple de même adresse ; on peut associer une adresse depuis Mon profil (code exigé, authentification récente exigée).
 - **Session** :
   - jeton aléatoire, dont seul le hachage SHA-256 est stocké ;
   - expiration après 12 h d'inactivité ou 14 jours au total ;
@@ -33,6 +40,10 @@
 - **Journal (`audit_log`)** : il consigne les rôles, invitations, désactivations, retraits, transferts, associations de moyens de connexion, suspensions et récupérations. Les courriels y sont masqués et aucun jeton ni code n'y figure.
 
 ## Configuration restante
+
+### 0. Code par courriel (déjà actif)
+
+Il utilise la liaison d'envoi `ALERT_EMAIL` (Cloudflare Email Service) déjà en place, avec l'expéditeur `connexion@notif.laqualia.com`. Le domaine `notif.laqualia.com` doit rester intégré dans Email Service › Email Sending. Facultatif : une variable `AUTH_FROM` change l'expéditeur, une liaison `AUTH_EMAIL` sépare les envois de connexion des alertes. Surveillez le quota quotidien d'envoi dans Email Service.
 
 ### 1. Google (environ 10 minutes)
 
@@ -80,8 +91,9 @@ Aujourd'hui, le responsable copie le lien d'invitation et le transmet lui-même.
 ## Essais
 
 ```
-node --test tests/accounts.test.mjs          # 14 essais serveur (D1 simulé, Google et Apple simulés)
-node tests/ui.mjs <dossier du site> <captures>  # parcours d'interface Playwright
+node --test tests/accounts.test.mjs tests/email.test.mjs  # 19 essais serveur (D1, Google, Apple et courriels simulés)
+node tests/ui.mjs <dossier du site> <captures>            # parcours d'interface Playwright
+node tests/ui-email.mjs <dossier du site> <captures>      # parcours de connexion par code courriel
 ```
 
 Les essais génèrent leurs propres clés de signature. Ils ne font aucun appel réseau et n'envoient aucun courriel.
@@ -94,4 +106,4 @@ Ajoutez `migrations/0002_….sql`, puis lancez :
 npx wrangler d1 migrations apply laqualia-comptes --remote
 ```
 
-La migration 0001 est déjà appliquée et consignée dans `d1_migrations`.
+Les migrations 0001 et 0002 sont déjà appliquées et consignée dans `d1_migrations`.

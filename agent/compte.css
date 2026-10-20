@@ -127,6 +127,14 @@ dialog::backdrop{background:#040f32a6}
 .prov svg{width:20px;height:20px}
 .prov[aria-disabled="true"]{opacity:.5;pointer-events:none}
 .fine{font-size:13.5px;color:var(--muted)}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px;font-weight:700}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.mailform{display:flex;flex-direction:column;gap:12px}
+.mailform .btn{width:100%;min-height:50px;font-size:16px}
+.codein{font-size:26px!important;letter-spacing:10px;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700}
+.linkbtn{background:none;border:0;padding:6px 0;color:var(--role);font-weight:700;font-size:14.5px;text-decoration:underline;text-underline-offset:3px}
+.linkbtn:disabled{opacity:.5}
+input[aria-invalid="true"]{border-color:var(--danger)}
 
 @media (max-width:900px){
   .layout{grid-template-columns:minmax(0,1fr);padding:16px 14px 80px;gap:16px}
@@ -144,3 +152,4 @@ dialog::backdrop{background:#040f32a6}
 }
 @media (prefers-reduced-motion:reduce){.skel{animation:none}}
 @media (max-width:600px){.topbar{gap:6px;padding:8px 10px}.topbar .brand{white-space:nowrap;font-size:16px}.tlink{padding:7px 8px;font-size:13px;white-space:nowrap}}
+@media (max-width:440px){.topbar .brand{font-size:0;gap:0}}

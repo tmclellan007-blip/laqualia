@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { generateKeyPair, exportJWK, exportPKCS8, SignJWT } from "../vendor/jose.js";
 import worker from "../agent-worker.js";
 
-const MIGRATION = readFileSync(new URL("../migrations/0001_comptes.sql", import.meta.url), "utf8");
+const MIGRATION = ["0001_comptes.sql", "0002_connexion_courriel.sql"].map((f) => readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8")).join("\n");
 export const ORIGIN = "https://laqualia.com";
 
 class Stmt {
@@ -63,8 +63,16 @@ export async function makeEnv() {
   return {
     DB: new FakeD1(), ADMIN_CODE: "Code-Plateforme-Test", ACCOUNT_ORIGIN: ORIGIN,
     GOOGLE_CLIENT_ID: "google-client", GOOGLE_CLIENT_SECRET: "google-secret",
+    AUTH_EMAIL: new FakeMailer(),
     APPLE_CLIENT_ID: "com.laqualia.web", APPLE_TEAM_ID: "TEAM123456", APPLE_KEY_ID: "KEY1234567", APPLE_PRIVATE_KEY: await exportPKCS8(appleClient.privateKey),
   };
+}
+
+// Envoi de courriels simulé : rien ne sort, les messages sont gardés pour l'essai.
+export class FakeMailer {
+  constructor() { this.sent = []; this.failNext = false; }
+  async send(m) { if (this.failNext) { this.failNext = false; throw Object.assign(new Error("refusé"), { code: "E_TEST" }); } this.sent.push(m); return { messageId: "test-" + this.sent.length }; }
+  lastCodeFor(to) { const m = [...this.sent].reverse().find((x) => x.to === to); return m && (m.text.match(/code : (\d{6})/) || [])[1]; }
 }
 
 // Navigateur simulé : garde ses témoins.
@@ -99,5 +107,13 @@ export class Browser {
     if (provider === "apple") res = await this.raw(`/auth/apple/callback`, { method: "POST", csrf: false, origin: "https://appleid.apple.com", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ code, state, ...(claims.__user ? { user: JSON.stringify(claims.__user) } : {}) }).toString() });
     else res = await this.raw(`/auth/google/callback?${new URLSearchParams({ code, state })}`);
     return { res, location: res.headers.get("location") || "", authUrl: au };
+  }
+  // Connexion par code courriel : demande, lecture du code dans le courriel simulé, saisie.
+  async loginEmail(email, { mode = "login", next, token, code } = {}) {
+    const start = await this.api("/auth/email/start", { method: "POST", body: { email, mode, next, token } });
+    if (start.status !== 200) return { start };
+    const c = code ?? this.env.AUTH_EMAIL.lastCodeFor(email.trim().toLowerCase());
+    const verify = await this.api("/auth/email/verify", { method: "POST", body: { code: c } });
+    return { start, verify, code: c };
   }
 }

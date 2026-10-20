@@ -40,6 +40,7 @@ export async function cleanupAccounts(env) {
   await env.DB.batch([
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ? OR last_seen_at < ?").bind(t, t - IDLE_TTL),
     env.DB.prepare("DELETE FROM auth_requests WHERE expires_at < ?").bind(t),
+    env.DB.prepare("DELETE FROM email_codes WHERE expires_at < ?").bind(t),
     env.DB.prepare("DELETE FROM rate_limits WHERE reset_at < ?").bind(t),
   ]);
 }
@@ -50,7 +51,9 @@ async function routeAuth(ctx) {
   const m = url.pathname.match(/^\/auth\/(google|apple)\/(start|callback)$/);
   if (m && m[2] === "start" && request.method === "GET") return authStart(ctx, m[1]);
   if (m && m[2] === "callback" && (request.method === "GET" || request.method === "POST")) return authCallback(ctx, m[1]);
-  if (url.pathname === "/auth/providers" && request.method === "GET") return json(200, providersStatus(ctx.env));
+  if (url.pathname === "/auth/providers" && request.method === "GET") return json(200, providers(ctx.env));
+  if (url.pathname === "/auth/email/start" && request.method === "POST") return emailStart(ctx);
+  if (url.pathname === "/auth/email/verify" && request.method === "POST") return emailVerify(ctx);
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     csrf(ctx);
     const s = await readSession(ctx);
@@ -119,28 +122,41 @@ async function authCallback(ctx, provider) {
   if (provider === "apple" && params.get("user")) {
     try { const u = JSON.parse(params.get("user")); info.givenName ||= u?.name?.firstName || null; info.familyName ||= u?.name?.lastName || null; } catch {}
   }
+  const out = await finishAuth(ctx, provider, info, req);
+  if (out.kind === "error") return withHeaders(loginError(ctx, out.code), clear);
+  if (out.kind === "redirect") return withHeaders(redirect(ctx.origin + out.path), clear);
+  const h = new Headers({ location: ctx.origin + out.path, "cache-control": "no-store" });
+  h.append("set-cookie", out.cookie);
+  h.append("set-cookie", clearCookie(OAUTH_COOKIE, "/auth/", "None"));
+  return new Response(null, { status: 302, headers: h });
+}
+
+// Commun à Google, Apple et au code par courriel : l'identité est déjà vérifiée ici (provider + subject).
+// Retourne { kind: "error", code } | { kind: "redirect", path } | { kind: "session", path, cookie }.
+async function finishAuth(ctx, provider, info, req) {
+  const { env, now, request } = ctx;
   const existing = await env.DB.prepare("SELECT * FROM identities WHERE provider = ? AND subject = ?").bind(provider, info.subject).first();
 
   if (req.mode === "link") {
     const s = await readSession(ctx);
-    if (!s || s.user.id !== req.link_user_id) return withHeaders(loginError(ctx, "connexion_requise"), clear);
-    if (existing && existing.user_id !== s.user.id) return withHeaders(redirect(`${ctx.origin}${ACCOUNT_PAGE}?erreur=identite_deja_utilisee#profil`), clear);
+    if (!s || s.expired || s.user.id !== req.link_user_id) return { kind: "error", code: "connexion_requise" };
+    if (existing && existing.user_id !== s.user.id) return { kind: "redirect", path: `${ACCOUNT_PAGE}?erreur=identite_deja_utilisee#profil` };
     if (!existing) {
       await env.DB.prepare("INSERT INTO identities (id, user_id, provider, subject, email, email_verified, is_private_email, created_at, last_login_at) VALUES (?,?,?,?,?,?,?,?,?)")
         .bind(uid(), s.user.id, provider, info.subject, info.email, info.emailVerified ? 1 : 0, info.isPrivateEmail ? 1 : 0, now, now).run();
       await audit(ctx, { actor: s.user.id, action: "identity.linked", target: s.user.id, details: { provider } });
     }
-    return withHeaders(redirect(`${ctx.origin}${ACCOUNT_PAGE}?associe=${provider}#profil`), clear);
+    return { kind: "redirect", path: `${ACCOUNT_PAGE}?associe=${provider}#profil` };
   }
 
   let userId;
   if (req.mode === "recovery") {
     const rec = await env.DB.prepare("SELECT * FROM recovery_links WHERE id = ?").bind(req.recovery_id).first();
-    if (!rec || rec.used_at || rec.expires_at < now) return withHeaders(loginError(ctx, "recuperation_invalide"), clear);
-    if (!info.emailVerified || info.email !== rec.email) return withHeaders(loginError(ctx, "recuperation_courriel"), clear);
-    if (existing && existing.user_id !== rec.user_id) return withHeaders(loginError(ctx, "identite_deja_utilisee"), clear);
+    if (!rec || rec.used_at || rec.expires_at < now) return { kind: "error", code: "recuperation_invalide" };
+    if (!info.emailVerified || info.email !== rec.email) return { kind: "error", code: "recuperation_courriel" };
+    if (existing && existing.user_id !== rec.user_id) return { kind: "error", code: "identite_deja_utilisee" };
     const used = await env.DB.prepare("UPDATE recovery_links SET used_at = ? WHERE id = ? AND used_at IS NULL").bind(now, rec.id).run();
-    if (!changes(used)) return withHeaders(loginError(ctx, "recuperation_invalide"), clear);
+    if (!changes(used)) return { kind: "error", code: "recuperation_invalide" };
     if (!existing) await env.DB.prepare("INSERT INTO identities (id, user_id, provider, subject, email, email_verified, is_private_email, created_at, last_login_at) VALUES (?,?,?,?,?,?,?,?,?)")
       .bind(uid(), rec.user_id, provider, info.subject, info.email, 1, info.isPrivateEmail ? 1 : 0, now, now).run();
     await audit(ctx, { actor: rec.user_id, action: "recovery.used", target: rec.user_id, details: { provider } });
@@ -154,22 +170,130 @@ async function authCallback(ctx, provider) {
     userId = uid();
     await env.DB.batch([
       env.DB.prepare("INSERT INTO users (id, first_name, last_name, photo, locale, created_at, updated_at) VALUES (?,?,?,?,?,?,?)")
-        .bind(userId, clip(info.givenName, 60), clip(info.familyName, 60), info.picture, "fr-CA", now, now),
+        .bind(userId, clip(info.givenName, 60), clip(info.familyName, 60), info.picture || null, "fr-CA", now, now),
       env.DB.prepare("INSERT INTO identities (id, user_id, provider, subject, email, email_verified, is_private_email, created_at, last_login_at) VALUES (?,?,?,?,?,?,?,?,?)")
         .bind(uid(), userId, provider, info.subject, info.email, info.emailVerified ? 1 : 0, info.isPrivateEmail ? 1 : 0, now, now),
     ]);
+    await audit(ctx, { actor: userId, action: "account.created", target: userId, details: { provider } });
   }
   const user = await env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(userId).first();
-  if (!user || user.status === "suspended") return withHeaders(loginError(ctx, "compte_suspendu"), clear);
+  if (!user || user.status === "suspended") return { kind: "error", code: "compte_suspendu" };
   const token = randomToken(32);
   const firstOrg = await env.DB.prepare("SELECT org_id FROM memberships WHERE user_id = ? AND status = 'active' ORDER BY created_at LIMIT 1").bind(userId).first();
   await env.DB.prepare("INSERT INTO sessions (id_hash, user_id, created_at, auth_at, last_seen_at, expires_at, active_org_id, user_agent) VALUES (?,?,?,?,?,?,?,?)")
     .bind(await sha256(token), userId, now, now, now, now + SESSION_TTL, firstOrg?.org_id || null, clip(request.headers.get("user-agent"), 200)).run();
-  const dest = user.status === "deactivated" ? `${ACCOUNT_PAGE}#profil` : safeNext(req.next_path);
-  const h = new Headers({ location: ctx.origin + dest, "cache-control": "no-store" });
-  h.append("set-cookie", cookie(SESSION_COOKIE, token, { path: "/", maxAge: SESSION_TTL / 1000, sameSite: "Lax" }));
-  h.append("set-cookie", clearCookie(OAUTH_COOKIE, "/auth/", "None"));
-  return new Response(null, { status: 302, headers: h });
+  const path = user.status === "deactivated" ? `${ACCOUNT_PAGE}#profil` : safeNext(req.next_path);
+  return { kind: "session", path, cookie: cookie(SESSION_COOKIE, token, { path: "/", maxAge: SESSION_TTL / 1000, sameSite: "Lax" }) };
+}
+
+/* ===================== Code par courriel ===================== */
+// Sans mot de passe : un code à 6 chiffres, valable 10 minutes, 5 essais, utilisable une seule fois,
+// et lié au navigateur qui l'a demandé (témoin). Le compte est identifié par l'adresse ainsi vérifiée
+// (fournisseur « email ») ; il n'est jamais fusionné avec un compte Google ou Apple de même adresse.
+const EMAIL_CODE_TTL = 10 * 60e3;
+const EMAIL_CODE_TRIES = 5;
+const EMAIL_COOKIE = "__Secure-lq_ecode";
+const EMAIL_RE = /^[^\s@<>"',;()]{1,64}@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
+export const normEmail = (e) => String(e || "").trim().toLowerCase();
+const emailSender = (env) => env.AUTH_EMAIL || env.ALERT_EMAIL || null;
+export const providers = (env) => ({ ...providersStatus(env), email: !!emailSender(env) });
+
+function sixDigits() {
+  const a = new Uint32Array(1);
+  for (;;) { crypto.getRandomValues(a); if (a[0] < 4294000000) return String(a[0] % 1000000).padStart(6, "0"); } // sans biais
+}
+
+async function emailStart(ctx) {
+  csrf(ctx);
+  const { env, now } = ctx;
+  if (!emailSender(env)) throw new HttpError(503, "La connexion par courriel n'est pas encore configurée.", "fournisseur_non_configure");
+  const b = await body(ctx);
+  const email = normEmail(b.email);
+  if (!EMAIL_RE.test(email) || email.length > 254) throw new HttpError(400, "Adresse courriel invalide.", "courriel_invalide");
+  const mode = ["login", "link", "recovery"].includes(b.mode) ? b.mode : "login";
+  let linkUserId = null, recoveryId = null;
+  if (mode === "link") {
+    const s = await readSession(ctx);
+    if (!s || s.expired || s.user.status !== "active") throw new HttpError(401, "Connectez-vous d'abord.", "connexion_requise");
+    if (now - s.session.auth_at > REAUTH_WINDOW) throw new HttpError(403, "Par sécurité, reconnectez-vous avant d'associer un nouveau moyen de connexion.", "reauth");
+    linkUserId = s.user.id;
+  }
+  if (mode === "recovery") {
+    const rec = await env.DB.prepare("SELECT * FROM recovery_links WHERE token_hash = ?").bind(await sha256(String(b.token || ""))).first();
+    if (!rec || rec.used_at || rec.expires_at < now) throw new HttpError(400, "Ce lien de récupération est invalide, expiré ou déjà utilisé.", "recuperation_invalide");
+    if (rec.email !== email) throw new HttpError(400, "Utilisez l'adresse indiquée par l'administrateur dans le lien de récupération.", "recuperation_courriel");
+    recoveryId = rec.id;
+  }
+  // Limites : contre l'envoi massif et le harcèlement d'une boîte courriel.
+  const ip = ctx.request.headers.get("cf-connecting-ip") || "?";
+  await rateLimit(ctx, "ecode:mail:" + email, 5, 3600e3);
+  await rateLimit(ctx, "ecode:ip:" + ip, 20, 3600e3);
+  const token = randomToken(32), code = sixDigits();
+  const idHash = await sha256(token);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM email_codes WHERE email = ? OR expires_at < ?").bind(email, now), // un seul code valide à la fois
+    env.DB.prepare("INSERT INTO email_codes (id_hash, email, code_hash, mode, next_path, link_user_id, recovery_id, created_at, expires_at) VALUES (?,?,?,?,?,?,?,?,?)")
+      .bind(idHash, email, await sha256(token + ":" + code), mode, safeNext(b.next), linkUserId, recoveryId, now, now + EMAIL_CODE_TTL),
+  ]);
+  try { await sendCodeEmail(env, email, code, mode); }
+  catch (e) {
+    console.error("email code", e && (e.code || e.message));
+    await env.DB.prepare("DELETE FROM email_codes WHERE id_hash = ?").bind(idHash).run();
+    throw new HttpError(502, "Le courriel n'a pas pu être envoyé. Vérifiez l'adresse ou réessayez dans un instant.", "envoi_impossible");
+  }
+  // Même réponse que l'adresse ait un compte ou non : rien n'est révélé.
+  return json(200, { ok: true, emailHint: maskEmail(email), expiresAt: now + EMAIL_CODE_TTL },
+    { "set-cookie": cookie(EMAIL_COOKIE, token, { path: "/auth/email/", maxAge: EMAIL_CODE_TTL / 1000, sameSite: "Strict" }) });
+}
+
+async function emailVerify(ctx) {
+  csrf(ctx);
+  const { env, now } = ctx;
+  const clear = clearCookie(EMAIL_COOKIE, "/auth/email/", "Strict");
+  const fail = (status, code, error, { keep = false, ...extra } = {}) => json(status, { error, code, ...extra }, keep ? {} : { "set-cookie": clear });
+  const token = readCookie(ctx.request, EMAIL_COOKIE);
+  if (!token) return fail(400, "code_expire", "Ce code n'est plus valide. Demandez-en un nouveau.");
+  const idHash = await sha256(token);
+  const row = await env.DB.prepare("SELECT * FROM email_codes WHERE id_hash = ?").bind(idHash).first();
+  if (!row || row.expires_at < now) {
+    if (row) await env.DB.prepare("DELETE FROM email_codes WHERE id_hash = ?").bind(idHash).run();
+    return fail(400, "code_expire", "Ce code a expiré. Demandez-en un nouveau.");
+  }
+  const b = await body(ctx);
+  const code = String(b.code || "").replace(/\D/g, "");
+  // L'essai est compté AVANT la comparaison (mise à jour conditionnelle) : impossible de dépasser la limite en parallèle.
+  const tick = await env.DB.prepare("UPDATE email_codes SET attempts = attempts + 1 WHERE id_hash = ? AND attempts < ?").bind(idHash, EMAIL_CODE_TRIES).run();
+  if (!changes(tick)) {
+    await env.DB.prepare("DELETE FROM email_codes WHERE id_hash = ?").bind(idHash).run();
+    return fail(429, "trop_essais", "Trop d'essais. Demandez un nouveau code.");
+  }
+  if (code.length !== 6 || !timingSafeEqual(await sha256(token + ":" + code), row.code_hash)) {
+    const left = EMAIL_CODE_TRIES - row.attempts - 1;
+    if (left <= 0) { await env.DB.prepare("DELETE FROM email_codes WHERE id_hash = ?").bind(idHash).run(); return fail(429, "trop_essais", "Trop d'essais. Demandez un nouveau code."); }
+    return fail(400, "code_incorrect", `Code incorrect. Il vous reste ${left} essai${left > 1 ? "s" : ""}.`, { remaining: left, keep: true });
+  }
+  // Usage unique : seule la première suppression réussit.
+  const del = await env.DB.prepare("DELETE FROM email_codes WHERE id_hash = ?").bind(idHash).run();
+  if (!changes(del)) return fail(400, "code_expire", "Ce code n'est plus valide. Demandez-en un nouveau.");
+  const info = { subject: row.email, email: row.email, emailVerified: true, isPrivateEmail: false, givenName: null, familyName: null, picture: null };
+  const out = await finishAuth(ctx, "email", info, row);
+  if (out.kind === "error") return fail(400, out.code, "La connexion a échoué.");
+  const h = new Headers({ "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  h.append("set-cookie", clear);
+  if (out.kind === "session") h.append("set-cookie", out.cookie);
+  return new Response(JSON.stringify({ ok: true, next: out.path }), { status: 200, headers: h });
+}
+
+async function sendCodeEmail(env, to, code, mode) {
+  const what = mode === "link" ? "associer cette adresse à votre compte La Qualia" : mode === "recovery" ? "récupérer l'accès à votre compte La Qualia" : "vous connecter à La Qualia";
+  const text = `Votre code : ${code}\n\nEntrez ce code pour ${what}. Il est valable 10 minutes et ne peut servir qu'une fois.\n\nVous n'avez rien demandé ? Ignorez ce courriel : personne ne peut se connecter sans ce code.\nNe communiquez jamais ce code, même à l'équipe de La Qualia.\n\nLa Qualia · laqualia.com`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#101010">
+<p style="font-size:15px;margin:0 0 16px">Entrez ce code pour ${what} :</p>
+<p style="font-size:34px;font-weight:700;letter-spacing:8px;margin:0 0 16px;font-family:Consolas,Menlo,monospace">${code}</p>
+<p style="font-size:14px;color:#55565d;margin:0 0 12px">Il est valable 10 minutes et ne peut servir qu'une fois.</p>
+<p style="font-size:14px;color:#55565d;margin:0 0 12px">Vous n'avez rien demandé ? Ignorez ce courriel : personne ne peut se connecter sans ce code. Ne communiquez jamais ce code, même à l'équipe de La Qualia.</p>
+<p style="font-size:13px;color:#8a8a90;margin:24px 0 0">La Qualia · laqualia.com</p></div>`;
+  await emailSender(env).send({ to, from: { email: env.AUTH_FROM || "connexion@notif.laqualia.com", name: "La Qualia" }, subject: `${code} est votre code La Qualia`, text, html });
 }
 
 /* ===================== Session ===================== */
@@ -253,7 +377,7 @@ async function getMe(ctx) {
     memberships: mem.map((x) => ({ ...x, permissions: x.status === "active" ? permissionsFor(user.platform_admin ? "platform" : x.role) : [] })),
     activeOrgId: (mem.some((x) => x.org_id === session.active_org_id && x.status === "active") || (user.platform_admin && session.active_org_id)) ? session.active_org_id : (mem.find((x) => x.status === "active")?.org_id || null),
     session: { expiresAt: Math.min(session.expires_at, session.last_seen_at + IDLE_TTL), authAt: session.auth_at },
-    providers: providersStatus(ctx.env), platform: { isAdmin: !!user.platform_admin, canBootstrap: !platformHasAdmin && !!ctx.env.ADMIN_CODE },
+    providers: providers(ctx.env), platform: { isAdmin: !!user.platform_admin, canBootstrap: !platformHasAdmin && !!ctx.env.ADMIN_CODE },
   });
 }
 const publicUser = (u) => ({ id: u.id, first_name: u.first_name, last_name: u.last_name, photo: u.photo, locale: u.locale, job_title: u.job_title, notif_prefs: safeJson(u.notif_prefs, {}), status: u.status, platform_admin: !!u.platform_admin, created_at: u.created_at });
