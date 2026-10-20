@@ -93,7 +93,12 @@
     try { await api("/api/session/org", { method: "POST", body: { orgId: e.target.value } }); S.orgId = e.target.value; toast("Établissement sélectionné."); route(); }
     catch (err) { fail(err); }
   };
-  $("logout").onclick = async () => { try { await api("/auth/logout", { method: "POST" }); } catch {} location.href = "connexion.html"; };
+  $("logout").onclick = async () => {
+    const solo = S.me && !S.me.identities.length;
+    if (solo && !(await confirmBox("Se déconnecter ?", "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation. Associez d'abord une adresse courriel dans Mon profil pour pouvoir vous reconnecter.", "Se déconnecter quand même", true))) return;
+    try { await api("/auth/logout", { method: "POST" }); } catch {}
+    location.href = solo ? "acces.html" : "connexion.html";
+  };
 
   function route() {
     $("navCodes").hidden = !(S.orgId && canDo("access_codes.read"));
@@ -150,6 +155,7 @@
             <div class="grid2">
               <div class="f"><label for="fn">Prénom</label><input type="text" id="fn" name="first_name" autocomplete="given-name" maxlength="60" value="${esc(u.first_name)}"></div>
               <div class="f"><label for="ln">Nom</label><input type="text" id="ln" name="last_name" autocomplete="family-name" maxlength="60" value="${esc(u.last_name)}"></div>
+              <div class="f"><label for="ce">Adresse courriel</label><input type="email" id="ce" ${u.contact_email || !identities.length ? 'name="contact_email"' : "readonly"} autocomplete="email" maxlength="254" value="${esc(u.contact_email || identities.find((i) => i.email && !i.is_private_email)?.email || "")}"><span class="hint">${u.contact_email ? "Coordonnée non vérifiée : elle sert à vous reconnaître dans l'équipe, pas à vous connecter." : "Adresse de votre moyen de connexion."}</span></div>
               <div class="f"><label for="jt">Fonction</label><input type="text" id="jt" name="job_title" maxlength="80" placeholder="Ex. : Réceptionniste" value="${esc(u.job_title)}"><span class="hint">Votre titre. Il n'accorde aucune permission.</span></div>
               <div class="f"><label for="lg">Langue</label><select id="lg" name="locale"><option value="fr-CA"${u.locale === "fr-CA" ? " selected" : ""}>Français</option><option value="en-CA"${u.locale === "en-CA" ? " selected" : ""}>English</option></select></div>
             </div>
@@ -173,6 +179,7 @@
         </section>
         <section class="card" aria-labelledby="h-ids">
           <h2 id="h-ids">Moyens de connexion</h2><p class="lead">Associez un deuxième moyen de connexion : il vous servira si vous perdez l'accès au premier.</p>
+          ${!identities.length ? `<div class="notice warn" style="margin-bottom:12px"><div><b>Aucun moyen de connexion associé.</b> Vous êtes connecté sur cet appareil grâce à votre code d'invitation. Associez une adresse courriel : vous pourrez vous reconnecter depuis un autre appareil ou après une déconnexion, avec « Connexion administrateur » sur la page d'accès.</div></div>` : ""}
           <ul class="list">${identities.map((i) => `<li class="item"><div class="who"><span class="av" aria-hidden="true" style="background:#101010">${i.provider === "google" ? "G" : i.provider === "apple" ? "A" : "@"}</span><div><b>${PROV[i.provider]}</b><small>${esc(i.email || "Adresse non transmise")}${i.email_verified ? "" : " · non vérifiée"}</small></div></div>
             <div class="tags">${i.is_private_email ? '<span class="badge b-warn">Adresse masquée Apple</span>' : ""}<span class="badge b-role">Dernière connexion : ${fmtDate(i.last_login_at)}</span></div>
             <div class="acts"><button class="btn danger ghost sm" data-unlink="${esc(i.id)}" ${identities.length < 2 || deact ? 'disabled title="Gardez au moins un moyen de connexion"' : ""}>Retirer</button></div></li>`).join("")}</ul>
@@ -180,7 +187,7 @@
           ${identities.some((i) => i.is_private_email) ? `<div class="notice info" style="margin-top:14px"><div><b>Adresse masquée Apple.</b> Les invitations doivent être envoyées à <b>${esc(identities.find((i) => i.is_private_email).email)}</b>, ou acceptées avec un autre moyen de connexion qui utilise l'adresse invitée. Pour associer un autre moyen en toute sécurité : connectez-vous d'abord ici, puis utilisez « Associer » ; La Qualia ne fusionne jamais deux comptes à partir d'une adresse courriel.</div></div>` : ""}
         </section>
         <section class="card" aria-labelledby="h-sess">
-          <h2 id="h-sess">Session</h2><p class="lead">Votre session expire après 12 heures d'inactivité, ou au plus tard le ${fmtDT(S.me.session.expiresAt)}.</p>
+          <h2 id="h-sess">Session</h2><p class="lead">Votre session expire après ${(S.me.session.idleHours || 12) >= 48 ? Math.round(S.me.session.idleHours / 24) + " jours" : (S.me.session.idleHours || 12) + " heures"} d'inactivité, ou au plus tard le ${fmtDT(S.me.session.expiresAt)}.</p>
           <button class="btn ghost" id="logoutAll">Se déconnecter de tous les appareils</button>
         </section>
         <section class="card danger" aria-labelledby="h-danger">
@@ -358,7 +365,7 @@
         <div class="tags"><span class="badge ${st[0]}">${st[1]}</span><span class="badge ${ROLE_BADGE[r.role]}">${esc(roleLabel(r.role))}</span><span class="badge b-role">${esc(fnLabel(r.function))}</span></div>
         <div class="acts">${P.has("invitations.revoke") && (r.role !== "owner" || canOwner) ? `<button class="btn danger ghost sm" data-revoke="${esc(r.id)}" data-email="${esc(r.email)}">Révoquer</button>` : ""}</div></li>`;
       const locked = r.role === "owner" && !canOwner;
-      return `<li class="item"><div class="who">${avatar(r)}<div><b>${esc(fullName(r))}${r.self ? " (vous)" : ""}</b><small>${esc(r.email || "")}${r.job_title ? " · " + esc(r.job_title) : ""}${r.last_seen_at ? " · vu " + fmtDT(r.last_seen_at) : ""}</small></div></div>
+      return `<li class="item"><div class="who">${avatar(r)}<div><b>${esc(fullName(r))}${r.self ? " (vous)" : ""}</b><small>${esc(r.email || "")}${r.email && r.email_unverified ? " (non vérifiée)" : ""}${r.job_title ? " · " + esc(r.job_title) : ""}${r.last_seen_at ? " · vu " + fmtDT(r.last_seen_at) : ""}</small></div></div>
         <div class="tags"><span class="badge ${st[0]}">${st[1]}</span>${r.user_status === "deactivated" ? '<span class="badge b-warn">Compte désactivé</span>' : ""}<span class="badge ${ROLE_BADGE[r.role]}">${esc(roleLabel(r.role))}</span><span class="badge b-role">${esc(fnLabel(r.function))}</span></div>
         <div class="acts">${!locked && (P.has("members.update_role") || P.has("members.update_function")) ? `<button class="btn ghost sm" data-edit="${esc(r.id)}">Modifier</button>` : ""}
           ${!locked && !r.self && P.has("members.disable") ? `<button class="btn ghost sm" data-toggle="${esc(r.id)}">${r.status === "active" ? "Désactiver" : "Réactiver"}</button>` : ""}
@@ -436,7 +443,7 @@
     main.innerHTML = head(org.org_name) + `
       <div class="cards">
         <section class="card" aria-labelledby="h-how"><h2 id="h-how">Comment ça marche</h2>
-          <p class="lead" style="margin-bottom:0">Transmettez vous-même le code (en personne, par téléphone ou par messagerie). La personne se connecte avec Google, Apple ou un code reçu par courriel, puis entre ce code <b>une seule fois</b>. Elle devient <b>Membre</b> de l'établissement : Réception, Équipe technique et tableau de bord. Le code ne donne jamais de droits d'administration.</p>
+          <p class="lead" style="margin-bottom:0">Transmettez vous-même le code (en personne, par téléphone ou par messagerie). Il est valable <b>24 heures</b>. La personne ouvre <b>laqualia.com/agent</b> et entre seulement son prénom, son adresse courriel et ce code : son profil est créé et le portail s'ouvre. Elle devient <b>Membre</b> de l'établissement : Réception, Équipe technique et tableau de bord. Le code ne donne jamais de droits d'administration.</p>
         </section>
         <div class="notice info"><div><b>Révoquer un code</b> bloque les nouvelles inscriptions, sans retirer l'accès des personnes déjà inscrites. Pour retirer l'accès d'une personne, désactivez-la dans <a href="#membres">Membres et invitations</a>.</div></div>
         <section class="card" aria-labelledby="h-codes"><h2 id="h-codes">Codes de l'établissement</h2><p class="lead">Seuls les administrateurs voient cette page. Les membres ne peuvent pas consulter les codes.</p>
@@ -489,13 +496,13 @@
     const v = await dialog(`<h2>Générer un code d'accès</h2><p>Les personnes qui l'entrent deviennent Membres de l'établissement.</p>
       <div class="f" style="margin:0"><label for="cLabel">Nom du code <span class="hint">(facultatif, visible des administrateurs seulement)</span></label><input type="text" id="cLabel" name="label" maxlength="60" placeholder="Ex. : Équipe de soir"></div>
       <div class="grid2">
-        <div class="f" style="margin:0"><label for="cDays">Valide pendant</label><select id="cDays" name="expiresInDays">${[[1, "1 jour"], [7, "7 jours"], [14, "14 jours"], [30, "30 jours"], [60, "60 jours"], [90, "90 jours"], [180, "6 mois"], [365, "1 an"]].map(([n, l]) => `<option value="${n}"${n === 30 ? " selected" : ""}>${l}</option>`).join("")}</select></div>
-        <div class="f" style="margin:0"><label for="cMax">Utilisations maximales</label><input type="number" id="cMax" name="maxUses" min="1" max="10000" inputmode="numeric" placeholder="Illimité"><span class="hint">Laissez vide pour illimité.</span></div>
+        <div class="f" style="margin:0"><span class="lbl">Validité</span><p style="margin:6px 0 0"><b>24 heures</b> après la création</p><span class="hint">Durée fixe, pour limiter les risques si le code circule.</span></div>
+        <div class="f" style="margin:0"><label for="cMax">Nombre de personnes</label><input type="number" id="cMax" name="maxUses" min="1" max="10000" inputmode="numeric" value="1" placeholder="Illimité"><span class="hint">1 = usage unique (recommandé). Vide = illimité.</span></div>
       </div>
       <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Annuler</button><button class="btn" value="ok">Générer</button></div>`);
     if (!v) return;
     try {
-      const r = await api(`/api/orgs/${S.orgId}/access-codes`, { method: "POST", body: { label: v.label, expiresInDays: Number(v.expiresInDays), maxUses: v.maxUses ? Number(v.maxUses) : null } });
+      const r = await api(`/api/orgs/${S.orgId}/access-codes`, { method: "POST", body: { label: v.label, maxUses: v.maxUses ? Number(v.maxUses) : null } });
       await showNewCode(r.code); loadCodes();
     } catch (e) { fail(e); }
   }

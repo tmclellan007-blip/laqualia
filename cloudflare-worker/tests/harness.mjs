@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { generateKeyPair, exportJWK, exportPKCS8, SignJWT } from "../vendor/jose.js";
 import worker from "../agent-worker.js";
 
-const MIGRATION = ["0001_comptes.sql", "0002_connexion_courriel.sql", "0003_codes_acces.sql"].map((f) => readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8")).join("\n");
+const MIGRATION = ["0001_comptes.sql", "0002_connexion_courriel.sql", "0003_codes_acces.sql", "0004_premier_acces.sql"].map((f) => readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8")).join("\n");
 export const ORIGIN = "https://laqualia.com";
 
 class Stmt {

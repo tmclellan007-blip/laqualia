@@ -71,7 +71,7 @@
   let accountMode = false, account = null;
   function leavePortal(status, why) {
     const dest = status === 401
-      ? "connexion.html?suite=" + encodeURIComponent("/agent/") + (why === "session_expired" ? "&erreur=session_expiree" : "")
+      ? "acces.html"
       : why === "account_deactivated" ? "compte.html#profil" : "acces.html" + (why === "membership_disabled" ? "?raison=retire" : "");
     location.replace(dest);
   }
@@ -1988,20 +1988,53 @@
   // Mode compte : prénom du compte, établissement affiché, déconnexion réelle de la session.
   function applyAccount() {
     tsaCode = ""; store.del("lq-tsa-code"); store.del("lq-agent-code"); code = "";
+    // Le prénom du compte est celui utilisé partout dans le portail (salutation, réponses personnalisées).
     const fn = cleanName(account.first_name);
-    if (fn && !prenom) { prenom = fn; store.set("lq-prenom", prenom); showName(); }
+    if (fn && fn !== prenom) { prenom = fn; store.set("lq-prenom", prenom); showName(); }
+    // « Changer de prénom » : se fait dans le profil, pour rester le même partout
+    $("changeName").onclick = () => { location.href = "compte.html#profil"; };
+    profilePrompt();
     const al = $("accountLink");
     if (al && account.org) { al.title = `Mon compte · ${account.org.name}`; const sp = al.querySelector("span"); if (sp) sp.textContent = account.org.name; }
     $("logout").onclick = async () => {
       const btn = $("logout");
       if (!btn.classList.contains("confirm")) {
-        btn.classList.add("confirm"); btn.querySelector("span").textContent = "Confirmer la déconnexion";
-        setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Se déconnecter"; }, 4000);
+        // Sans moyen de connexion associé, un nouveau code sera nécessaire pour revenir : on le dit clairement.
+        btn.classList.add("confirm"); btn.querySelector("span").textContent = account.noIdentity ? "Confirmer (nouveau code requis)" : "Confirmer la déconnexion";
+        if (account.noIdentity) btn.title = "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation. Associez-en un dans Mon compte.";
+        setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Se déconnecter"; }, 5000);
         return;
       }
       ctl?.abort(); try { stopSim(true); } catch {}
       try { await fetch("/auth/logout", { method: "POST", credentials: "same-origin", headers: { "x-lq-csrf": "1" } }); } catch {}
-      location.replace("connexion.html?suite=" + encodeURIComponent("/agent/"));
+      location.replace("acces.html");
     };
+  }
+
+  // Invitation discrète à compléter le profil : ne bloque jamais l'utilisation du portail.
+  function profilePrompt() {
+    if (!account.needsProfile) return;
+    const key = "lq-profil-plus-tard-" + account.uid;
+    const later = Number(store.get(key) || 0);
+    if (later && Date.now() - later < 7 * 864e5) return;
+    if (document.getElementById("profPrompt")) return;
+    const st = document.createElement("style");
+    st.textContent = `.prof-prompt{position:fixed;z-index:60;right:20px;bottom:20px;width:min(380px,calc(100vw - 32px));background:#fff;color:#101010;border:1px solid #e4e3dd;border-radius:18px;box-shadow:0 18px 50px rgb(4 8 26/.18);padding:16px 18px;display:flex;flex-direction:column;gap:10px;font-size:14.5px;line-height:1.5;animation:ppIn .25s ease-out}
+      .prof-prompt b{font-size:15.5px}.prof-prompt p{margin:0;color:#55565d}
+      .prof-prompt .pp-row{display:flex;gap:8px;flex-wrap:wrap}
+      .prof-prompt a,.prof-prompt button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 14px;border-radius:11px;font-weight:800;font-size:14.5px;text-decoration:none;cursor:pointer;border:1.5px solid transparent}
+      .prof-prompt a{background:#401098;color:#fff}.prof-prompt button{background:#fff;color:#2b2a35;border-color:#d6d4cc}
+      @keyframes ppIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+      @media (prefers-reduced-motion:reduce){.prof-prompt{animation:none}}
+      @media (max-width:640px){.prof-prompt{left:16px;right:16px;width:auto;top:calc(var(--tabs-h,44px) + 64px);bottom:auto}}`;
+    document.head.append(st);
+    const box = document.createElement("aside");
+    box.id = "profPrompt"; box.className = "prof-prompt"; box.setAttribute("role", "status"); box.setAttribute("aria-label", "Compléter mon profil");
+    box.innerHTML = `<b>Bienvenue${prenom ? " " + esc(prenom) : ""} !</b><p>${account.noIdentity
+      ? "Complétez votre profil et associez une adresse courriel : vous pourrez ainsi vous reconnecter depuis un autre appareil."
+      : "Ajoutez votre nom de famille et votre photo pour que votre équipe vous reconnaisse."}</p>
+      <div class="pp-row"><a href="compte.html#profil" id="ppGo">Compléter mon profil</a><button type="button" id="ppLater">Plus tard</button></div>`;
+    document.body.append(box);
+    $("ppLater").onclick = () => { store.set(key, String(Date.now())); box.remove(); $("q").focus(); };
   }
 })();

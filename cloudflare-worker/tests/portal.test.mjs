@@ -25,7 +25,7 @@ async function world() {
   return { env, plat, A, B };
 }
 async function newCode(b, orgId, body = {}) {
-  const r = await b.api(`/api/orgs/${orgId}/access-codes`, { method: "POST", body: { expiresInDays: 30, ...body } });
+  const r = await b.api(`/api/orgs/${orgId}/access-codes`, { method: "POST", body: { maxUses: 10, ...body } });
   assert.equal(r.status, 201, JSON.stringify(r.data));
   return r.data.code;
 }
@@ -104,7 +104,7 @@ test("gestion des codes : consulter, renouveler, révoquer, expiration, nombre d
   for (const e of ["u1@a.ca", "u2@a.ca"]) { const b = new Browser(env); await b.loginEmail(e); assert.equal((await b.api("/api/access/redeem", { method: "POST", body: { code: c.code } })).status, 200); }
   const u3 = new Browser(env); await u3.loginEmail("u3@a.ca");
   const ex = await u3.api("/api/access/redeem", { method: "POST", body: { code: c.code } });
-  assert.equal(ex.data.code, "code_exhausted"); assert.match(ex.data.error, /nombre maximal/);
+  assert.equal(ex.data.code, "code_exhausted"); assert.match(ex.data.error, /déjà été utilisé/);
 
   // Renouveler : l'ancien code est révoqué, le nouveau fonctionne avec les mêmes réglages
   const rn = await A.owner.api(`/api/orgs/${A.id}/access-codes/${c.id}/renew`, { method: "POST" });
@@ -127,14 +127,17 @@ test("gestion des codes : consulter, renouveler, révoquer, expiration, nombre d
   assert.equal((await early.api("/api/agent")).status, 200, "révoquer le code ne retire pas l'accès des membres déjà inscrits");
 
   // Expiration
-  const c3 = await newCode(A.owner, A.id, { expiresInDays: 1 });
+  const c3 = await newCode(A.owner, A.id);
+  assert.ok(Math.abs(c3.expiresAt - (Date.now() + 24 * 3600e3)) < 60e3, "les codes expirent 24 heures après leur création");
   env.DB.exec("UPDATE access_codes SET expires_at = ? WHERE id = ?", Date.now() - 1, c3.id);
   const r3 = await late.api("/api/access/redeem", { method: "POST", body: { code: c3.code } });
   assert.equal(r3.data.code, "code_expired"); assert.match(r3.data.error, /expiré/);
 
   // Réglages invalides
-  assert.equal((await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInDays: 0 } })).status, 400);
-  assert.equal((await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInDays: 30, maxUses: 0 } })).status, 400);
+  const long = await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInDays: 365 } });
+  assert.ok(long.data.code.expiresAt <= Date.now() + 24 * 3600e3 + 1000, "une durée demandée plus longue est ignorée : 24 h");
+  assert.equal(long.data.code.maxUses, 1, "usage unique par défaut");
+  assert.equal((await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { maxUses: 0 } })).status, 400);
 
   // Isolation : l'administrateur de B ne voit ni ne touche les codes de A ; un code de B rattache à B
   assert.equal((await B.owner.api(`/api/orgs/${A.id}/access-codes`)).status, 404);

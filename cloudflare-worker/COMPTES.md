@@ -12,27 +12,46 @@
 - **Pages** : `agent/connexion.html`, `agent/invitation.html` et `agent/compte.html` (avec `compte.js` et `compte.css`). Le lien « Mon compte » est dans le menu de l'assistant.
 - **Bibliothèque** : `vendor/jose.js` est la version 5.9.6 de jose (licence MIT). Elle vérifie les jetons d'identité : signature, émetteur, audience, expiration et nonce.
 
-## Accès simplifié au portail (laqualia.com/agent)
+## Accès au portail (laqualia.com/agent)
 
-- **Parcours** :
-  1. La personne ouvre le portail.
-  2. Elle se connecte avec Google, Apple ou un code par courriel.
-  3. Sans établissement validé, elle est dirigée vers `agent/acces.html`, où elle entre le code d'accès de son établissement une seule fois.
-  4. Elle devient Membre de cet établissement, et le portail s'ouvre ensuite directement.
-- **Relais** : sur laqualia.com, l'interface appelle `/api/agent` (même site). Le relais vérifie à chaque requête la session, le compte actif et l'appartenance active à un établissement actif. Les codes d'équipe, TSA et Admin ne sont pas demandés.
+### Premier accès des personnes invitées (`agent/acces.html`)
+- **Saisie** : trois champs seulement (prénom, adresse courriel, code d'invitation), puis « Accéder au portail ».
+- **Vérification** : le serveur (`POST /auth/invite`) vérifie le code. S'il est valide :
+  - il crée un profil minimal (prénom, courriel) ;
+  - il rattache la personne à l'établissement du code avec le rôle Membre ;
+  - il ouvre une session.
+  - Aucun mot de passe, aucun courriel de confirmation, aucune autre étape.
+- **Courriel** : c'est une coordonnée non vérifiée (`users.contact_email`). Il ne sert jamais à retrouver un compte ni à se connecter, et ne déclenche aucune fusion : chaque premier accès crée un compte distinct.
+- **Session** :
+  - session « invite », gardée sur l'appareil ;
+  - expire après 30 jours d'inactivité, ou 90 jours au total ;
+  - les sessions des comptes existants gardent leurs règles (12 h d'inactivité, 14 jours au total).
+- **Profil** : une invitation discrète (« Compléter mon profil » / « Plus tard ») propose d'ajouter le nom et d'associer une adresse courriel, vérifiée par code, pour pouvoir se reconnecter depuis un autre appareil. Elle ne bloque jamais le portail.
+- **Limites** : 10 essais par adresse IP par 15 minutes, 40 par jour. Une saisie refusée ne crée aucun compte et ne consomme pas le code.
+- **Appareil partagé** : un nouveau premier accès ferme la session précédente de ce navigateur.
+
+### Connexion administrateur (`agent/connexion.html`)
+- L'authentification existante (code par courriel, Google ou Apple), sans code d'invitation.
+- Pour les administrateurs, et pour les personnes qui ont associé un moyen de connexion à leur profil.
+- Les comptes existants ne sont pas modifiés par le nouveau parcours.
+
+### Codes d'invitation (Mon compte › Codes d'accès, administrateurs de l'établissement seulement)
+- **Gestion** : générer, consulter, copier, renouveler, révoquer.
+- **Validité** : 24 heures, durée fixe.
+- **Utilisations** : usage unique par défaut, ou un nombre choisi, ou illimité.
+- **Format** : 12 caractères, sans caractères ambigus.
+- **Stockage** : la vérification se fait par empreinte SHA-256. Le code est aussi chiffré (AES-GCM) pour être revu par l'administrateur tant qu'il est actif. La clé vient de `ACCESS_CODE_KEY`, sinon de `ADMIN_CODE`.
+- **Révoquer ou retirer** :
+  - révoquer un code bloque seulement les nouvelles entrées ;
+  - retirer l'accès d'une personne est une action distincte (Membres et invitations), effective immédiatement ;
+  - le code ne rétablit pas un accès retiré.
+
+### Portail
+- **Vérification** : sur laqualia.com, l'interface appelle `/api/agent`. La session, le compte actif et l'appartenance active sont vérifiés à chaque requête.
 - **Droits** :
   - un Membre utilise la Réception, la TSA et le tableau de bord ;
-  - la page Admin (configuration commune de l'agent) est réservée à l'administrateur de la plateforme ;
-  - connaître un code ne donne aucun droit d'administration.
-- **Codes d'accès** (Mon compte › Codes d'accès, administrateurs de l'établissement seulement) :
-  - génération, consultation, copie, renouvellement et révocation ;
-  - validité de 1 à 365 jours, nombre maximal d'utilisations facultatif ;
-  - 12 caractères sans caractères ambigus ;
-  - vérification par empreinte SHA-256 ; le code est aussi chiffré (AES-GCM) pour que l'administrateur puisse le revoir tant qu'il est actif ;
-  - la clé de chiffrement vient de `ACCESS_CODE_KEY` si ce secret existe, sinon de `ADMIN_CODE`. Si cette clé change, les codes existants fonctionnent toujours mais ne peuvent plus être affichés : il suffit de les renouveler.
-- **Limites** : 8 essais par compte par 15 minutes et 30 par adresse IP par heure, comptés avant la vérification.
-- **Révoquer ou retirer** : révoquer un code bloque les nouvelles inscriptions seulement. Pour retirer l'accès d'une personne, on la désactive dans Membres et invitations ; l'effet est immédiat, et le code ne rétablit pas cet accès.
-- **Miroir GitHub Pages** : le miroir `nc` garde l'ancien accès par codes, puisque les sessions ne fonctionnent que sur laqualia.com.
+  - la page Admin de l'agent est réservée à l'administrateur de la plateforme.
+- **Miroir** : le miroir GitHub Pages `nc` garde l'ancien accès par codes d'équipe.
 
 ## Sécurité, en bref
 
@@ -113,10 +132,10 @@ Aujourd'hui, le responsable copie le lien d'invitation et le transmet lui-même.
 ## Essais
 
 ```
-node --test tests/accounts.test.mjs tests/email.test.mjs tests/portal.test.mjs  # 24 essais serveur (D1, fournisseurs, courriels et modèle simulés)
+node --test tests/accounts.test.mjs tests/email.test.mjs tests/portal.test.mjs tests/premier-acces.test.mjs  # 30 essais serveur
 node tests/ui.mjs <dossier du site> <captures>            # parcours d'interface Playwright
 node tests/ui-email.mjs <dossier du site> <captures>      # parcours de connexion par code courriel
-node tests/ui-portal.mjs <dossier du site> <captures>     # parcours complet du portail : compte, code, rattachement, retrait
+node tests/ui-portal.mjs <dossier du site> <captures>     # premier accès, codes expirés ou déjà utilisés, reconnexion, retrait, accès administrateur
 ```
 
 Les essais génèrent leurs propres clés de signature. Ils ne font aucun appel réseau et n'envoient aucun courriel.
@@ -129,4 +148,4 @@ Ajoutez `migrations/0002_….sql`, puis lancez :
 npx wrangler d1 migrations apply laqualia-comptes --remote
 ```
 
-Les migrations 0001, 0002 et 0003 sont déjà appliquées et consignée dans `d1_migrations`.
+Les migrations 0001 à 0004 sont déjà appliquées et consignée dans `d1_migrations`.

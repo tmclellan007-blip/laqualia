@@ -115,7 +115,7 @@ async function handlePortal(request, env) {
     let pub = null;
     try { pub = await publicConfig(request, env); } catch {}
     return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: false, voice: speechReady(env), tsa: true, tsaOk: true, admin: !!(a.platform && env.AGENT_KV), pub,
-      account: { first_name: a.user.first_name || "", org: a.org, role: a.role, orgs: a.orgs } }, same);
+      account: { uid: a.user.id, first_name: a.user.first_name || "", org: a.org, role: a.role, orgs: a.orgs, needsProfile: !!a.needsProfile, noIdentity: !!a.noIdentity } }, same);
   }
   const sp = request.headers.get("x-agent-mode");
   if (sp === "tts" || sp === "stt") return handleSpeech(sp, request, env, same, auth);

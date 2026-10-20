@@ -16,12 +16,13 @@
 <header class="topbar">
   <a class="brand" href="./"><img src="../assets/icone-clair.svg" alt="" width="30" height="30">La Qualia <small>Connexion</small></a>
   <span class="sp"></span>
-  <a class="tlink" href="./">Retour à l'assistant</a>
+  <a class="tlink" href="acces.html">Retour à l'accueil</a>
 </header>
 <main class="auth">
   <section class="sheet" aria-labelledby="t">
-    <h1 id="t">Connexion</h1>
-    <p id="intro">Connectez-vous avec Google, Apple ou un code reçu par courriel. Aucun mot de passe à créer.</p>
+    <h1 id="t">Connexion administrateur</h1>
+    <p id="intro">Pour les administrateurs et les personnes qui ont déjà associé un moyen de connexion à leur profil.</p>
+    <p class="fine" style="margin:-6px 0 0">Première visite avec un code d'invitation ? <a href="acces.html">Accédez au portail ici</a>.</p>
     <div class="notice err" id="err" role="alert" hidden></div>
     <div class="notice info" id="info" hidden></div>
     <div id="buttons" class="cards" style="gap:10px">
@@ -32,7 +33,7 @@
     <form id="fEmail" class="mailform" novalidate hidden>
       <div class="f" style="margin:0"><label for="email">Adresse courriel</label>
         <input type="email" id="email" name="email" autocomplete="email" inputmode="email" required maxlength="254" aria-describedby="emailHint">
-        <span class="hint" id="emailHint">Nous vous envoyons un code à 6 chiffres. Nouveau ? Votre compte est créé à la première connexion.</span></div>
+        <span class="hint" id="emailHint">Utilisez l'adresse associée à votre compte. Nous vous envoyons un code à 6 chiffres.</span></div>
       <button class="btn" id="sendBtn">Recevoir un code</button>
     </form>
     <form id="fCode" class="mailform" novalidate hidden>

@@ -5,37 +5,136 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
 <title>Accès au portail · La Qualia</title>
+<meta name="description" content="Portail d'équipe La Qualia : premier accès avec le code d'invitation de votre établissement.">
 <meta name="theme-color" content="#04081a">
 <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="compte.css?v=3">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Young+Serif&display=swap">
+<style>
+[hidden]{display:none!important}
+:root{--ink:#101010;--muted:#55565d;--paper:#f6f6f2;--line:#e4e3dd;--purple:#401098;--purple-ink:#2b0f6e;--purple-soft:#ede5ff;--night:#04081a;--lime:#c7ff00;--danger:#b91c1c;--danger-soft:#fde8e8;--ok:#15803d;--ok-soft:#e3f5e9;--warn:#8a4b00;--warn-soft:#fff4e0}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+a{color:var(--purple)}
+:focus-visible{outline:3px solid #005dff;outline-offset:2px}
+.serif{font-family:"Young Serif",Georgia,"Times New Roman",serif;font-weight:400}
+
+.wl{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:minmax(340px,42%) minmax(0,1fr)}
+/* Panneau de marque (ordinateur) */
+.art{background:var(--night);display:flex;align-items:center;justify-content:center;padding:48px;border-right:4px solid var(--purple)}
+.art .logo{width:min(380px,72%);height:auto}
+
+/* Colonne du formulaire */
+.side{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px calc(32px + env(safe-area-inset-bottom))}
+.mhead{display:none}
+.card{width:min(460px,100%);background:#fff;border:1px solid var(--line);border-radius:24px;padding:32px;box-shadow:0 24px 60px rgb(16 16 16/.07)}
+.eyebrow{margin:0 0 6px;font-size:13px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--purple)}
+.card h1{margin:0 0 8px;font-size:30px;line-height:1.15;letter-spacing:-.3px}
+.card .lead{margin:0 0 22px;color:var(--muted)}
+.f{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.f label{font-weight:800;font-size:15px}
+.f input{width:100%;min-height:52px;border:1.5px solid #d6d4cc;border-radius:14px;padding:12px 14px;background:#fff;font-size:17px}
+.f input:focus{border-color:var(--purple);outline:0;box-shadow:0 0 0 4px var(--purple-soft)}
+.f input[aria-invalid="true"]{border-color:var(--danger);box-shadow:0 0 0 4px var(--danger-soft)}
+.f .hint{font-size:14px;color:var(--muted)}
+.f .err{font-size:14.5px;font-weight:700;color:var(--danger)}
+.codein{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;letter-spacing:3px;text-transform:uppercase}
+.codein::placeholder{letter-spacing:2px;font-weight:600;color:#a3a29b}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;border:0;border-radius:14px;background:var(--purple);color:#fff;font-weight:800;font-size:17px;cursor:pointer;margin-top:6px;text-decoration:none}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:wait}
+.btn svg{width:20px;height:20px}
+.notice{border-radius:14px;padding:13px 16px;font-size:15px;margin:0 0 16px}
+.notice.err{background:var(--danger-soft);color:var(--danger);font-weight:600}
+.notice.warn{background:var(--warn-soft);color:var(--warn)}
+.notice.ok{background:var(--ok-soft);color:var(--ok);font-weight:700}
+.fine{font-size:13.5px;color:var(--muted);margin:16px 0 0;display:flex;gap:8px;align-items:flex-start}
+.fine svg{flex:none;width:16px;height:16px;margin-top:2px}
+.linkbtn{background:none;border:0;padding:0;color:var(--purple);font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.admin{width:min(460px,100%);margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 6px}
+.admin span{color:var(--muted);font-size:14.5px}
+.admin a{display:inline-flex;align-items:center;gap:8px;font-weight:800;text-decoration:none;border:1.5px solid #cfcbe0;border-radius:12px;padding:10px 14px;min-height:44px;background:#fff;color:var(--purple-ink)}
+.admin a:hover{border-color:var(--purple)}
+.admin a svg{width:17px;height:17px}
+.admin .also{flex-basis:100%;font-size:13px}
+.skel{height:18px;border-radius:9px;background:linear-gradient(90deg,#eceae3,#f6f5f1,#eceae3);background-size:200% 100%;animation:sk 1.2s linear infinite;margin:12px 0}
+@keyframes sk{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+
+/* Téléphone et tablette */
+@media (max-width:900px){
+  .wl{grid-template-columns:minmax(0,1fr)}
+  .art{display:none}
+  .side{justify-content:flex-start;padding:0 16px calc(28px + env(safe-area-inset-bottom))}
+  .mhead{display:flex;justify-content:center;width:calc(100% + 32px);margin:0 -16px 22px;background:var(--night);padding:calc(22px + env(safe-area-inset-top)) 20px 22px;border-bottom:4px solid var(--purple)}
+  .mhead .logo{height:44px;width:auto;display:block}
+  .card{padding:24px 20px;border-radius:20px;box-shadow:0 12px 30px rgb(16 16 16/.06)}
+  .card h1{font-size:26px}
+}
+</style>
 </head>
 <body>
-<header class="topbar">
-  <a class="brand" href="./"><img src="../assets/icone-clair.svg" alt="" width="30" height="30">La Qualia <small>Accès au portail</small></a>
-  <span class="sp"></span>
-  <a class="tlink" href="compte.html">Mon compte</a>
-  <button class="tlink" type="button" id="logout" hidden>Se déconnecter</button>
-</header>
-<main class="auth">
-  <section class="sheet" aria-labelledby="t">
-    <h1 id="t">Rejoindre votre établissement</h1>
-    <p id="intro">Entrez le code d'accès que l'administrateur de votre établissement vous a transmis. Vous ne le saisirez qu'une seule fois : aux prochaines connexions, le portail s'ouvrira directement.</p>
-    <div class="notice warn" id="warn" role="alert" hidden></div>
-    <div class="notice info" id="info" role="status" hidden></div>
-    <div class="notice ok" id="okBox" role="status" hidden></div>
-    <!-- method="post" : même sans JavaScript, le code ne se retrouve jamais dans l'adresse de la page -->
-    <form id="fCode" class="mailform" method="post" action="#" novalidate hidden>
-      <div class="f" style="margin:0"><label for="code">Code d'accès de l'établissement</label>
-        <input type="text" id="code" class="codein access" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="20" required aria-describedby="codeHint codeErr">
-        <span class="hint" id="codeHint">12 caractères, par exemple ABCD-EFGH-JKMN. Les tirets et les espaces sont facultatifs.</span>
-        <span class="field-err" id="codeErr" role="alert" hidden></span></div>
-      <button class="btn" id="go">Valider le code</button>
-    </form>
-    <div class="skel" id="wait" aria-hidden="true"></div>
-    <p class="fine">Pas de code ? Demandez-le à l'administrateur de votre établissement. Le code vous donne accès au portail avec le rôle Membre (Réception, Équipe technique et tableau de bord). Il ne donne aucun droit d'administration.</p>
+<main class="wl">
+  <aside class="art">
+    <img class="logo" src="../assets/logo-sombre.svg?v=qfacette" alt="La Qualia">
+  </aside>
+
+  <section class="side">
+    <header class="mhead">
+      <img class="logo" src="../assets/logo-sombre.svg?v=qfacette" alt="La Qualia">
+    </header>
+
+    <div class="card" id="card" aria-live="polite">
+      <div id="loading"><div class="skel"></div><div class="skel" style="width:70%"></div><div class="skel" style="width:85%"></div></div>
+
+      <!-- Premier accès : trois champs seulement. method="post" : le code n'apparaît jamais dans l'adresse. -->
+      <form id="fFirst" method="post" action="#" novalidate hidden>
+        <p class="eyebrow">Premier accès</p>
+        <h1 class="serif">Bienvenue<span style="color:var(--purple)">.</span></h1>
+        <p class="lead">Entrez votre prénom, votre adresse courriel et le code d'invitation transmis par votre établissement.</p>
+        <div class="notice err" id="formErr" role="alert" hidden></div>
+        <div class="f"><label for="first">Prénom</label>
+          <input id="first" name="first_name" type="text" autocomplete="given-name" autocapitalize="words" maxlength="60" required aria-describedby="firstErr">
+          <span class="err" id="firstErr" hidden></span></div>
+        <div class="f"><label for="email">Adresse courriel</label>
+          <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" maxlength="254" required aria-describedby="emailErr">
+          <span class="err" id="emailErr" hidden></span></div>
+        <div class="f"><label for="code">Code d'invitation fourni</label>
+          <input id="code" type="text" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXX-XXXX-XXXX" required aria-describedby="codeHint codeErr">
+          <span class="hint" id="codeHint">Valable 24 heures. Les tirets sont facultatifs.</span>
+          <span class="err" id="codeErr" hidden></span></div>
+        <button class="btn" id="go">Accéder au portail<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+        <p class="fine"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>Aucun courriel ne vous sera envoyé. Votre adresse sert seulement à vous reconnaître au sein de votre équipe.</span></p>
+      </form>
+
+      <!-- Personne déjà connectée, mais sans établissement actif : le code suffit. -->
+      <form id="fJoin" method="post" action="#" novalidate hidden>
+        <p class="eyebrow">Accès au portail</p>
+        <h1 class="serif" id="joinTitle">Bonjour.</h1>
+        <div class="notice warn" id="joinWarn" role="alert" hidden></div>
+        <p class="lead">Entrez le code d'invitation transmis par votre établissement.</p>
+        <div class="f"><label for="code2">Code d'invitation fourni</label>
+          <input id="code2" type="text" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="14" placeholder="XXXX-XXXX-XXXX" required aria-describedby="code2Err">
+          <span class="err" id="code2Err" hidden></span></div>
+        <button class="btn" id="go2">Accéder au portail</button>
+        <p class="fine"><span>Ce n'est pas vous ? <button type="button" class="linkbtn" id="switchUser">Changer d'utilisateur</button></span></p>
+      </form>
+
+      <div id="done" hidden>
+        <p class="eyebrow">C'est fait</p>
+        <h1 class="serif" id="doneTitle">Bienvenue.</h1>
+        <div class="notice ok" id="doneMsg" role="status"></div>
+      </div>
+    </div>
+
+    <nav class="admin" aria-label="Autre accès">
+      <span>Vous administrez un établissement ?</span>
+      <a href="connexion.html?suite=%2Fagent%2F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg>Connexion administrateur</a>
+      <span class="also">Vous avez déjà associé un moyen de connexion à votre profil ? Utilisez aussi cette option.</span>
+    </nav>
   </section>
 </main>
 <script>
@@ -43,65 +142,92 @@
   "use strict";
   const $ = (id) => document.getElementById(id);
   const PORTAL = "./";
-  const show = (id, html) => { const el = $(id); if (html === null) { el.hidden = true; return; } el.innerHTML = html; el.hidden = false; };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-  const toLogin = () => location.replace("connexion.html?suite=" + encodeURIComponent("/agent/acces.html"));
-  if (new URLSearchParams(location.search).get("raison") === "retire") history.replaceState(null, "", location.pathname);
+  const post = async (path, body) => {
+    const r = await fetch(path, { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-lq-csrf": "1" }, body: JSON.stringify(body) });
+    let d = {}; try { d = await r.json(); } catch {}
+    return { r, d };
+  };
+  if (location.search) history.replaceState(null, "", location.pathname);
 
-  async function status() {
+  // Codes : majuscules et tirets ajoutés pendant la saisie
+  const fmt = (e) => { const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); e.target.value = raw.replace(/(.{4})(?=.)/g, "$1-"); };
+  ["code", "code2"].forEach((id) => $(id).addEventListener("input", (e) => { fmt(e); clearErr(id); }));
+  ["first", "email"].forEach((id) => $(id).addEventListener("input", () => clearErr(id)));
+  function clearErr(id) { $(id).removeAttribute("aria-invalid"); $(id + "Err").hidden = true; $("formErr").hidden = true; }
+  function fieldErr(id, msg, focus = true) { $(id).setAttribute("aria-invalid", "true"); $(id + "Err").textContent = msg; $(id + "Err").hidden = false; if (focus) $(id).focus(); }
+  const FIELD = { first_name: "first", email: "email", code: "code" };
+
+  function welcome(first, org) {
+    ["fFirst", "fJoin", "loading"].forEach((id) => ($(id).hidden = true));
+    $("done").hidden = false;
+    $("doneTitle").innerHTML = `Bienvenue${first ? " " + esc(first) : ""}<span style="color:var(--purple)">.</span>`;
+    $("doneMsg").innerHTML = `Vous faites maintenant partie de l'équipe de <b>${esc(org)}</b>. Ouverture du portail…`;
+    setTimeout(() => location.replace(PORTAL), 1100);
+  }
+  function busy(btn, on) { btn.disabled = on; btn.firstChild.nodeValue = on ? "Vérification…" : "Accéder au portail"; }
+
+  $("fFirst").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const first = $("first").value.trim(), email = $("email").value.trim(), code = $("code").value.replace(/[^A-Za-z0-9]/g, "");
+    let bad = false;
+    if (code.length !== 12) { fieldErr("code", "Le code compte 12 caractères.", false); bad = "code"; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { fieldErr("email", "Entrez une adresse courriel valide.", false); bad = "email"; }
+    if (!first) { fieldErr("first", "Entrez votre prénom.", false); bad = "first"; }
+    if (bad) { $(bad).focus(); return; }
+    busy($("go"), true);
+    try {
+      const { r, d } = await post("/auth/invite", { first_name: first, email, code });
+      if (r.ok) return welcome(first, d.orgName);
+      if (r.status === 429) { $("formErr").textContent = "Trop d'essais depuis cet appareil. Patientez quelques minutes, puis réessayez."; $("formErr").hidden = false; return; }
+      if (d.field && FIELD[d.field]) return fieldErr(FIELD[d.field], d.error);
+      $("formErr").textContent = d.error || "L'accès n'a pas pu être ouvert. Réessayez."; $("formErr").hidden = false;
+    } catch { $("formErr").textContent = "Connexion au serveur impossible. Vérifiez votre connexion Internet, puis réessayez."; $("formErr").hidden = false; }
+    finally { busy($("go"), false); }
+  });
+
+  $("fJoin").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const code = $("code2").value.replace(/[^A-Za-z0-9]/g, "");
+    if (code.length !== 12) return fieldErr("code2", "Le code compte 12 caractères.");
+    busy($("go2"), true);
+    try {
+      const { r, d } = await post("/api/access/redeem", { code });
+      if (r.status === 401) return showFirst();
+      if (r.ok) return welcome(joinName, d.orgName);
+      fieldErr("code2", r.status === 429 ? "Trop d'essais. Patientez quelques minutes, puis réessayez." : (d.error || "La vérification a échoué."));
+    } catch { fieldErr("code2", "Connexion au serveur impossible. Vérifiez votre connexion Internet."); }
+    finally { busy($("go2"), false); }
+  });
+
+  $("switchUser").onclick = async () => {
+    try { await post("/auth/logout", {}); } catch {}
+    showFirst();
+  };
+
+  function showFirst() {
+    ["fJoin", "done", "loading"].forEach((id) => ($(id).hidden = true));
+    $("fFirst").hidden = false;
+    if (matchMedia("(min-width: 901px)").matches) $("first").focus();
+  }
+  let joinName = "";
+  async function start() {
     let r, d = {};
     try { r = await fetch("/api/access/status", { credentials: "same-origin", cache: "no-store" }); d = await r.json(); }
-    catch { $("wait").hidden = true; show("warn", "Le portail est momentanément injoignable. Vérifiez votre connexion Internet, puis rechargez la page."); return; }
-    $("wait").hidden = true;
-    if (r.status === 401) return toLogin();
-    $("logout").hidden = false;
-    if (r.ok && d.access) {
-      show("info", `Vous avez déjà accès au portail pour <b>${esc(d.org ? d.org.name : "la plateforme")}</b>. <a href="${PORTAL}">Ouvrir le portail</a>`);
-      $("t").textContent = "Ajouter un établissement";
-      $("intro").textContent = "Vous avez reçu le code d'un autre établissement ? Entrez-le ci-dessous.";
-    } else if (d.code === "membership_disabled" || d.code === "account_deactivated") {
-      show("warn", esc(d.error));
+    catch { return showFirst(); }
+    if (r.ok && d.access) return location.replace(PORTAL);
+    if (r.status === 403 && d.code !== "account_deactivated") {
+      // Déjà connecté, mais sans établissement actif (accès retiré, ou compte sans établissement)
+      joinName = (d.user && d.user.first_name) || "";
+      $("joinTitle").innerHTML = `Bonjour${joinName ? " " + esc(joinName) : ""}<span style="color:var(--purple)">.</span>`;
+      if (d.code === "membership_disabled") { $("joinWarn").textContent = d.error; $("joinWarn").hidden = false; }
+      $("loading").hidden = true; $("fJoin").hidden = false;
+      return;
     }
-    if (d.code === "account_deactivated") return;
-    $("fCode").hidden = false;
-    if (matchMedia("(min-width: 700px)").matches) $("code").focus();
+    if (r.status === 403 && d.code === "account_deactivated") return location.replace("compte.html#profil");
+    showFirst();
   }
-
-  // Mise en forme pendant la saisie : majuscules et tirets tous les 4 caractères
-  $("code").addEventListener("input", (e) => {
-    const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
-    e.target.value = raw.replace(/(.{4})(?=.)/g, "$1-");
-    $("codeErr").hidden = true; e.target.removeAttribute("aria-invalid");
-  });
-  const fieldErr = (msg) => { $("codeErr").textContent = msg; $("codeErr").hidden = false; $("code").setAttribute("aria-invalid", "true"); $("code").focus(); };
-
-  $("fCode").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const v = $("code").value.replace(/[^A-Za-z0-9]/g, "");
-    if (v.length !== 12) return fieldErr("Le code compte 12 caractères. Vérifiez-le et réessayez.");
-    const btn = $("go"); btn.disabled = true; btn.textContent = "Vérification…";
-    try {
-      const r = await fetch("/api/access/redeem", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-lq-csrf": "1" }, body: JSON.stringify({ code: v }) });
-      let d = {}; try { d = await r.json(); } catch {}
-      if (r.status === 401) return toLogin();
-      if (!r.ok) {
-        fieldErr(d.code === "rate_limited" ? "Trop d'essais. Patientez quelques minutes avant de réessayer." : (d.error || "La vérification a échoué. Réessayez."));
-        if (d.code === "membership_disabled") show("warn", esc(d.error));
-        return;
-      }
-      $("code").value = "";
-      $("fCode").hidden = true; show("info", null); show("warn", null);
-      show("okBox", d.already ? `Vous faites déjà partie de <b>${esc(d.orgName)}</b>. Ouverture du portail…` : `Bienvenue! Vous êtes maintenant membre de <b>${esc(d.orgName)}</b>. Ouverture du portail…`);
-      setTimeout(() => location.replace(PORTAL), 1200);
-    } catch { fieldErr("Connexion au serveur impossible. Vérifiez votre connexion Internet."); }
-    finally { btn.disabled = false; btn.textContent = "Valider le code"; }
-  });
-
-  $("logout").onclick = async () => {
-    try { await fetch("/auth/logout", { method: "POST", credentials: "same-origin", headers: { "x-lq-csrf": "1" } }); } catch {}
-    location.replace("connexion.html?suite=" + encodeURIComponent("/agent/"));
-  };
-  status();
+  start();
 })();
 </script>
 </body>

@@ -41,11 +41,13 @@ async function wire(ctx) {
 
 const ok = (c, m) => { if (!c) { errors.push(m); console.log("ÉCHEC :", m); } else console.log("ok :", m); };
 const shot = (p, n, full = false) => p.screenshot({ path: `${OUT}/${n}.png`, fullPage: full });
+const gateOpen = (p) => p.waitForFunction(() => !document.documentElement.classList.contains("lq-gate"));
 
-// Préparation (côté serveur) : plateforme, établissement et son administratrice
+// Préparation : plateforme (administrateur existant), établissement et sa propriétaire
 const plat = new Browser(env);
 await plat.loginEmail("plateforme@laqualia.com");
 await plat.api("/api/platform/bootstrap", { method: "POST", body: { code: env.ADMIN_CODE } });
+await plat.api("/api/me", { method: "PATCH", body: { first_name: "Terry", last_name: "Admin" } });
 const org = (await plat.api("/api/platform/orgs", { method: "POST", body: { name: "Clinique vétérinaire Saint-Laurent", ownerEmail: "direction@csl.ca" } })).data;
 const owner = new Browser(env);
 await owner.loginEmail("direction@csl.ca");
@@ -60,125 +62,131 @@ async function emailLogin(p, email) {
 }
 const browser = await chromium.launch();
 
-// 1. L'administratrice génère un code dans Mon compte › Codes d'accès
+// 1. L'administratrice génère un code (24 h, usage unique par défaut)
 const actx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-CA" });
 await wire(actx);
 const a = await actx.newPage();
 a.on("pageerror", (e) => errors.push("admin JS : " + e.message));
-await a.goto(ORIGIN + "/agent/connexion.html?suite=" + encodeURIComponent("/agent/compte.html#codes"));
+await a.goto(ORIGIN + "/agent/acces.html");
+await a.waitForSelector("#fFirst:not([hidden])");
+await shot(a, "01-accueil-ordinateur");
+await a.click("text=Connexion administrateur");
+await a.waitForURL(/connexion\.html/);
+ok(/Connexion administrateur/.test(await a.textContent("h1")), "accueil : option distincte « Connexion administrateur »");
 await emailLogin(a, "direction@csl.ca");
-await a.waitForURL(/compte\.html#codes/);
-await a.waitForSelector("#newCode");
-ok(!(await a.locator("#navCodes").isHidden()), "admin : entrée « Codes d'accès » visible");
-await a.click("#newCode");
-await a.fill("#cLabel", "Équipe de soir"); await a.selectOption("#cDays", "14"); await a.fill("#cMax", "10");
-await shot(a, "01-admin-generer");
+await a.waitForURL(ORIGIN + "/agent/"); await gateOpen(a);
+ok(true, "administratrice : connexion existante, sans code d'invitation");
+await a.goto(ORIGIN + "/agent/compte.html#codes");
+await a.waitForSelector("#newCode"); await a.click("#newCode");
+ok((await a.inputValue("#cMax")) === "1", "codes : usage unique proposé par défaut");
+ok(/24 heures/.test(await a.textContent("#dlgForm")), "codes : validité de 24 heures affichée");
+await a.fill("#cLabel", "Julie (accueil)");
+await shot(a, "02-admin-generer");
 await a.click("#dlgForm button[value=ok]");
 await a.waitForSelector("#cpNew");
 const CODE = (await a.textContent("#dlgForm .codeval")).trim();
-ok(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(CODE), "admin : code généré et affiché une fois prêt à copier");
-await shot(a, "02-admin-code-pret");
 await a.click("#dlgForm button[value=ok]");
-await a.waitForSelector(".codecard");
-ok((await a.textContent(".codecard .codeval")).startsWith("••••"), "admin : code masqué par défaut dans la liste");
-await a.click("[data-show]");
-ok((await a.textContent(".codecard .codeval")).trim() === CODE, "admin : « Afficher » révèle le code");
-await shot(a, "03-admin-liste-codes", true);
+const code2 = (await owner.api(`/api/orgs/${org.org.id}/access-codes`, { method: "POST", body: { label: "Équipe", maxUses: 5 } })).data.code.code;
 
-// 2. Nouvelle personne, sur téléphone : création de compte, code, portail
+// 2. Premier accès sur téléphone : prénom, courriel, code
 const mctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "fr-CA", hasTouch: true, isMobile: true });
 await wire(mctx);
 const m = await mctx.newPage();
 m.on("pageerror", (e) => errors.push("membre JS : " + e.message));
-const urls = [];
-m.on("request", (r) => urls.push(r.url()));
+const urls = []; m.on("request", (r) => urls.push(r.url()));
 await m.goto(ORIGIN + "/agent/");
-await m.waitForURL(/connexion\.html\?suite=%2Fagent%2F/);
-ok(true, "membre : le portail exige d'abord une connexion");
-await emailLogin(m, "julie.roy@csl.ca");
 await m.waitForURL(/acces\.html/);
-await m.waitForSelector("#fCode:not([hidden])");
-ok(true, "membre : compte créé, mais sans rattachement le portail renvoie à la saisie du code");
-await shot(m, "04-membre-saisie-code", true);
-await m.fill("#code", "ABCD-EFGH-JKMN"); await m.click("#go");
-await m.waitForSelector("#codeErr:not([hidden])");
-ok(/pas valide/.test(await m.textContent("#codeErr")), "membre : message clair pour un code invalide");
-await shot(m, "05-membre-code-invalide", true);
-await m.fill("#code", CODE.toLowerCase().replace(/-/g, "")); await m.click("#go");
-await m.waitForSelector("#okBox:not([hidden])");
-ok(/Clinique vétérinaire Saint-Laurent/.test(await m.textContent("#okBox")), "membre : rattachée au bon établissement");
-await shot(m, "06-membre-bienvenue", true);
-await m.waitForURL(ORIGIN + "/agent/");
-await m.waitForFunction(() => !document.documentElement.classList.contains("lq-gate"));
-// Prénom (le compte par courriel n'a pas encore de nom)
-if (await m.locator("#codebox").isVisible()) {
-  ok(await m.locator("#code").isHidden(), "membre : aucune demande de code d'équipe, seulement le prénom");
-  await m.fill("#prenom", "Julie"); await m.click("#codeForm button[type=submit], #codeForm button:not([type])");
-}
+await m.waitForSelector("#fFirst:not([hidden])");
+ok((await m.locator("#fFirst input").count()) === 3, "accueil : trois champs seulement");
+ok(/Accéder au portail/.test(await m.textContent("#go")), "accueil : bouton « Accéder au portail »");
+await shot(m, "03-accueil-telephone", true);
+await m.click("#go");
+ok(!(await m.locator("#firstErr").isHidden()), "validation : prénom requis signalé");
+await m.fill("#first", "Julie"); await m.fill("#email", "julie.roy@csl.ca"); await m.fill("#code", "ABCD-EFGH-JKMN");
+await m.click("#go"); await m.waitForSelector("#codeErr:not([hidden])");
+ok(/pas valide/.test(await m.textContent("#codeErr")), "code invalide : message clair sous le champ");
+await shot(m, "04-code-invalide", true);
+await m.fill("#code", CODE.toLowerCase().replace(/-/g, ""));
+await m.click("#go");
+await m.waitForSelector("#done:not([hidden])");
+ok(/Bienvenue Julie/.test(await m.textContent("#doneTitle")), "premier accès : accueil personnalisé avec le prénom");
+await shot(m, "05-bienvenue", true);
+await m.waitForURL(ORIGIN + "/agent/"); await gateOpen(m);
+ok(await m.locator("#codebox").isHidden(), "portail : aucune autre fenêtre (ni prénom ni code)");
+ok(/Julie/.test(await m.textContent("#helloName")), "portail : prénom du compte utilisé dans la salutation");
+await m.waitForSelector("#profPrompt");
+ok(/Compléter mon profil/.test(await m.textContent("#profPrompt")) && /Plus tard/.test(await m.textContent("#profPrompt")), "invitation discrète à compléter le profil");
 if (await m.locator("#privbox").isVisible()) await m.click("#privOk");
-await shot(m, "07-membre-portail");
+await shot(m, "06-portail-invitation-profil");
 await m.fill("#q", "Comment annoncer un retard de 30 minutes à un client ?");
 await m.click("#send");
 await m.waitForFunction(() => /Réponse simulée/.test(document.body.innerText), null, { timeout: 15000 });
-ok(true, "membre : question Réception traitée sans code");
-await m.click("#roleTsa");
-await m.waitForTimeout(400);
-ok(await m.locator("#tsabox").isHidden(), "membre : onglet TSA ouvert sans code TSA");
-ok(await m.locator("#tsaLock").isHidden(), "membre : cadenas TSA retiré");
-await shot(m, "08-membre-tsa");
-ok(await m.locator("#adminLink").isHidden(), "membre : lien Admin absent (aucun droit d'administration)");
-ok(!urls.some((u) => u.includes(CODE) || u.includes(CODE.replace(/-/g, "")) || u.toLowerCase().includes(CODE.toLowerCase().replace(/-/g, ""))), "aucune URL ne contient le code");
+ok(true, "portail utilisable sans compléter le profil (question traitée)");
+await m.click("#ppLater");
+ok(!(await m.locator("#profPrompt").count()), "« Plus tard » referme l'invitation");
+await m.click("#roleTsa"); await m.waitForTimeout(300);
+ok(await m.locator("#tsabox").isHidden(), "TSA ouverte sans code TSA");
+ok(await m.locator("#adminLink").isHidden(), "aucun lien Admin : aucun droit d'administration");
+ok(!urls.some((u) => u.toUpperCase().includes(CODE.replace(/-/g, "")) || u.toUpperCase().includes(CODE)), "le code n'apparaît dans aucune URL");
 
-// 3. Navigation et reconnexion : aucune nouvelle demande de code
-await m.reload(); await m.waitForFunction(() => !document.documentElement.classList.contains("lq-gate"));
-ok(m.url() === ORIGIN + "/agent/" && (await m.locator("#codebox").isHidden()), "membre : rechargement sans nouvelle demande");
-await m.goto(ORIGIN + "/agent/compte.html#profil"); await m.waitForSelector("#fProfile");
-ok(await m.locator("#navCodes").isHidden(), "membre : pas d'accès à la page des codes");
-await m.goto(ORIGIN + "/agent/compte.html#codes"); await m.waitForTimeout(500);
-ok(/réservée aux administrateurs/.test(await m.textContent("main")), "membre : page des codes refusée");
-await m.goto(ORIGIN + "/agent/"); await m.waitForFunction(() => !document.documentElement.classList.contains("lq-gate"));
-await m.click("#menuBtn").catch(() => {});
-await m.click("#logout"); await m.click("#logout");
-await m.waitForURL(/connexion\.html/);
-await emailLogin(m, "julie.roy@csl.ca");
-await m.waitForURL(ORIGIN + "/agent/");
-await m.waitForFunction(() => !document.documentElement.classList.contains("lq-gate"));
-ok(await m.locator("#codebox").isHidden(), "membre : reconnexion, portail ouvert directement sans code");
+// 3. Code déjà utilisé, code expiré (autre personne, tablette)
+const tctx = await browser.newContext({ viewport: { width: 820, height: 1180 }, locale: "fr-CA" }); await wire(tctx);
+const t = await tctx.newPage();
+await t.goto(ORIGIN + "/agent/acces.html"); await t.waitForSelector("#fFirst:not([hidden])");
+await t.fill("#first", "Marc"); await t.fill("#email", "marc@csl.ca"); await t.fill("#code", CODE); await t.click("#go");
+await t.waitForSelector("#codeErr:not([hidden])");
+ok(/déjà été utilisé/.test(await t.textContent("#codeErr")), "code déjà utilisé : message clair");
+await shot(t, "07-code-deja-utilise", true);
+const expired = (await owner.api(`/api/orgs/${org.org.id}/access-codes`, { method: "POST", body: {} })).data.code;
+env.DB.exec("UPDATE access_codes SET expires_at = ? WHERE id = ?", Date.now() - 1, expired.id);
+await t.fill("#code", expired.code); await t.click("#go");
+await t.waitForFunction(() => /expiré/.test(document.getElementById("codeErr").textContent));
+ok(true, "code expiré : message clair");
+await t.fill("#code", code2); await t.click("#go");
+await t.waitForURL(ORIGIN + "/agent/"); await gateOpen(t);
+ok(/Marc/.test(await t.textContent("#helloName")), "tablette : deuxième personne entrée avec un code d'équipe");
+ok(!(await t.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "tablette : aucun débordement horizontal");
 
-// 4. Retrait d'accès : effet à la requête suivante, même page ouverte
+// 4. Reconnexion : nouvel onglet, rechargement, retour plus tard
+const m2 = await mctx.newPage();
+await m2.goto(ORIGIN + "/agent/"); await gateOpen(m2);
+ok(m2.url() === ORIGIN + "/agent/" && (await m2.locator("#codebox").isHidden()), "reconnexion : portail ouvert directement, sans code");
+ok(!(await m2.locator("#profPrompt").count()), "reconnexion : l'invitation reportée ne revient pas");
+await m2.goto(ORIGIN + "/agent/acces.html"); await m2.waitForURL(ORIGIN + "/agent/");
+ok(true, "page d'accès : une personne déjà entrée est renvoyée au portail");
+await m2.goto(ORIGIN + "/agent/compte.html#profil"); await m2.waitForSelector("#fProfile");
+ok(await m2.inputValue("#ce") === "julie.roy@csl.ca", "profil : courriel saisi affiché comme coordonnée");
+ok(/Aucun moyen de connexion associé/.test(await m2.textContent("main")), "profil : explique comment se reconnecter ailleurs");
+await m2.fill("#ln", "Roy"); await m2.click("#fProfile > button.btn"); await m2.waitForSelector("#toast:not([hidden])");
+await shot(m2, "08-profil-a-completer", true);
+ok(!(await m2.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "téléphone : aucun débordement horizontal");
+await m2.close();
+
+// 5. Retrait d'accès : effet immédiat, même page ouverte
 const mid = (await owner.api(`/api/orgs/${org.org.id}/members`)).data.members.find((x) => x.email === "julie.roy@csl.ca").id;
 await owner.api(`/api/orgs/${org.org.id}/members/${mid}`, { method: "PATCH", body: { status: "disabled" } });
-await m.fill("#q", "Encore une question");
-await m.click("#send");
+await m.fill("#q", "Encore une question"); await m.click("#send");
 await m.waitForURL(/acces\.html/);
-await m.waitForSelector("#warn:not([hidden])");
-ok(/a été retiré/.test(await m.textContent("#warn")), "retrait : la personne est sortie du portail avec un message clair");
-await shot(m, "09-membre-acces-retire", true);
-await m.fill("#code", CODE); await m.click("#go");
-await m.waitForSelector("#codeErr:not([hidden])");
-ok(/retiré/.test(await m.textContent("#codeErr")), "retrait : le code ne rétablit pas l'accès");
+await m.waitForSelector("#fJoin:not([hidden])");
+ok(/a été retiré/.test(await m.textContent("#joinWarn")), "retrait : sortie du portail avec un message clair");
+await shot(m, "09-acces-retire", true);
 
-// 5. Révocation du code depuis l'interface admin
-await a.reload(); await a.waitForSelector("[data-revoke]");
-await a.click("[data-revoke]"); await a.click("#dlgForm button[value=ok]");
-await a.waitForSelector(".codecard .badge.b-disabled");
-ok(true, "admin : code révoqué");
-await shot(a, "10-admin-code-revoque", true);
-const n2 = await mctx.newPage();
-const late = await browser.newContext({ viewport: { width: 820, height: 1180 }, locale: "fr-CA" }); await wire(late);
-const l = await late.newPage();
-await l.goto(ORIGIN + "/agent/acces.html"); await emailLogin(l, "retard@csl.ca");
-await l.waitForURL(/acces\.html|agent\/$/);
-if (!/acces\.html/.test(l.url())) await l.goto(ORIGIN + "/agent/acces.html");
-await l.waitForSelector("#fCode:not([hidden])");
-await l.fill("#code", CODE); await l.click("#go");
-await l.waitForSelector("#codeErr:not([hidden])");
-ok(/révoqué/.test(await l.textContent("#codeErr")), "code révoqué : message clair (tablette)");
-await shot(l, "11-tablette-code-revoque", true);
-const over = await l.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
-ok(!over, "tablette : aucun débordement horizontal");
-const overM = await m.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
-ok(!overM, "téléphone : aucun débordement horizontal");
+// 6. Mon accès administrateur (plateforme) : connexion existante et toutes les fonctions
+const pctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: "fr-CA" }); await wire(pctx);
+const p = await pctx.newPage();
+p.on("pageerror", (e) => errors.push("plateforme JS : " + e.message));
+await p.goto(ORIGIN + "/agent/"); await p.waitForURL(/acces\.html/);
+await p.click("text=Connexion administrateur"); await p.waitForURL(/connexion\.html/);
+await emailLogin(p, "plateforme@laqualia.com");
+await p.waitForURL(ORIGIN + "/agent/"); await gateOpen(p);
+ok(!(await p.locator("#adminLink").isHidden()), "plateforme : lien Admin présent");
+ok(!(await p.locator("#profPrompt").count()), "plateforme : aucune invitation à compléter (profil complet)");
+await p.goto(ORIGIN + "/agent/admin.html");
+await p.waitForSelector("#app:not([hidden])", { timeout: 15000 });
+ok(true, "plateforme : configuration de l'agent ouverte sans code Admin");
+await p.goto(ORIGIN + "/agent/compte.html#plateforme"); await p.waitForTimeout(800);
+ok(!(await p.locator("#navPlat").isHidden()), "plateforme : section Plateforme accessible");
+await shot(p, "10-admin-plateforme");
 await browser.close();
 const dump = JSON.stringify(env.DB.raw("SELECT * FROM audit_log")) + JSON.stringify(env.DB.raw("SELECT * FROM access_codes"));
 ok(!dump.includes(CODE) && !dump.includes(CODE.replace(/-/g, "")), "le code n'est ni dans le journal ni en clair dans la base");

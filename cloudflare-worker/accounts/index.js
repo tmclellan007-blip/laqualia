@@ -5,6 +5,11 @@ import { MATRIX, ROLES, ROLE_LABELS, FUNCTIONS, can, permissionsFor, checkTarget
 
 const SESSION_TTL = 14 * 24 * 3600e3;   // expiration absolue
 const IDLE_TTL = 12 * 3600e3;           // inactivité
+// Premier accès par code d'invitation : le compte n'a pas encore de moyen de connexion vérifié ;
+// la session de cet appareil est donc plus longue pour éviter les demandes répétées.
+const FIRST_IDLE = 30 * 24 * 3600e3;   // inactivité
+const FIRST_TTL = 90 * 24 * 3600e3;    // expiration absolue
+const idleFor = (session) => (session.kind === "invite" ? FIRST_IDLE : IDLE_TTL);
 const REAUTH_WINDOW = 30 * 60e3;        // association d'un moyen de connexion : authentification récente exigée
 const INVITE_TTL = 7 * 24 * 3600e3;
 const RECOVERY_TTL = 24 * 3600e3;
@@ -38,7 +43,7 @@ export async function cleanupAccounts(env) {
   if (!env.DB) return;
   const t = Date.now();
   await env.DB.batch([
-    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ? OR last_seen_at < ?").bind(t, t - IDLE_TTL),
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ? OR (kind = 'invite' AND last_seen_at < ?) OR (kind != 'invite' AND last_seen_at < ?)").bind(t, t - FIRST_IDLE, t - IDLE_TTL),
     env.DB.prepare("DELETE FROM auth_requests WHERE expires_at < ?").bind(t),
     env.DB.prepare("DELETE FROM email_codes WHERE expires_at < ?").bind(t),
     env.DB.prepare("DELETE FROM rate_limits WHERE reset_at < ?").bind(t),
@@ -53,6 +58,7 @@ async function routeAuth(ctx) {
   if (m && m[2] === "callback" && (request.method === "GET" || request.method === "POST")) return authCallback(ctx, m[1]);
   if (url.pathname === "/auth/providers" && request.method === "GET") return json(200, providers(ctx.env));
   if (url.pathname === "/auth/email/start" && request.method === "POST") return emailStart(ctx);
+  if (url.pathname === "/auth/invite" && request.method === "POST") return inviteSignup(ctx);
   if (url.pathname === "/auth/email/verify" && request.method === "POST") return emailVerify(ctx);
   if (url.pathname === "/auth/logout" && request.method === "POST") {
     csrf(ctx);
@@ -86,7 +92,8 @@ async function authStart(ctx, provider) {
   if (mode === "link") {
     const s = await readSession(ctx);
     if (!s || s.user.status !== "active") return loginError(ctx, "connexion_requise");
-    if (now - s.session.auth_at > REAUTH_WINDOW) return redirect(`${ctx.origin}${LOGIN_PAGE}?erreur=reauth&suite=${encodeURIComponent(ACCOUNT_PAGE + "#profil")}`);
+    // Compte créé par code d'invitation, sans moyen de connexion : il n'y a rien à revérifier, la session est la seule preuve.
+    if (now - s.session.auth_at > REAUTH_WINDOW && (await identityCount(ctx, s.user.id)) > 0) return redirect(`${ctx.origin}${LOGIN_PAGE}?erreur=reauth&suite=${encodeURIComponent(ACCOUNT_PAGE + "#profil")}`);
     linkUserId = s.user.id;
   }
   if (mode === "recovery") {
@@ -215,7 +222,7 @@ async function emailStart(ctx) {
   if (mode === "link") {
     const s = await readSession(ctx);
     if (!s || s.expired || s.user.status !== "active") throw new HttpError(401, "Connectez-vous d'abord.", "connexion_requise");
-    if (now - s.session.auth_at > REAUTH_WINDOW) throw new HttpError(403, "Par sécurité, reconnectez-vous avant d'associer un nouveau moyen de connexion.", "reauth");
+    if (now - s.session.auth_at > REAUTH_WINDOW && (await identityCount(ctx, s.user.id)) > 0) throw new HttpError(403, "Par sécurité, reconnectez-vous avant d'associer un nouveau moyen de connexion.", "reauth");
     linkUserId = s.user.id;
   }
   if (mode === "recovery") {
@@ -303,7 +310,7 @@ async function readSession(ctx) {
   const idHash = await sha256(token);
   const session = await ctx.env.DB.prepare("SELECT * FROM sessions WHERE id_hash = ?").bind(idHash).first();
   if (!session) return null;
-  if (session.expires_at < ctx.now || session.last_seen_at < ctx.now - IDLE_TTL) {
+  if (session.expires_at < ctx.now || session.last_seen_at < ctx.now - idleFor(session)) {
     await ctx.env.DB.prepare("DELETE FROM sessions WHERE id_hash = ?").bind(idHash).run();
     return { expired: true };
   }
@@ -381,11 +388,11 @@ async function getMe(ctx) {
     user: publicUser(user), identities: ids.map((i) => ({ ...i, email_verified: !!i.email_verified, is_private_email: !!i.is_private_email })),
     memberships: mem.map((x) => ({ ...x, permissions: x.status === "active" ? permissionsFor(user.platform_admin ? "platform" : x.role) : [] })),
     activeOrgId: (mem.some((x) => x.org_id === session.active_org_id && x.status === "active") || (user.platform_admin && session.active_org_id)) ? session.active_org_id : (mem.find((x) => x.status === "active")?.org_id || null),
-    session: { expiresAt: Math.min(session.expires_at, session.last_seen_at + IDLE_TTL), authAt: session.auth_at },
+    session: { expiresAt: Math.min(session.expires_at, session.last_seen_at + idleFor(session)), authAt: session.auth_at, kind: session.kind || "auth", idleHours: idleFor(session) / 3600e3 },
     providers: providers(ctx.env), platform: { isAdmin: !!user.platform_admin, canBootstrap: !platformHasAdmin && !!ctx.env.ADMIN_CODE },
   });
 }
-const publicUser = (u) => ({ id: u.id, first_name: u.first_name, last_name: u.last_name, photo: u.photo, locale: u.locale, job_title: u.job_title, notif_prefs: safeJson(u.notif_prefs, {}), status: u.status, platform_admin: !!u.platform_admin, created_at: u.created_at });
+const publicUser = (u) => ({ id: u.id, contact_email: u.contact_email || null, signup: u.signup || null, first_name: u.first_name, last_name: u.last_name, photo: u.photo, locale: u.locale, job_title: u.job_title, notif_prefs: safeJson(u.notif_prefs, {}), status: u.status, platform_admin: !!u.platform_admin, created_at: u.created_at });
 
 async function patchMe(ctx) {
   const { user } = await requireUser(ctx);
@@ -394,6 +401,11 @@ async function patchMe(ctx) {
   if ("first_name" in b) f.first_name = clip(b.first_name, 60);
   if ("last_name" in b) f.last_name = clip(b.last_name, 60);
   if ("job_title" in b) f.job_title = clip(b.job_title, 80);
+  if ("contact_email" in b) {
+    const e = normEmail(b.contact_email);
+    if (e && (!EMAIL_RE.test(e) || e.length > 254)) throw new HttpError(400, "Adresse courriel invalide.", "invalid");
+    f.contact_email = e || null; // coordonnée non vérifiée : jamais utilisée pour se connecter
+  }
   if ("locale" in b) { if (!["fr-CA", "en-CA"].includes(b.locale)) throw new HttpError(400, "Langue non prise en charge.", "invalid"); f.locale = b.locale; }
   if ("photo" in b) f.photo = validImage(b.photo);
   if ("notif_prefs" in b) {
@@ -498,7 +510,8 @@ async function patchOrg(ctx, orgId) {
 /* ----- Membres ----- */
 async function memberRows(ctx, orgId) {
   return (await ctx.env.DB.prepare(`SELECT m.id, m.user_id, m.role, m.function, m.status, m.created_at, m.updated_at, u.first_name, u.last_name, u.photo, u.job_title, u.status AS user_status,
-      (SELECT i.email FROM identities i WHERE i.user_id = m.user_id ORDER BY i.is_private_email, i.created_at LIMIT 1) AS email,
+      COALESCE((SELECT i.email FROM identities i WHERE i.user_id = m.user_id ORDER BY i.is_private_email, i.created_at LIMIT 1), u.contact_email) AS email,
+      NOT EXISTS (SELECT 1 FROM identities i WHERE i.user_id = m.user_id) AS email_unverified, u.signup AS signup,
       (SELECT MAX(s.last_seen_at) FROM sessions s WHERE s.user_id = m.user_id) AS last_seen_at
     FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.org_id = ? ORDER BY u.first_name, u.last_name`).bind(orgId).all()).results;
 }
@@ -715,10 +728,10 @@ async function listAccessCodes(ctx, orgId) {
     WHERE c.org_id = ? ORDER BY c.created_at DESC LIMIT 100`).bind(orgId).all()).results;
   return json(200, { codes: await Promise.all(rows.map((c) => accessCodeView(ctx, c))), keyReady: !!(ctx.env.ACCESS_CODE_KEY || ctx.env.ADMIN_CODE) });
 }
+// Les codes d'invitation expirent toujours 24 heures après leur création. Par défaut : usage unique.
 function codeSettings(b) {
-  const days = Math.round(Number(b.expiresInDays ?? 30));
-  if (!(days >= 1 && days <= 365)) throw new HttpError(400, "La durée de validité doit être entre 1 et 365 jours.", "invalid");
-  let maxUses = b.maxUses === null || b.maxUses === "" || b.maxUses === undefined ? null : Math.round(Number(b.maxUses));
+  const days = 1;
+  let maxUses = b.maxUses === undefined ? 1 : b.maxUses === null || b.maxUses === "" ? null : Math.round(Number(b.maxUses));
   if (maxUses !== null && !(maxUses >= 1 && maxUses <= 10000)) throw new HttpError(400, "Le nombre maximal d'utilisations doit être entre 1 et 10 000 (ou illimité).", "invalid");
   return { days, maxUses, label: clip(b.label, 60) };
 }
@@ -759,8 +772,7 @@ async function renewAccessCode(ctx, orgId, codeId) {
   const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
   const old = await getOrgCode(ctx, orgId, codeId);
   const b = await body(ctx);
-  const days = b.expiresInDays ?? Math.max(1, Math.min(365, Math.round((old.expires_at - old.created_at) / 86400e3)));
-  const st = codeSettings({ expiresInDays: days, maxUses: "maxUses" in b ? b.maxUses : old.max_uses, label: "label" in b ? b.label : old.label });
+  const st = codeSettings({ maxUses: "maxUses" in b ? b.maxUses : old.max_uses, label: "label" in b ? b.label : old.label });
   await ctx.env.DB.prepare("UPDATE access_codes SET revoked_at = COALESCE(revoked_at, ?), revoked_by = COALESCE(revoked_by, ?) WHERE id = ?").bind(ctx.now, user.id, codeId).run();
   const { id, code } = await insertAccessCode(ctx, orgId, user.id, st);
   await ctx.env.DB.prepare("UPDATE access_codes SET replaced_by = ? WHERE id = ?").bind(id, codeId).run();
@@ -773,34 +785,78 @@ const CODE_MSG = {
   invalid: "Ce code n'est pas valide. Vérifiez-le auprès de l'administrateur de votre établissement.",
   revoked: "Ce code a été révoqué. Demandez un nouveau code à l'administrateur de votre établissement.",
   expired: "Ce code a expiré. Demandez un nouveau code à l'administrateur de votre établissement.",
-  exhausted: "Ce code a atteint son nombre maximal d'utilisations. Demandez un nouveau code à l'administrateur.",
+  exhausted: "Ce code a déjà été utilisé. Demandez un nouveau code à l'administrateur de votre établissement.",
 };
+const codeFail = (state) => { throw new HttpError(state === "invalid" ? 404 : 410, CODE_MSG[state], "code_" + state, { field: "code" }); };
+// Vérifie un code côté serveur (empreinte, établissement actif, révocation, expiration, utilisations).
+async function findActiveCode(ctx, raw) {
+  const n = normAccessCode(raw);
+  if (n.length !== CODE_LEN) codeFail("invalid");
+  const c = await ctx.env.DB.prepare("SELECT c.*, o.name AS org_name, o.status AS org_status FROM access_codes c JOIN organizations o ON o.id = c.org_id WHERE c.code_hash = ?").bind(await accessHash(n)).first();
+  if (!c || c.org_status !== "active") codeFail("invalid");
+  const state = codeState(c, ctx.now);
+  if (state !== "active") codeFail(state);
+  return c;
+}
+// Utilisation comptée de façon atomique : la limite et l'expiration sont revérifiées dans la même requête.
+async function consumeCode(ctx, c) {
+  const r = await ctx.env.DB.prepare("UPDATE access_codes SET uses = uses + 1, last_used_at = ? WHERE id = ? AND revoked_at IS NULL AND expires_at > ? AND (max_uses IS NULL OR uses < max_uses)").bind(ctx.now, c.id, ctx.now).run();
+  if (!changes(r)) { const now = codeState(await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(c.id).first(), ctx.now); codeFail(now === "active" ? "invalid" : now); }
+}
+const giveBackCode = (ctx, c) => ctx.env.DB.prepare("UPDATE access_codes SET uses = MAX(uses - 1, 0) WHERE id = ?").bind(c.id).run();
+const identityCount = async (ctx, userId) => (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM identities WHERE user_id = ?").bind(userId).first()).n;
+
+// Premier accès : prénom + courriel (non vérifié) + code d'invitation. Crée un nouveau compte Membre et ouvre une session.
+// Le courriel ne retrouve jamais un compte existant et ne déclenche aucune fusion : chaque premier accès crée un compte distinct.
+async function inviteSignup(ctx) {
+  csrf(ctx);
+  const ip = ctx.request.headers.get("cf-connecting-ip") || "?";
+  await rateLimit(ctx, "invite:ip:" + ip, 10, 15 * 60e3);
+  await rateLimit(ctx, "invite:ipday:" + ip, 40, 24 * 3600e3);
+  const b = await body(ctx);
+  const first = clip(String(b.first_name || "").replace(/[<>]/g, ""), 60);
+  if (!first) throw new HttpError(400, "Entrez votre prénom.", "prenom_requis", { field: "first_name" });
+  const email = normEmail(b.email);
+  if (!EMAIL_RE.test(email) || email.length > 254) throw new HttpError(400, "Entrez une adresse courriel valide.", "courriel_invalide", { field: "email" });
+  const c = await findActiveCode(ctx, b.code);
+  await consumeCode(ctx, c);
+  const { env, now } = ctx;
+  const userId = uid(), token = randomToken(32);
+  try {
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO users (id, first_name, contact_email, signup, locale, created_at, updated_at) VALUES (?,?,?,'invite','fr-CA',?,?)").bind(userId, first, email, now, now),
+      env.DB.prepare("INSERT INTO memberships (id, org_id, user_id, role, function, status, joined_via, created_at, updated_at) VALUES (?,?,?,'member','other','active',?,?,?)").bind(uid(), c.org_id, userId, "code:" + c.id, now, now),
+      env.DB.prepare("INSERT INTO sessions (id_hash, user_id, created_at, auth_at, last_seen_at, expires_at, active_org_id, user_agent, kind) VALUES (?,?,?,?,?,?,?,?,'invite')")
+        .bind(await sha256(token), userId, now, now, now, now + FIRST_TTL, c.org_id, clip(ctx.request.headers.get("user-agent"), 200)),
+    ]);
+  } catch (e) { await giveBackCode(ctx, c); throw e; }
+  // Une éventuelle session précédente dans ce navigateur est fermée : un seul compte actif par appareil.
+  const prev = readCookie(ctx.request, SESSION_COOKIE);
+  if (prev) await env.DB.prepare("DELETE FROM sessions WHERE id_hash = ?").bind(await sha256(prev)).run();
+  await audit(ctx, { actor: userId, action: "account.created", target: userId, details: { provider: "invite" } });
+  await audit(ctx, { org: c.org_id, actor: userId, action: "access_code.redeemed", target: userId, details: { codeId: c.id, label: c.label, firstAccess: true } });
+  return json(200, { ok: true, next: "/agent/", orgName: c.org_name },
+    { "set-cookie": cookie(SESSION_COOKIE, token, { path: "/", maxAge: FIRST_TTL / 1000, sameSite: "Lax" }) });
+}
+
 async function redeemAccessCode(ctx) {
   const { user, idHash } = await requireUser(ctx);
   // Limites : par compte et par adresse IP, comptées avant toute vérification.
   await rateLimit(ctx, "redeem:u:" + user.id, 8, 15 * 60e3);
   await rateLimit(ctx, "redeem:ip:" + (ctx.request.headers.get("cf-connecting-ip") || "?"), 30, 3600e3);
   const b = await body(ctx);
-  const n = normAccessCode(b.code);
-  const fail = (state) => { throw new HttpError(state === "invalid" ? 404 : 410, CODE_MSG[state], "code_" + state); };
-  if (n.length !== CODE_LEN) fail("invalid");
-  const c = await ctx.env.DB.prepare("SELECT c.*, o.name AS org_name, o.status AS org_status FROM access_codes c JOIN organizations o ON o.id = c.org_id WHERE c.code_hash = ?").bind(await accessHash(n)).first();
-  if (!c || c.org_status !== "active") fail("invalid");
-  const state = codeState(c, ctx.now);
-  if (state !== "active") fail(state);
+  const c = await findActiveCode(ctx, b.code);
   const existing = await ctx.env.DB.prepare("SELECT * FROM memberships WHERE org_id = ? AND user_id = ?").bind(c.org_id, user.id).first();
   if (existing && existing.status === "disabled")
     throw new HttpError(403, `Votre accès à ${c.org_name} a été retiré par un administrateur. Le code ne permet pas de le rétablir : communiquez avec l'administrateur.`, "membership_disabled");
   if (!existing) {
-    // Utilisation comptée de façon atomique : la limite et l'expiration sont revérifiées dans la même requête.
-    const r = await ctx.env.DB.prepare("UPDATE access_codes SET uses = uses + 1, last_used_at = ? WHERE id = ? AND revoked_at IS NULL AND expires_at > ? AND (max_uses IS NULL OR uses < max_uses)").bind(ctx.now, c.id, ctx.now).run();
-    if (!changes(r)) { const now = codeState(await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(c.id).first(), ctx.now); fail(now === "active" ? "invalid" : now); }
+    await consumeCode(ctx, c);
     try {
       await ctx.env.DB.prepare("INSERT INTO memberships (id, org_id, user_id, role, function, status, joined_via, created_at, updated_at) VALUES (?,?,?,'member','other','active',?,?,?)")
         .bind(uid(), c.org_id, user.id, "code:" + c.id, ctx.now, ctx.now).run();
     } catch (e) {
       // Double envoi simultané : l'appartenance existe déjà, on rend l'utilisation comptée en trop.
-      await ctx.env.DB.prepare("UPDATE access_codes SET uses = MAX(uses - 1, 0) WHERE id = ?").bind(c.id).run();
+      await giveBackCode(ctx, c);
     }
     await audit(ctx, { org: c.org_id, actor: user.id, action: "access_code.redeemed", target: user.id, details: { codeId: c.id, label: c.label } });
   }
@@ -823,15 +879,16 @@ export async function portalAccess(request, env) {
   const platform = !!s.user.platform_admin;
   if (!m && !platform) {
     const off = mem.filter((x) => x.status === "disabled").map((x) => x.org_name);
-    return { ok: false, status: 403, code: off.length ? "membership_disabled" : "no_access", disabledOrgs: off,
+    return { ok: false, status: 403, code: off.length ? "membership_disabled" : "no_access", disabledOrgs: off, who: { first_name: s.user.first_name || "" },
       error: off.length ? `Votre accès à ${off.join(", ")} a été retiré. Entrez un code d'un autre établissement ou communiquez avec l'administrateur.` : "Entrez le code d'accès de votre établissement pour continuer." };
   }
-  return { ok: true, user: s.user, platform, org: m ? { id: m.org_id, name: m.org_name } : null, role: platform ? "platform" : m.role,
+  const noIdentity = (await identityCount(ctx, s.user.id)) === 0;
+  return { ok: true, user: s.user, platform, noIdentity, needsProfile: noIdentity || !s.user.last_name, org: m ? { id: m.org_id, name: m.org_name } : null, role: platform ? "platform" : m.role,
     orgs: active.map((x) => ({ id: x.org_id, name: x.org_name, role: x.role })) };
 }
 async function accessStatus(ctx) {
   const a = await portalAccess(ctx.request, ctx.env);
-  if (!a.ok) return json(a.status, { access: false, code: a.code, error: a.error, disabledOrgs: a.disabledOrgs || [] });
+  if (!a.ok) return json(a.status, { access: false, code: a.code, error: a.error, disabledOrgs: a.disabledOrgs || [], user: a.who || null });
   return json(200, { access: true, org: a.org, role: a.role, platform: a.platform, orgs: a.orgs, user: { first_name: a.user.first_name, last_name: a.user.last_name } });
 }
 
