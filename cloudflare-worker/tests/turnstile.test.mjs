@@ -63,6 +63,6 @@ test("avec secret : envoi du code par courriel protégé ; l'association depuis 
 test("secret mal saisi : personne n'est bloqué (les limites habituelles restent)", async () => {
   const w = await world(true);
   w.env.TURNSTILE_SECRET = "secret-mal-copie";
-  const r = await new Browser(w.env).api("/auth/invite", { method: "POST", body: { first_name: "A", email: "a@a.ca", code: await newCode(w) } });
+  const r = await new Browser(w.env).api("/auth/invite", { method: "POST", body: { first_name: "A", email: "a@a.ca", code: await newCode(w), turnstile: "jeton-du-navigateur" } });
   assert.equal(r.status, 200);
 });
