@@ -37,7 +37,7 @@
 
 ### Codes d'invitation (Mon compte › Codes d'accès, administrateurs de l'établissement seulement)
 - **Gestion** : générer, consulter, copier, renouveler, révoquer.
-- **Validité** : 24 heures, durée fixe.
+- **Validité** : choisie par l'administrateur en heures, de 1 à 720 (30 jours), 24 heures par défaut. Le renouvellement reprend la même durée.
 - **Utilisations** : usage unique par défaut, ou un nombre choisi, ou illimité.
 - **Format** : 12 caractères, sans caractères ambigus.
 - **Stockage** : la vérification se fait par empreinte SHA-256. Le code est aussi chiffré (AES-GCM) pour être revu par l'administrateur tant qu'il est actif. La clé vient de `ACCESS_CODE_KEY`, sinon de `ADMIN_CODE`.

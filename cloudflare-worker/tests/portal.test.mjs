@@ -134,9 +134,14 @@ test("gestion des codes : consulter, renouveler, révoquer, expiration, nombre d
   assert.equal(r3.data.code, "code_expired"); assert.match(r3.data.error, /expiré/);
 
   // Réglages invalides
-  const long = await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInDays: 365 } });
-  assert.ok(long.data.code.expiresAt <= Date.now() + 24 * 3600e3 + 1000, "une durée demandée plus longue est ignorée : 24 h");
-  assert.equal(long.data.code.maxUses, 1, "usage unique par défaut");
+  const def = await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: {} });
+  assert.ok(Math.abs(def.data.code.expiresAt - (Date.now() + 24 * 3600e3)) < 60e3, "24 h par défaut");
+  assert.equal(def.data.code.maxUses, 1, "usage unique par défaut");
+  const h6 = await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInHours: 6 } });
+  assert.ok(Math.abs(h6.data.code.expiresAt - (Date.now() + 6 * 3600e3)) < 60e3, "durée choisie en heures");
+  const rn6 = await A.owner.api(`/api/orgs/${A.id}/access-codes/${h6.data.code.id}/renew`, { method: "POST", body: {} });
+  assert.ok(Math.abs(rn6.data.code.expiresAt - (Date.now() + 6 * 3600e3)) < 60e3, "le renouvellement garde la même durée");
+  for (const bad of [0, 721, 2.5, "abc"]) assert.equal((await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { expiresInHours: bad } })).status, 400, "durée refusée : " + bad);
   assert.equal((await A.owner.api(`/api/orgs/${A.id}/access-codes`, { method: "POST", body: { maxUses: 0 } })).status, 400);
 
   // Isolation : l'administrateur de B ne voit ni ne touche les codes de A ; un code de B rattache à B

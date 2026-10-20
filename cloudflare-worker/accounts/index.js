@@ -752,19 +752,21 @@ async function listAccessCodes(ctx, orgId) {
     WHERE c.org_id = ? ORDER BY c.created_at DESC LIMIT 100`).bind(orgId).all()).results;
   return json(200, { codes: await Promise.all(rows.map((c) => accessCodeView(ctx, c))), keyReady: !!(ctx.env.ACCESS_CODE_KEY || ctx.env.ADMIN_CODE) });
 }
-// Les codes d'invitation expirent toujours 24 heures après leur création. Par défaut : usage unique.
+// Durée de validité choisie par l'administrateur, en heures (1 à 720, soit 30 jours). Par défaut : 24 h, usage unique.
+const CODE_HOURS_MAX = 720;
 function codeSettings(b) {
-  const days = 1;
+  const hours = b.expiresInHours === undefined || b.expiresInHours === null || b.expiresInHours === "" ? 24 : Number(b.expiresInHours);
+  if (!Number.isInteger(hours) || hours < 1 || hours > CODE_HOURS_MAX) throw new HttpError(400, `La durée de validité doit être un nombre entier d'heures, entre 1 et ${CODE_HOURS_MAX}.`, "invalid");
   let maxUses = b.maxUses === undefined ? 1 : b.maxUses === null || b.maxUses === "" ? null : Math.round(Number(b.maxUses));
   if (maxUses !== null && !(maxUses >= 1 && maxUses <= 10000)) throw new HttpError(400, "Le nombre maximal d'utilisations doit être entre 1 et 10 000 (ou illimité).", "invalid");
-  return { days, maxUses, label: clip(b.label, 60) };
+  return { hours, maxUses, label: clip(b.label, 60) };
 }
-async function insertAccessCode(ctx, orgId, userId, { days, maxUses, label }) {
+async function insertAccessCode(ctx, orgId, userId, { hours, maxUses, label }) {
   const active = (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM access_codes WHERE org_id = ? AND revoked_at IS NULL AND expires_at > ?").bind(orgId, ctx.now).first()).n;
   if (active >= 20) throw new HttpError(409, "Cet établissement a déjà 20 codes actifs. Révoquez-en un avant d'en créer un autre.", "too_many");
   const id = uid(), code = newAccessCode();
   await ctx.env.DB.prepare("INSERT INTO access_codes (id, org_id, label, code_hash, code_enc, code_hint, max_uses, expires_at, created_by, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
-    .bind(id, orgId, label, await accessHash(code), await sealCode(ctx.env, code, id + ":" + orgId), "••••-••••-" + code.slice(-4), maxUses, ctx.now + days * 86400e3, userId, ctx.now).run();
+    .bind(id, orgId, label, await accessHash(code), await sealCode(ctx.env, code, id + ":" + orgId), "••••-••••-" + code.slice(-4), maxUses, ctx.now + hours * 3600e3, userId, ctx.now).run();
   return { id, code };
 }
 async function createAccessCode(ctx, orgId) {
@@ -772,7 +774,7 @@ async function createAccessCode(ctx, orgId) {
   const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
   const st = codeSettings(await body(ctx));
   const { id, code } = await insertAccessCode(ctx, orgId, user.id, st);
-  await audit(ctx, { org: orgId, actor: user.id, action: "access_code.created", details: { codeId: id, label: st.label, days: st.days, maxUses: st.maxUses } });
+  await audit(ctx, { org: orgId, actor: user.id, action: "access_code.created", details: { codeId: id, label: st.label, hours: st.hours, maxUses: st.maxUses } });
   const row = await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(id).first();
   return json(201, { code: { ...(await accessCodeView(ctx, row)), code } });
 }
@@ -796,7 +798,9 @@ async function renewAccessCode(ctx, orgId, codeId) {
   const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
   const old = await getOrgCode(ctx, orgId, codeId);
   const b = await body(ctx);
-  const st = codeSettings({ maxUses: "maxUses" in b ? b.maxUses : old.max_uses, label: "label" in b ? b.label : old.label });
+  // Même durée que l'ancien code (bornée), sauf si une autre est demandée
+  const oldHours = Math.min(CODE_HOURS_MAX, Math.max(1, Math.round((old.expires_at - old.created_at) / 3600e3)));
+  const st = codeSettings({ expiresInHours: "expiresInHours" in b ? b.expiresInHours : oldHours, maxUses: "maxUses" in b ? b.maxUses : old.max_uses, label: "label" in b ? b.label : old.label });
   await ctx.env.DB.prepare("UPDATE access_codes SET revoked_at = COALESCE(revoked_at, ?), revoked_by = COALESCE(revoked_by, ?) WHERE id = ?").bind(ctx.now, user.id, codeId).run();
   const { id, code } = await insertAccessCode(ctx, orgId, user.id, st);
   await ctx.env.DB.prepare("UPDATE access_codes SET replaced_by = ? WHERE id = ?").bind(id, codeId).run();

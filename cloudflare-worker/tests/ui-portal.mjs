@@ -84,13 +84,16 @@ ok(true, "administratrice : connexion existante, sans code d'invitation");
 await a.goto(ORIGIN + "/agent/compte.html#codes");
 await a.waitForSelector("#newCode"); await a.click("#newCode");
 ok((await a.inputValue("#cMax")) === "1", "codes : usage unique proposé par défaut");
-ok(/24 heures/.test(await a.textContent("#dlgForm")), "codes : validité de 24 heures affichée");
+ok((await a.inputValue("#cHours")) === "24", "codes : 24 heures proposées par défaut");
+await a.fill("#cHours", "48");
 await a.fill("#cLabel", "Julie (accueil)");
 await shot(a, "02-admin-generer");
 await a.click("#dlgForm button[value=ok]");
 await a.waitForSelector("#cpNew");
 const CODE = (await a.textContent("#dlgForm .codeval")).trim();
 await a.click("#dlgForm button[value=ok]");
+const exp48 = env.DB.raw("SELECT expires_at - created_at AS d FROM access_codes ORDER BY created_at DESC LIMIT 1")[0].d;
+ok(exp48 === 48 * 3600e3, "codes : durée choisie en heures appliquée (48 h)");
 const code2 = (await owner.api(`/api/orgs/${org.org.id}/access-codes`, { method: "POST", body: { label: "Équipe", maxUses: 5 } })).data.code.code;
 
 // 2. Premier accès sur téléphone : prénom, courriel, code

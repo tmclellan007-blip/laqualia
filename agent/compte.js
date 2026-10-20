@@ -443,7 +443,7 @@
     main.innerHTML = head(org.org_name) + `
       <div class="cards">
         <section class="card" aria-labelledby="h-how"><h2 id="h-how">Comment ça marche</h2>
-          <p class="lead" style="margin-bottom:0">Transmettez vous-même le code (en personne, par téléphone ou par messagerie). Il est valable <b>24 heures</b>. La personne ouvre <b>laqualia.com/agent</b> et entre seulement son prénom, son adresse courriel et ce code : son profil est créé et le portail s'ouvre. Elle devient <b>Membre</b> de l'établissement : Réception, Équipe technique et tableau de bord. Le code ne donne jamais de droits d'administration.</p>
+          <p class="lead" style="margin-bottom:0">Transmettez vous-même le code (en personne, par téléphone ou par messagerie). Il expire après le nombre d'heures que vous choisissez (<b>24 heures</b> par défaut). La personne ouvre <b>laqualia.com/agent</b> et entre seulement son prénom, son adresse courriel et ce code : son profil est créé et le portail s'ouvre. Elle devient <b>Membre</b> de l'établissement : Réception, Équipe technique et tableau de bord. Le code ne donne jamais de droits d'administration.</p>
         </section>
         <div class="notice info"><div><b>Révoquer un code</b> bloque les nouvelles inscriptions, sans retirer l'accès des personnes déjà inscrites. Pour retirer l'accès d'une personne, désactivez-la dans <a href="#membres">Membres et invitations</a>.</div></div>
         <section class="card" aria-labelledby="h-codes"><h2 id="h-codes">Codes de l'établissement</h2><p class="lead">Seuls les administrateurs voient cette page. Les membres ne peuvent pas consulter les codes.</p>
@@ -484,7 +484,7 @@
     }));
     box.querySelectorAll("[data-renew]").forEach((b) => (b.onclick = async () => {
       const c = d.codes.find((x) => x.id === b.dataset.renew);
-      if (!(await confirmBox("Renouveler ce code ?", `Un nouveau code est créé avec les mêmes réglages${c.state === "active" ? " ; l'ancien cesse aussitôt de fonctionner" : ""}. Les personnes déjà inscrites gardent leur accès.`, "Renouveler"))) return;
+      if (!(await confirmBox("Renouveler ce code ?", `Un nouveau code est créé avec les mêmes réglages (même durée de validité, comptée à partir de maintenant)${c.state === "active" ? " ; l'ancien cesse aussitôt de fonctionner" : ""}. Les personnes déjà inscrites gardent leur accès.`, "Renouveler"))) return;
       try { const r = await api(`/api/orgs/${S.orgId}/access-codes/${c.id}/renew`, { method: "POST", body: {} }); await showNewCode(r.code); loadCodes(); } catch (e) { fail(e); }
     }));
   }
@@ -496,13 +496,15 @@
     const v = await dialog(`<h2>Générer un code d'accès</h2><p>Les personnes qui l'entrent deviennent Membres de l'établissement.</p>
       <div class="f" style="margin:0"><label for="cLabel">Nom du code <span class="hint">(facultatif, visible des administrateurs seulement)</span></label><input type="text" id="cLabel" name="label" maxlength="60" placeholder="Ex. : Équipe de soir"></div>
       <div class="grid2">
-        <div class="f" style="margin:0"><span class="lbl">Validité</span><p style="margin:6px 0 0"><b>24 heures</b> après la création</p><span class="hint">Durée fixe, pour limiter les risques si le code circule.</span></div>
+        <div class="f" style="margin:0"><label for="cHours">Expire après (heures)</label><input type="number" id="cHours" name="expiresInHours" min="1" max="720" step="1" inputmode="numeric" value="24" required><span class="hint">De 1 à 720 heures (30 jours). Plus c'est court, plus c'est sûr.</span></div>
         <div class="f" style="margin:0"><label for="cMax">Nombre de personnes</label><input type="number" id="cMax" name="maxUses" min="1" max="10000" inputmode="numeric" value="1" placeholder="Illimité"><span class="hint">1 = usage unique (recommandé). Vide = illimité.</span></div>
       </div>
       <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Annuler</button><button class="btn" value="ok">Générer</button></div>`);
     if (!v) return;
     try {
-      const r = await api(`/api/orgs/${S.orgId}/access-codes`, { method: "POST", body: { label: v.label, maxUses: v.maxUses ? Number(v.maxUses) : null } });
+      const hours = Number(v.expiresInHours);
+      if (!Number.isInteger(hours) || hours < 1 || hours > 720) { toast("La durée doit être un nombre entier d'heures, entre 1 et 720.", true); return; }
+      const r = await api(`/api/orgs/${S.orgId}/access-codes`, { method: "POST", body: { label: v.label, expiresInHours: hours, maxUses: v.maxUses ? Number(v.maxUses) : null } });
       await showNewCode(r.code); loadCodes();
     } catch (e) { fail(e); }
   }
