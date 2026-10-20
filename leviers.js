@@ -49,7 +49,7 @@
       const next = new Image();
       next.onload = next.onerror = () => {
         img.src = src(s.n, 1200); img.srcset = `${src(s.n, 1200)} 1200w, ${src(s.n, 1920)} 1920w`;
-        img.alt = `${s.t} — ${s.c}`;
+        img.alt = `${s.t}${EN ? ":" : " :"} ${s.c}`;
         requestAnimationFrame(() => img.classList.remove('is-swap'));
       };
       next.src = src(s.n, 1200);
@@ -79,7 +79,7 @@
   function lbShow(i) {
     lbI = (i + lbShots.length) % lbShots.length;
     const s = lbShots[lbI];
-    lbImg.src = src(s.n, 1920); lbImg.alt = `${s.t} — ${s.c}`;
+    lbImg.src = src(s.n, 1920); lbImg.alt = `${s.t}${EN ? ":" : " :"} ${s.c}`;
     lb.querySelector('.lb-scroll').scrollLeft = 0;
     document.getElementById('lev-lb-count').textContent = `${lbI + 1} / ${lbShots.length}`;
     document.getElementById('lev-lb-title').textContent = s.t;
