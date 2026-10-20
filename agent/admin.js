@@ -22,12 +22,17 @@
   let apiUrl = "", adminCode = ss.get("lq-admin-code") || "", role = "reception", data = null, dirty = false, busy = false;
 
   /* ---------- appels au relais ---------- */
+  // Sur laqualia.com : la session de l'administrateur de la plateforme remplace le code Admin.
+  const ACCOUNT_HOST = /(^|\.)laqualia\.(com|test)$/i.test(location.hostname);
   async function call(body) {
-    const r = await fetch(apiUrl, {
+    const r = ACCOUNT_HOST
+      ? await fetch("/api/agent", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-agent-mode": "admin", "x-lq-csrf": "1" }, body: JSON.stringify({ role, ...body }) })
+      : await fetch(apiUrl, {
       method: "POST",
       headers: { "content-type": "application/json", "x-agent-code": ls.get("lq-agent-code") || "", "x-agent-mode": "admin", "x-admin-code": adminCode },
       body: JSON.stringify({ role, ...body }),
     });
+    if (ACCOUNT_HOST && r.status === 401) { location.replace("connexion.html?suite=" + encodeURIComponent("/agent/admin.html")); throw new Error("Connexion requise."); }
     let j = {}; try { j = await r.json(); } catch {}
     if (!r.ok) { const e = new Error(j.error || "Le relais n'a pas répondu."); e.status = r.status; throw e; }
     return j;
@@ -334,6 +339,14 @@
   fetch("config.json", { cache: "no-cache" }).then((r) => r.json()).then((c) => {
     fileCfg = c || {};
     apiUrl = c.apiUrl || "";
+    if (ACCOUNT_HOST) {
+      // Aucun code à saisir : le relais vérifie la session et le statut d'administrateur de la plateforme.
+      $("adminCode").hidden = $("loginGo").hidden = true;
+      $("loginForm").querySelector("p").textContent = "Vérification de votre compte…";
+      load().then(() => { $("login").hidden = true; $("app").hidden = false; $("savebar").hidden = false; $("out").hidden = true; })
+        .catch((e) => { $("loginForm").querySelector("p").innerHTML = '<a href="./">Retour au portail</a>'; $("loginErr").hidden = false; $("loginErr").textContent = e.status === 403 ? "La configuration de l'agent est réservée à l'administrateur de la plateforme. Votre compte n'a pas ce droit." : e.message; });
+      return;
+    }
     if (!apiUrl) { $("loginErr").hidden = false; $("loginErr").textContent = "apiUrl manquante dans config.json."; return; }
     if (adminCode) login(adminCode); else setTimeout(() => $("adminCode").focus(), 50);
   }).catch(() => { $("loginErr").hidden = false; $("loginErr").textContent = "Impossible de lire config.json."; });

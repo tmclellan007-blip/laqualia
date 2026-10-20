@@ -135,6 +135,16 @@ dialog::backdrop{background:#040f32a6}
 .linkbtn{background:none;border:0;padding:6px 0;color:var(--role);font-weight:700;font-size:14.5px;text-decoration:underline;text-underline-offset:3px}
 .linkbtn:disabled{opacity:.5}
 input[aria-invalid="true"]{border-color:var(--danger)}
+.codein.access{font-size:22px!important;letter-spacing:4px}
+.field-err{color:var(--danger);font-weight:700;font-size:14px}
+.codecard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.codecard + .codecard{margin-top:10px}
+.codecard .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.codecard .top b{font-size:15.5px}
+.codecard .meta{display:flex;gap:6px 16px;flex-wrap:wrap;color:var(--muted);font-size:13.5px}
+.codeval{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:800;font-size:18px;letter-spacing:2px;background:#f6f5f1;border:1.5px dashed #c9c6d6;border-radius:10px;padding:8px 12px;user-select:all;word-break:break-all}
+.codeval.masked{letter-spacing:1px;color:var(--muted);font-weight:700}
+.codecard.off{background:#faf9f6}
 
 @media (max-width:900px){
   .layout{grid-template-columns:minmax(0,1fr);padding:16px 14px 80px;gap:16px}

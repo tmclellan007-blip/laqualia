@@ -65,6 +65,31 @@
   let code = store.get("lq-agent-code") || "";
   let prenom = store.get("lq-prenom") || "";
   let needsCode = true;
+  // Portail par compte (laqualia.com) : session + établissement validé remplacent les codes d'équipe, TSA et Admin.
+  // Ailleurs (miroir GitHub Pages, essais locaux), l'ancien accès par code reste en place.
+  const ACCOUNT_HOST = /(^|\.)laqualia\.(com|test)$/i.test(location.hostname);
+  let accountMode = false, account = null;
+  function leavePortal(status, why) {
+    const dest = status === 401
+      ? "connexion.html?suite=" + encodeURIComponent("/agent/") + (why === "session_expired" ? "&erreur=session_expiree" : "")
+      : why === "account_deactivated" ? "compte.html#profil" : "acces.html" + (why === "membership_disabled" ? "?raison=retire" : "");
+    location.replace(dest);
+  }
+  // Tous les appels au relais passent ici. En mode compte : témoin de session, en-tête anti-CSRF, aucun code.
+  function apiFetch(opts = {}) {
+    if (!accountMode) return fetch(cfg.apiUrl, opts);
+    const h = { ...(opts.headers || {}) };
+    delete h["x-agent-code"]; delete h["x-tsa-code"];
+    if ((opts.method || "GET") !== "GET") h["x-lq-csrf"] = "1";
+    return fetch(cfg.apiUrl, { ...opts, headers: h, credentials: "same-origin" }).then(async (r) => {
+      if (r.status === 401 || r.status === 403) {
+        let d = {}; try { d = await r.clone().json(); } catch {}
+        // Accès retiré ou session terminée pendant la navigation : on quitte le portail aussitôt.
+        if (r.status === 401 || ["no_access", "membership_disabled", "account_deactivated"].includes(d.code)) leavePortal(r.status, d.code);
+      }
+      return r;
+    });
+  }
   const cleanName = (v) => String(v || "").replace(/[^\p{L}\p{M}' -]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
   function showName() {
     $("helloName").textContent = prenom ? " " + prenom : "";
@@ -516,7 +541,7 @@
     let idleTimer = setTimeout(cut, 60000);
     const alive = () => { clearTimeout(idleTimer); idleTimer = setTimeout(cut, 60000); };
     try {
-      const res = await fetch(cfg.apiUrl, {
+      const res = await apiFetch({
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ question: q, history: turns.slice(-8), tier, prenom, role }),
@@ -625,6 +650,7 @@
 
   /* ---------- code d'accès ---------- */
   function askCode(invalid, nameOnly) {
+    if (accountMode && invalid) return; // en mode compte, un refus mène à la connexion ou à la page d'accès
     $("codebox").hidden = false;
     $("codeErr").hidden = !invalid;
     if (invalid) { code = ""; store.del("lq-agent-code"); }
@@ -900,7 +926,7 @@
   async function checkTsa(candidate) {
     if (!cfg.apiUrl) return { tsa: false, tsaOk: false };
     const h = { "x-agent-code": code }; if (candidate) h["x-tsa-code"] = candidate;
-    const r = await fetch(cfg.apiUrl, { headers: h });
+    const r = await apiFetch({ headers: h });
     return r.ok ? r.json() : { tsa: false, tsaOk: false };
   }
   $("tsaForm").addEventListener("submit", async (e) => {
@@ -1141,7 +1167,7 @@
 
   async function simAsk(payload, onText, signal) {
     if (!cfg.apiUrl) throw new Error("L'assistant n'est pas encore activé.");
-    const res = await fetch(cfg.apiUrl, {
+    const res = await apiFetch({
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ...payload, role, mode: "simulation", tier, prenom, level, voix: sim.voice || undefined, genre: sim.voice && sim.genre ? sim.genre : undefined }),
@@ -1503,7 +1529,7 @@
     });
   }
   async function fetchTTS(text, voice) {
-    const r = await fetch(cfg.apiUrl, {
+    const r = await apiFetch({
       method: "POST", signal: vc.ttsAbort.signal,
       headers: { "content-type": "application/json", "x-agent-code": code, "x-agent-mode": "tts" },
       body: JSON.stringify({ text, voice }),
@@ -1613,7 +1639,7 @@
       vc.want = false; vc.transcribing = true; micUI();
       const ctl = (vc.sttAbort = new AbortController());
       try {
-        const r = await fetch(cfg.apiUrl, {
+        const r = await apiFetch({
           method: "POST", signal: ctl.signal,
           headers: { "content-type": "audio/wav", "x-agent-code": code, "x-agent-mode": "stt" },
           body: encodeWav(chunks, rate),
@@ -1794,7 +1820,7 @@
       if (!send || !started) { dictUI(); return; }
       dict.busy = true; dictUI();
       try {
-        const r = await fetch(cfg.apiUrl, { method: "POST", headers: { "content-type": "audio/wav", "x-agent-code": code, "x-agent-mode": "stt" }, body: encodeWav(chunks, ctx.sampleRate) });
+        const r = await apiFetch({ method: "POST", headers: { "content-type": "audio/wav", "x-agent-code": code, "x-agent-mode": "stt" }, body: encodeWav(chunks, ctx.sampleRate) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j.error || "Dictée indisponible.");
         if (j.text) dictWrite(j.text); else dictHint("Je n'ai pas bien entendu. Réessayez.");
@@ -1919,9 +1945,21 @@
     .catch(() => {})
     .then(() => {
       applyCfg();
-      if (!cfg.apiUrl) { setStatus("bad", "Assistant pas encore activé"); return; }
+      if (!cfg.apiUrl && !ACCOUNT_HOST) { setStatus("bad", "Assistant pas encore activé"); return; }
       const h0 = {}; if (tsaCode) h0["x-tsa-code"] = tsaCode;
-      return fetch(cfg.apiUrl, { headers: h0 }).then((r) => (r.ok ? r.json() : null)).then((s) => {
+      const statusP = ACCOUNT_HOST
+        ? fetch("/api/agent", { credentials: "same-origin", cache: "no-store" }).then(async (r) => {
+            let d = null; try { d = await r.json(); } catch {}
+            if (r.status === 401 || r.status === 403) { leavePortal(r.status, d && d.code); return "stop"; }
+            if (!r.ok || !d || !d.account) return null;
+            accountMode = true; account = d.account; cfg.apiUrl = "/api/agent";
+            return d;
+          })
+        : apiFetch({ headers: h0 }).then((r) => (r.ok ? r.json() : null));
+      return statusP.then((s) => {
+        if (s === "stop") return;
+        if (ACCOUNT_HOST) document.documentElement.classList.remove("lq-gate");
+        if (accountMode) applyAccount();
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
@@ -1937,12 +1975,33 @@
           applyCfg();
         }
         $("adminLink").hidden = !s.admin;
-        if (s.pub && s.pub.privacy) setPrivacy(s.pub.privacy);
         if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
         $("tsaLock").hidden = tsaVerified;
         if (store.get("lq-role") === "tsa" && tsaVerified && !isTsa()) switchRole("tsa", { silent: true });
         needsCode = !!s.needsCode;
         if ((needsCode && !code) || !prenom) askCode(false);
-      }).catch(() => setStatus("bad", "Service injoignable"));
+        // Avis de confidentialité après la fenêtre du prénom (jamais les deux à la fois)
+        if (s.pub && s.pub.privacy) setPrivacy(s.pub.privacy);
+      }).catch(() => { document.documentElement.classList.remove("lq-gate"); setStatus("bad", "Service injoignable"); });
     });
+
+  // Mode compte : prénom du compte, établissement affiché, déconnexion réelle de la session.
+  function applyAccount() {
+    tsaCode = ""; store.del("lq-tsa-code"); store.del("lq-agent-code"); code = "";
+    const fn = cleanName(account.first_name);
+    if (fn && !prenom) { prenom = fn; store.set("lq-prenom", prenom); showName(); }
+    const al = $("accountLink");
+    if (al && account.org) { al.title = `Mon compte · ${account.org.name}`; const sp = al.querySelector("span"); if (sp) sp.textContent = account.org.name; }
+    $("logout").onclick = async () => {
+      const btn = $("logout");
+      if (!btn.classList.contains("confirm")) {
+        btn.classList.add("confirm"); btn.querySelector("span").textContent = "Confirmer la déconnexion";
+        setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Se déconnecter"; }, 4000);
+        return;
+      }
+      ctl?.abort(); try { stopSim(true); } catch {}
+      try { await fetch("/auth/logout", { method: "POST", credentials: "same-origin", headers: { "x-lq-csrf": "1" } }); } catch {}
+      location.replace("connexion.html?suite=" + encodeURIComponent("/agent/"));
+    };
+  }
 })();

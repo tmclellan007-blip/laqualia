@@ -96,15 +96,16 @@
   $("logout").onclick = async () => { try { await api("/auth/logout", { method: "POST" }); } catch {} location.href = "connexion.html"; };
 
   function route() {
+    $("navCodes").hidden = !(S.orgId && canDo("access_codes.read"));
     const r = (location.hash.slice(1) || "profil").split("?")[0];
     document.querySelectorAll("#nav a").forEach((a) => (a.dataset.r === r ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
-    const view = { profil: viewProfile, etablissement: viewOrg, membres: viewMembers, roles: viewRoles, plateforme: viewPlatform }[r] || viewProfile;
+    const view = { profil: viewProfile, etablissement: viewOrg, membres: viewMembers, codes: viewCodes, roles: viewRoles, plateforme: viewPlatform }[r] || viewProfile;
     if (S.me.user.status === "deactivated" && view !== viewProfile) return viewProfile();
     view();
   }
   const noOrg = () => {
     const off = S.me.memberships.filter((m) => m.status === "disabled");
-    return `<div class="card">${off.length ? `<div class="notice warn" role="alert">Votre accès à ${off.map((m) => "<b>" + esc(m.org_name) + "</b>").join(", ")} a été désactivé par un responsable. Communiquez avec lui pour le rétablir.</div>` : ""}<div class="empty"><b>Aucun établissement actif</b>Ouvrez le lien d'invitation reçu de votre responsable pour rejoindre un établissement.</div></div>`;
+    return `<div class="card">${off.length ? `<div class="notice warn" role="alert">Votre accès à ${off.map((m) => "<b>" + esc(m.org_name) + "</b>").join(", ")} a été désactivé par un responsable. Communiquez avec lui pour le rétablir.</div>` : ""}<div class="empty"><b>Aucun établissement actif</b>Vous avez reçu un code d'accès ? <a href="acces.html">Entrez-le ici</a>. Vous pouvez aussi ouvrir le lien d'invitation reçu de votre responsable.</div></div>`;
   };
 
   /* ---------- Associer une adresse courriel (code à usage unique) ---------- */
@@ -168,7 +169,7 @@
           <h2 id="h-orgs">Mes établissements</h2><p class="lead">Votre rôle détermine vos permissions ; votre fonction décrit votre travail.</p>
           ${memberships.length ? `<ul class="list">${memberships.map((m) => `<li class="item"><div class="who"><span class="av" aria-hidden="true">${esc(m.org_name[0] || "?")}</span><div><b>${esc(m.org_name)}</b><small>${esc(fnLabel(m.function))}${m.org_city ? " · " + esc(m.org_city) : ""}</small></div></div>
             <div class="tags"><span class="badge ${ROLE_BADGE[m.role]}">${esc(roleLabel(m.role))}</span><span class="badge ${STATUS[m.status][0]}">${STATUS[m.status][1]}</span>${m.org_id === S.orgId ? '<span class="badge b-invited">Établissement actif</span>' : ""}</div>
-            <div class="acts">${m.status === "active" && m.org_id !== S.orgId ? `<button class="btn ghost sm" data-use="${esc(m.org_id)}">Travailler ici</button>` : ""}<button class="btn ghost sm" data-leave="${esc(m.org_id)}" ${deact ? "disabled" : ""}>Quitter</button></div></li>`).join("")}</ul>` : '<div class="empty"><b>Aucun établissement</b>Ouvrez le lien d\'invitation reçu pour rejoindre votre équipe.</div>'}
+            <div class="acts">${m.status === "active" && m.org_id !== S.orgId ? `<button class="btn ghost sm" data-use="${esc(m.org_id)}">Travailler ici</button>` : ""}<button class="btn ghost sm" data-leave="${esc(m.org_id)}" ${deact ? "disabled" : ""}>Quitter</button></div></li>`).join("")}</ul>` : '<div class="empty"><b>Aucun établissement</b>Vous avez reçu un code d\'accès ? <a href="acces.html">Entrez-le ici</a>, ou ouvrez le lien d\'invitation reçu.</div>'}
         </section>
         <section class="card" aria-labelledby="h-ids">
           <h2 id="h-ids">Moyens de connexion</h2><p class="lead">Associez un deuxième moyen de connexion : il vous servira si vous perdez l'accès au premier.</p>
@@ -372,7 +373,7 @@
     }));
     box.querySelectorAll("[data-remove]").forEach((b) => (b.onclick = async () => {
       const r = byId[b.dataset.remove];
-      if (!(await confirmBox("Retirer de l'établissement ?", `<b>${esc(fullName(r))}</b> ne fera plus partie de l'établissement. Son compte personnel n'est pas supprimé. Pour revenir, il faudra une nouvelle invitation.`, "Retirer", true))) return;
+      if (!(await confirmBox("Retirer de l'établissement ?", `<b>${esc(fullName(r))}</b> ne fera plus partie de l'établissement. Son compte personnel n'est pas supprimé. Pour revenir, il faudra une nouvelle invitation ou un code d'accès actif. Pour bloquer tout retour, désactivez plutôt son accès.`, "Retirer", true))) return;
       try { await api(`/api/orgs/${S.orgId}/members/${r.id}`, { method: "DELETE" }); toast("Membre retiré."); loadMembers(); loadAudit(); } catch (e) { fail(e); }
     }));
     box.querySelectorAll("[data-revoke]").forEach((b) => (b.onclick = async () => {
@@ -408,7 +409,7 @@
       <div class="row"><button class="btn" value="ok">Terminé</button></div>`, { onOpen: (f) => { f.querySelector("#cp").onclick = () => { navigator.clipboard?.writeText(d.link).then(() => toast("Lien copié."), () => toast("Sélectionnez le lien et copiez-le.", true)); }; } });
     loadMembers();
   }
-  const ACTIONS = { "invitation.created": "a invité", "invitation.revoked": "a révoqué l'invitation de", "invitation.accepted": "a rejoint l'établissement", "member.role_changed": "a changé le rôle de", "member.function_changed": "a changé la fonction de", "member.disabled": "a désactivé l'accès de", "member.enabled": "a réactivé l'accès de", "member.removed": "a retiré", "member.left": "a quitté l'établissement", "ownership.transferred": "a transféré la propriété à", "org.updated": "a modifié l'établissement", "org.created": "a créé l'établissement", "account.deleted": "a supprimé son compte" };
+  const ACTIONS = { "invitation.created": "a invité", "invitation.revoked": "a révoqué l'invitation de", "invitation.accepted": "a rejoint l'établissement", "member.role_changed": "a changé le rôle de", "member.function_changed": "a changé la fonction de", "member.disabled": "a désactivé l'accès de", "member.enabled": "a réactivé l'accès de", "member.removed": "a retiré", "member.left": "a quitté l'établissement", "ownership.transferred": "a transféré la propriété à", "org.updated": "a modifié l'établissement", "org.created": "a créé l'établissement", "account.deleted": "a supprimé son compte", "access_code.created": "a généré un code d'accès", "access_code.renewed": "a renouvelé un code d'accès", "access_code.revoked": "a révoqué un code d'accès", "access_code.redeemed": "a rejoint l'établissement avec un code d'accès" };
   async function loadAudit() {
     const box = $("audit"); if (!box) return;
     $("auditCard").hidden = false;
@@ -417,11 +418,92 @@
       const n = (f, l, id) => (f || l ? esc([f, l].filter(Boolean).join(" ")) : id ? "Compte supprimé" : "—");
       box.innerHTML = entries.length ? `<ul class="list">${entries.slice(0, 40).map((e) => {
         const det = e.details || {};
-        const extra = det.from && det.to ? ` (${esc(roleLabel(det.from) || det.from)} → ${esc(roleLabel(det.to) || det.to)})` : det.email ? ` ${esc(det.email)}` : "";
+        const extra = det.from && det.to ? ` (${esc(roleLabel(det.from) || det.from)} → ${esc(roleLabel(det.to) || det.to)})` : det.email ? ` ${esc(det.email)}` : det.label ? ` « ${esc(det.label)} »` : "";
         const tgt = e.target_user_id && e.target_user_id !== e.actor_user_id ? " " + n(e.target_first, e.target_last, e.target_user_id) : "";
         return `<li class="item"><div class="who"><div><b>${n(e.actor_first, e.actor_last, e.actor_user_id)}</b> ${esc(ACTIONS[e.action] || e.action)}${tgt}${extra}<small>${fmtDT(e.created_at)}</small></div></div></li>`;
       }).join("")}</ul>` : '<div class="empty"><b>Aucun événement</b>Les changements apparaîtront ici.</div>';
     } catch (e) { $("auditCard").hidden = true; }
+  }
+
+
+  /* ---------- Codes d'accès (administrateurs de l'établissement) ---------- */
+  const CODE_STATE = { active: ["b-active", "Actif"], expired: ["b-expired", "Expiré"], revoked: ["b-disabled", "Révoqué"], exhausted: ["b-warn", "Utilisations épuisées"] };
+  async function viewCodes() {
+    const head = (sub) => `<div class="head"><div><h1>Codes d'accès</h1><p>${esc(sub || "")}</p></div>${canDo("access_codes.manage") ? '<button class="btn" id="newCode">Générer un code</button>' : ""}</div>`;
+    if (!S.orgId) { main.innerHTML = head() + noOrg(); return; }
+    const org = S.me.memberships.find((m) => m.org_id === S.orgId) || { org_name: S.platOrgName || "" };
+    if (!canDo("access_codes.read")) { main.innerHTML = `<div class="head"><div><h1>Codes d'accès</h1></div></div><div class="card"><div class="notice warn" role="alert">Cette section est réservée aux administrateurs de l'établissement.</div></div>`; return; }
+    main.innerHTML = head(org.org_name) + `
+      <div class="cards">
+        <section class="card" aria-labelledby="h-how"><h2 id="h-how">Comment ça marche</h2>
+          <p class="lead" style="margin-bottom:0">Transmettez vous-même le code (en personne, par téléphone ou par messagerie). La personne se connecte avec Google, Apple ou un code reçu par courriel, puis entre ce code <b>une seule fois</b>. Elle devient <b>Membre</b> de l'établissement : Réception, Équipe technique et tableau de bord. Le code ne donne jamais de droits d'administration.</p>
+        </section>
+        <div class="notice info"><div><b>Révoquer un code</b> bloque les nouvelles inscriptions, sans retirer l'accès des personnes déjà inscrites. Pour retirer l'accès d'une personne, désactivez-la dans <a href="#membres">Membres et invitations</a>.</div></div>
+        <section class="card" aria-labelledby="h-codes"><h2 id="h-codes">Codes de l'établissement</h2><p class="lead">Seuls les administrateurs voient cette page. Les membres ne peuvent pas consulter les codes.</p>
+          <div id="clist" aria-busy="true"><div class="skel"></div><div class="skel" style="width:70%"></div></div></section>
+      </div>`;
+    $("newCode") && ($("newCode").onclick = newCodeDialog);
+    loadCodes();
+  }
+  const usesText = (c) => c.maxUses ? `${c.uses} / ${c.maxUses} utilisation${c.maxUses > 1 ? "s" : ""}` : `${c.uses} utilisation${c.uses > 1 ? "s" : ""} · illimité`;
+  async function loadCodes() {
+    const box = $("clist"); if (!box) return;
+    let d;
+    try { d = await api(`/api/orgs/${S.orgId}/access-codes`); }
+    catch (e) { box.removeAttribute("aria-busy"); box.innerHTML = `<div class="notice err" role="alert">${esc(e.message)} <button class="btn ghost sm" id="retry">Réessayer</button></div>`; $("retry").onclick = loadCodes; return; }
+    box.removeAttribute("aria-busy");
+    const manage = canDo("access_codes.manage");
+    if (!d.codes.length) { box.innerHTML = `<div class="empty"><b>Aucun code pour l'instant</b>${manage ? "Générez un code, puis transmettez-le aux personnes à inviter." : ""}</div>`; return; }
+    box.innerHTML = d.codes.map((c) => `
+      <article class="codecard${c.state === "active" ? "" : " off"}" aria-label="Code ${esc(c.label || c.hint)}">
+        <div class="top"><b>${esc(c.label || "Code sans nom")}</b><span class="badge ${CODE_STATE[c.state][0]}">${CODE_STATE[c.state][1]}</span></div>
+        ${c.state === "active" && c.code ? `<div class="row"><span class="codeval masked" data-val="${esc(c.code)}" data-hint="${esc(c.hint)}">${esc(c.hint)}</span>
+            <button class="btn ghost sm" type="button" data-show aria-pressed="false">Afficher</button><button class="btn sm" type="button" data-copy="${esc(c.id)}">Copier</button></div>`
+          : c.unreadable ? `<div class="notice warn">Ce code ne peut plus être affiché (clé de chiffrement changée). Il fonctionne toujours ; renouvelez-le pour en obtenir un nouveau à transmettre.</div>`
+          : `<div class="row"><span class="codeval masked">${esc(c.hint)}</span></div>`}
+        <div class="meta"><span>${usesText(c)}</span><span>${c.state === "expired" ? "Expiré le" : "Expire le"} ${fmtDT(c.expiresAt)}</span><span>Créé le ${fmtDate(c.createdAt)}${c.createdBy ? " par " + esc(c.createdBy) : ""}</span>${c.lastUsedAt ? `<span>Dernière utilisation : ${fmtDT(c.lastUsedAt)}</span>` : ""}${c.revokedAt ? `<span>Révoqué le ${fmtDT(c.revokedAt)}</span>` : ""}</div>
+        ${manage ? `<div class="row"><button class="btn ghost sm" type="button" data-renew="${esc(c.id)}">${c.state === "active" ? "Renouveler" : "Remplacer par un nouveau code"}</button>${c.state === "active" ? `<button class="btn danger ghost sm" type="button" data-revoke="${esc(c.id)}">Révoquer</button>` : ""}</div>` : ""}
+      </article>`).join("");
+    box.querySelectorAll("[data-show]").forEach((b) => (b.onclick = () => {
+      const v = b.previousElementSibling, on = b.getAttribute("aria-pressed") !== "true";
+      v.textContent = on ? v.dataset.val : v.dataset.hint; v.classList.toggle("masked", !on);
+      b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "Masquer" : "Afficher";
+    }));
+    box.querySelectorAll("[data-copy]").forEach((b) => (b.onclick = () => copyCode(b.parentElement.querySelector(".codeval").dataset.val)));
+    box.querySelectorAll("[data-revoke]").forEach((b) => (b.onclick = async () => {
+      const c = d.codes.find((x) => x.id === b.dataset.revoke);
+      if (!(await confirmBox("Révoquer ce code ?", `Le code <b>${esc(c.label || c.hint)}</b> cessera immédiatement de fonctionner pour les nouvelles inscriptions. Les ${c.uses} personne${c.uses > 1 ? "s" : ""} déjà inscrite${c.uses > 1 ? "s" : ""} garde${c.uses > 1 ? "nt" : ""} leur accès.`, "Révoquer", true))) return;
+      try { await api(`/api/orgs/${S.orgId}/access-codes/${c.id}`, { method: "DELETE" }); toast("Code révoqué."); loadCodes(); } catch (e) { fail(e); }
+    }));
+    box.querySelectorAll("[data-renew]").forEach((b) => (b.onclick = async () => {
+      const c = d.codes.find((x) => x.id === b.dataset.renew);
+      if (!(await confirmBox("Renouveler ce code ?", `Un nouveau code est créé avec les mêmes réglages${c.state === "active" ? " ; l'ancien cesse aussitôt de fonctionner" : ""}. Les personnes déjà inscrites gardent leur accès.`, "Renouveler"))) return;
+      try { const r = await api(`/api/orgs/${S.orgId}/access-codes/${c.id}/renew`, { method: "POST", body: {} }); await showNewCode(r.code); loadCodes(); } catch (e) { fail(e); }
+    }));
+  }
+  function copyCode(v) {
+    if (!v) return;
+    (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => toast("Code copié."), () => toast("Sélectionnez le code et copiez-le.", true));
+  }
+  async function newCodeDialog() {
+    const v = await dialog(`<h2>Générer un code d'accès</h2><p>Les personnes qui l'entrent deviennent Membres de l'établissement.</p>
+      <div class="f" style="margin:0"><label for="cLabel">Nom du code <span class="hint">(facultatif, visible des administrateurs seulement)</span></label><input type="text" id="cLabel" name="label" maxlength="60" placeholder="Ex. : Équipe de soir"></div>
+      <div class="grid2">
+        <div class="f" style="margin:0"><label for="cDays">Valide pendant</label><select id="cDays" name="expiresInDays">${[[1, "1 jour"], [7, "7 jours"], [14, "14 jours"], [30, "30 jours"], [60, "60 jours"], [90, "90 jours"], [180, "6 mois"], [365, "1 an"]].map(([n, l]) => `<option value="${n}"${n === 30 ? " selected" : ""}>${l}</option>`).join("")}</select></div>
+        <div class="f" style="margin:0"><label for="cMax">Utilisations maximales</label><input type="number" id="cMax" name="maxUses" min="1" max="10000" inputmode="numeric" placeholder="Illimité"><span class="hint">Laissez vide pour illimité.</span></div>
+      </div>
+      <div class="row"><button class="btn ghost" value="cancel" formnovalidate>Annuler</button><button class="btn" value="ok">Générer</button></div>`);
+    if (!v) return;
+    try {
+      const r = await api(`/api/orgs/${S.orgId}/access-codes`, { method: "POST", body: { label: v.label, expiresInDays: Number(v.expiresInDays), maxUses: v.maxUses ? Number(v.maxUses) : null } });
+      await showNewCode(r.code); loadCodes();
+    } catch (e) { fail(e); }
+  }
+  function showNewCode(c) {
+    return dialog(`<h2>Code prêt à transmettre</h2><p>Transmettez-le vous-même aux personnes à inviter. Elles l'entreront une seule fois, après s'être connectées.</p>
+      <div class="linkbox" style="justify-content:space-between"><code class="codeval" style="border:0;background:none;padding:0">${esc(c.code)}</code><button class="btn sm" type="button" id="cpNew">Copier</button></div>
+      <p class="fine">${usesText({ ...c, uses: 0 }).replace(/^0 \/ /, "Jusqu'à ").replace(/^0 utilisation · illimité$/, "Utilisations illimitées")} · expire le ${fmtDT(c.expiresAt)}. Vous pourrez le revoir dans cette page tant qu'il est actif.</p>
+      <div class="row"><button class="btn" value="ok">Terminé</button></div>`, { onOpen: (f) => { f.querySelector("#cpNew").onclick = () => copyCode(c.code); } });
   }
 
   /* ---------- Rôles et permissions ---------- */

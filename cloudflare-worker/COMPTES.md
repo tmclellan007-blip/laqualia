@@ -7,10 +7,32 @@
   - `oidc.js` gère Google et Apple en OpenID Connect ;
   - le code par courriel (sans mot de passe) est dans `index.js` (routes `/auth/email/start` et `/auth/email/verify`) ;
   - `perms.js` contient la matrice des permissions.
-- **Données** : la base Cloudflare D1 `laqualia-comptes`, reliée sous le nom `DB`. Le schéma est dans `migrations/0001_comptes.sql` et `migrations/0002_connexion_courriel.sql`.
+- **Données** : la base Cloudflare D1 `laqualia-comptes`, reliée sous le nom `DB`. Le schéma est dans `migrations/0001_comptes.sql`, `0002_connexion_courriel.sql` et `0003_codes_acces.sql`.
 - **Routes** : `laqualia.com/auth/*` et `laqualia.com/api/*` passent par le relais, déclarées dans `wrangler.jsonc`. La session est un témoin `__Host-lq_sess` (HttpOnly, Secure, SameSite=Lax) du même site.
 - **Pages** : `agent/connexion.html`, `agent/invitation.html` et `agent/compte.html` (avec `compte.js` et `compte.css`). Le lien « Mon compte » est dans le menu de l'assistant.
 - **Bibliothèque** : `vendor/jose.js` est la version 5.9.6 de jose (licence MIT). Elle vérifie les jetons d'identité : signature, émetteur, audience, expiration et nonce.
+
+## Accès simplifié au portail (laqualia.com/agent)
+
+- **Parcours** :
+  1. La personne ouvre le portail.
+  2. Elle se connecte avec Google, Apple ou un code par courriel.
+  3. Sans établissement validé, elle est dirigée vers `agent/acces.html`, où elle entre le code d'accès de son établissement une seule fois.
+  4. Elle devient Membre de cet établissement, et le portail s'ouvre ensuite directement.
+- **Relais** : sur laqualia.com, l'interface appelle `/api/agent` (même site). Le relais vérifie à chaque requête la session, le compte actif et l'appartenance active à un établissement actif. Les codes d'équipe, TSA et Admin ne sont pas demandés.
+- **Droits** :
+  - un Membre utilise la Réception, la TSA et le tableau de bord ;
+  - la page Admin (configuration commune de l'agent) est réservée à l'administrateur de la plateforme ;
+  - connaître un code ne donne aucun droit d'administration.
+- **Codes d'accès** (Mon compte › Codes d'accès, administrateurs de l'établissement seulement) :
+  - génération, consultation, copie, renouvellement et révocation ;
+  - validité de 1 à 365 jours, nombre maximal d'utilisations facultatif ;
+  - 12 caractères sans caractères ambigus ;
+  - vérification par empreinte SHA-256 ; le code est aussi chiffré (AES-GCM) pour que l'administrateur puisse le revoir tant qu'il est actif ;
+  - la clé de chiffrement vient de `ACCESS_CODE_KEY` si ce secret existe, sinon de `ADMIN_CODE`. Si cette clé change, les codes existants fonctionnent toujours mais ne peuvent plus être affichés : il suffit de les renouveler.
+- **Limites** : 8 essais par compte par 15 minutes et 30 par adresse IP par heure, comptés avant la vérification.
+- **Révoquer ou retirer** : révoquer un code bloque les nouvelles inscriptions seulement. Pour retirer l'accès d'une personne, on la désactive dans Membres et invitations ; l'effet est immédiat, et le code ne rétablit pas cet accès.
+- **Miroir GitHub Pages** : le miroir `nc` garde l'ancien accès par codes, puisque les sessions ne fonctionnent que sur laqualia.com.
 
 ## Sécurité, en bref
 
@@ -91,9 +113,10 @@ Aujourd'hui, le responsable copie le lien d'invitation et le transmet lui-même.
 ## Essais
 
 ```
-node --test tests/accounts.test.mjs tests/email.test.mjs  # 19 essais serveur (D1, Google, Apple et courriels simulés)
+node --test tests/accounts.test.mjs tests/email.test.mjs tests/portal.test.mjs  # 24 essais serveur (D1, fournisseurs, courriels et modèle simulés)
 node tests/ui.mjs <dossier du site> <captures>            # parcours d'interface Playwright
 node tests/ui-email.mjs <dossier du site> <captures>      # parcours de connexion par code courriel
+node tests/ui-portal.mjs <dossier du site> <captures>     # parcours complet du portail : compte, code, rattachement, retrait
 ```
 
 Les essais génèrent leurs propres clés de signature. Ils ne font aucun appel réseau et n'envoient aucun courriel.
@@ -106,4 +129,4 @@ Ajoutez `migrations/0002_….sql`, puis lancez :
 npx wrangler d1 migrations apply laqualia-comptes --remote
 ```
 
-Les migrations 0001 et 0002 sont déjà appliquées et consignée dans `d1_migrations`.
+Les migrations 0001, 0002 et 0003 sont déjà appliquées et consignée dans `d1_migrations`.

@@ -357,6 +357,11 @@ async function routeApi(ctx) {
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/invitations$/))) { if (M === "GET") return listInvitations(ctx, m[1]); if (M === "POST") return createInvitation(ctx, m[1]); }
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/invitations\/([\w-]+)$/)) && M === "DELETE") return revokeInvitation(ctx, m[1], m[2]);
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/audit$/)) && M === "GET") return listAudit(ctx, m[1]);
+  if (p === "/api/access/status" && M === "GET") return accessStatus(ctx);
+  if (p === "/api/access/redeem" && M === "POST") return redeemAccessCode(ctx);
+  if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes$/))) { if (M === "GET") return listAccessCodes(ctx, m[1]); if (M === "POST") return createAccessCode(ctx, m[1]); }
+  if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes\/([\w-]+)\/renew$/)) && M === "POST") return renewAccessCode(ctx, m[1], m[2]);
+  if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes\/([\w-]+)$/)) && M === "DELETE") return revokeAccessCode(ctx, m[1], m[2]);
   if (p === "/api/platform/bootstrap" && M === "POST") return bootstrapPlatform(ctx);
   if (p === "/api/platform/orgs") { if (M === "GET") return platformOrgs(ctx); if (M === "POST") return createOrg(ctx); }
   if (p === "/api/platform/users" && M === "GET") return platformUsers(ctx);
@@ -656,6 +661,178 @@ async function acceptInvitation(ctx, token) {
   await ctx.env.DB.prepare("INSERT INTO memberships (id, org_id, user_id, role, function, status, created_at, updated_at) VALUES (?,?,?,?,?,'active',?,?)").bind(uid(), i.org_id, user.id, i.role, i.function, ctx.now, ctx.now).run();
   await audit(ctx, { org: i.org_id, actor: user.id, action: "invitation.accepted", target: user.id, details: { invitationId: i.id, role: i.role } });
   return json(200, { ok: true, orgId: i.org_id, orgName: i.org_name });
+}
+
+/* ----- Codes d'accès d'établissement ----- */
+// Un administrateur génère un code et le transmet lui-même. Une personne connectée le saisit une seule fois
+// et devient Membre (jamais davantage). Le code n'apparaît jamais dans une URL ni dans le journal.
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // sans I, L, O, 0, 1 (confusions)
+const CODE_LEN = 12;
+export const normAccessCode = (c) => String(c || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+function newAccessCode() {
+  const out = []; const buf = new Uint8Array(32);
+  while (out.length < CODE_LEN) {
+    crypto.getRandomValues(buf);
+    for (const b of buf) { if (b < 248 && out.length < CODE_LEN) out.push(CODE_ALPHABET[b % 31]); } // 248 = 8 × 31 : sans biais
+  }
+  return out.join("").replace(/(.{4})(?=.)/g, "$1-");
+}
+const accessHash = (code) => sha256("lq-access:" + normAccessCode(code));
+async function codeKey(env) {
+  const secret = env.ACCESS_CODE_KEY || env.ADMIN_CODE;
+  if (!secret) return null;
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(String(secret)), "HKDF", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "HKDF", hash: "SHA-256", salt: new TextEncoder().encode("laqualia-access-codes"), info: new TextEncoder().encode("v1") }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+const b64 = (u8) => btoa(String.fromCharCode(...u8));
+const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+async function sealCode(env, code, aad) {
+  const key = await codeKey(env); if (!key) return "";
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv, additionalData: new TextEncoder().encode(aad) }, key, new TextEncoder().encode(code)));
+  return "v1." + b64(iv) + "." + b64(ct);
+}
+async function openCode(env, sealed, aad) {
+  try {
+    const [v, iv, ct] = String(sealed || "").split(".");
+    if (v !== "v1") return null;
+    const key = await codeKey(env); if (!key) return null;
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: unb64(iv), additionalData: new TextEncoder().encode(aad) }, key, unb64(ct)));
+  } catch { return null; }
+}
+const codeState = (c, now) => (c.revoked_at ? "revoked" : c.expires_at <= now ? "expired" : c.max_uses != null && c.uses >= c.max_uses ? "exhausted" : "active");
+async function accessCodeView(ctx, c) {
+  const state = codeState(c, ctx.now);
+  // Le code en clair n'est renvoyé qu'à un administrateur, et seulement tant qu'il est utilisable.
+  const code = state === "active" ? await openCode(ctx.env, c.code_enc, c.id + ":" + c.org_id) : null;
+  return { id: c.id, label: c.label, state, code, hint: c.code_hint, maxUses: c.max_uses, uses: c.uses, expiresAt: c.expires_at, createdAt: c.created_at, lastUsedAt: c.last_used_at, revokedAt: c.revoked_at,
+    createdBy: [c.cb_first, c.cb_last].filter(Boolean).join(" ") || null, unreadable: state === "active" && !code };
+}
+async function listAccessCodes(ctx, orgId) {
+  const { user } = await requireUser(ctx);
+  const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.read");
+  const rows = (await ctx.env.DB.prepare(`SELECT c.*, u.first_name AS cb_first, u.last_name AS cb_last FROM access_codes c LEFT JOIN users u ON u.id = c.created_by
+    WHERE c.org_id = ? ORDER BY c.created_at DESC LIMIT 100`).bind(orgId).all()).results;
+  return json(200, { codes: await Promise.all(rows.map((c) => accessCodeView(ctx, c))), keyReady: !!(ctx.env.ACCESS_CODE_KEY || ctx.env.ADMIN_CODE) });
+}
+function codeSettings(b) {
+  const days = Math.round(Number(b.expiresInDays ?? 30));
+  if (!(days >= 1 && days <= 365)) throw new HttpError(400, "La durée de validité doit être entre 1 et 365 jours.", "invalid");
+  let maxUses = b.maxUses === null || b.maxUses === "" || b.maxUses === undefined ? null : Math.round(Number(b.maxUses));
+  if (maxUses !== null && !(maxUses >= 1 && maxUses <= 10000)) throw new HttpError(400, "Le nombre maximal d'utilisations doit être entre 1 et 10 000 (ou illimité).", "invalid");
+  return { days, maxUses, label: clip(b.label, 60) };
+}
+async function insertAccessCode(ctx, orgId, userId, { days, maxUses, label }) {
+  const active = (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM access_codes WHERE org_id = ? AND revoked_at IS NULL AND expires_at > ?").bind(orgId, ctx.now).first()).n;
+  if (active >= 20) throw new HttpError(409, "Cet établissement a déjà 20 codes actifs. Révoquez-en un avant d'en créer un autre.", "too_many");
+  const id = uid(), code = newAccessCode();
+  await ctx.env.DB.prepare("INSERT INTO access_codes (id, org_id, label, code_hash, code_enc, code_hint, max_uses, expires_at, created_by, created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
+    .bind(id, orgId, label, await accessHash(code), await sealCode(ctx.env, code, id + ":" + orgId), "••••-••••-" + code.slice(-4), maxUses, ctx.now + days * 86400e3, userId, ctx.now).run();
+  return { id, code };
+}
+async function createAccessCode(ctx, orgId) {
+  const { user } = await requireUser(ctx);
+  const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
+  const st = codeSettings(await body(ctx));
+  const { id, code } = await insertAccessCode(ctx, orgId, user.id, st);
+  await audit(ctx, { org: orgId, actor: user.id, action: "access_code.created", details: { codeId: id, label: st.label, days: st.days, maxUses: st.maxUses } });
+  const row = await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(id).first();
+  return json(201, { code: { ...(await accessCodeView(ctx, row)), code } });
+}
+async function getOrgCode(ctx, orgId, codeId) {
+  const c = await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ? AND org_id = ?").bind(codeId, orgId).first();
+  if (!c) throw new HttpError(404, "Code introuvable.", "not_found");
+  return c;
+}
+async function revokeAccessCode(ctx, orgId, codeId) {
+  const { user } = await requireUser(ctx);
+  const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
+  const c = await getOrgCode(ctx, orgId, codeId);
+  const r = await ctx.env.DB.prepare("UPDATE access_codes SET revoked_at = ?, revoked_by = ? WHERE id = ? AND org_id = ? AND revoked_at IS NULL").bind(ctx.now, user.id, codeId, orgId).run();
+  if (!changes(r)) throw new HttpError(409, "Ce code est déjà révoqué.", "already_revoked");
+  await audit(ctx, { org: orgId, actor: user.id, action: "access_code.revoked", details: { codeId, label: c.label } });
+  return json(200, { ok: true });
+}
+// Renouveler : l'ancien code est révoqué et remplacé par un nouveau, avec les mêmes réglages.
+async function renewAccessCode(ctx, orgId, codeId) {
+  const { user } = await requireUser(ctx);
+  const oc = await orgContext(ctx, user, orgId); need(oc, "access_codes.manage");
+  const old = await getOrgCode(ctx, orgId, codeId);
+  const b = await body(ctx);
+  const days = b.expiresInDays ?? Math.max(1, Math.min(365, Math.round((old.expires_at - old.created_at) / 86400e3)));
+  const st = codeSettings({ expiresInDays: days, maxUses: "maxUses" in b ? b.maxUses : old.max_uses, label: "label" in b ? b.label : old.label });
+  await ctx.env.DB.prepare("UPDATE access_codes SET revoked_at = COALESCE(revoked_at, ?), revoked_by = COALESCE(revoked_by, ?) WHERE id = ?").bind(ctx.now, user.id, codeId).run();
+  const { id, code } = await insertAccessCode(ctx, orgId, user.id, st);
+  await ctx.env.DB.prepare("UPDATE access_codes SET replaced_by = ? WHERE id = ?").bind(id, codeId).run();
+  await audit(ctx, { org: orgId, actor: user.id, action: "access_code.renewed", details: { oldCodeId: codeId, codeId: id, label: st.label } });
+  const row = await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(id).first();
+  return json(201, { code: { ...(await accessCodeView(ctx, row)), code } });
+}
+
+const CODE_MSG = {
+  invalid: "Ce code n'est pas valide. Vérifiez-le auprès de l'administrateur de votre établissement.",
+  revoked: "Ce code a été révoqué. Demandez un nouveau code à l'administrateur de votre établissement.",
+  expired: "Ce code a expiré. Demandez un nouveau code à l'administrateur de votre établissement.",
+  exhausted: "Ce code a atteint son nombre maximal d'utilisations. Demandez un nouveau code à l'administrateur.",
+};
+async function redeemAccessCode(ctx) {
+  const { user, idHash } = await requireUser(ctx);
+  // Limites : par compte et par adresse IP, comptées avant toute vérification.
+  await rateLimit(ctx, "redeem:u:" + user.id, 8, 15 * 60e3);
+  await rateLimit(ctx, "redeem:ip:" + (ctx.request.headers.get("cf-connecting-ip") || "?"), 30, 3600e3);
+  const b = await body(ctx);
+  const n = normAccessCode(b.code);
+  const fail = (state) => { throw new HttpError(state === "invalid" ? 404 : 410, CODE_MSG[state], "code_" + state); };
+  if (n.length !== CODE_LEN) fail("invalid");
+  const c = await ctx.env.DB.prepare("SELECT c.*, o.name AS org_name, o.status AS org_status FROM access_codes c JOIN organizations o ON o.id = c.org_id WHERE c.code_hash = ?").bind(await accessHash(n)).first();
+  if (!c || c.org_status !== "active") fail("invalid");
+  const state = codeState(c, ctx.now);
+  if (state !== "active") fail(state);
+  const existing = await ctx.env.DB.prepare("SELECT * FROM memberships WHERE org_id = ? AND user_id = ?").bind(c.org_id, user.id).first();
+  if (existing && existing.status === "disabled")
+    throw new HttpError(403, `Votre accès à ${c.org_name} a été retiré par un administrateur. Le code ne permet pas de le rétablir : communiquez avec l'administrateur.`, "membership_disabled");
+  if (!existing) {
+    // Utilisation comptée de façon atomique : la limite et l'expiration sont revérifiées dans la même requête.
+    const r = await ctx.env.DB.prepare("UPDATE access_codes SET uses = uses + 1, last_used_at = ? WHERE id = ? AND revoked_at IS NULL AND expires_at > ? AND (max_uses IS NULL OR uses < max_uses)").bind(ctx.now, c.id, ctx.now).run();
+    if (!changes(r)) { const now = codeState(await ctx.env.DB.prepare("SELECT * FROM access_codes WHERE id = ?").bind(c.id).first(), ctx.now); fail(now === "active" ? "invalid" : now); }
+    try {
+      await ctx.env.DB.prepare("INSERT INTO memberships (id, org_id, user_id, role, function, status, joined_via, created_at, updated_at) VALUES (?,?,?,'member','other','active',?,?,?)")
+        .bind(uid(), c.org_id, user.id, "code:" + c.id, ctx.now, ctx.now).run();
+    } catch (e) {
+      // Double envoi simultané : l'appartenance existe déjà, on rend l'utilisation comptée en trop.
+      await ctx.env.DB.prepare("UPDATE access_codes SET uses = MAX(uses - 1, 0) WHERE id = ?").bind(c.id).run();
+    }
+    await audit(ctx, { org: c.org_id, actor: user.id, action: "access_code.redeemed", target: user.id, details: { codeId: c.id, label: c.label } });
+  }
+  await ctx.env.DB.prepare("UPDATE sessions SET active_org_id = ? WHERE id_hash = ?").bind(c.org_id, idHash).run();
+  return json(200, { ok: true, orgId: c.org_id, orgName: c.org_name, already: !!existing });
+}
+
+/* ----- Accès au portail (/agent) ----- */
+// Vérifié à chaque requête : session valide, compte actif, appartenance active à un établissement actif.
+export async function portalAccess(request, env) {
+  if (!env.DB) return { ok: false, status: 503, code: "no_db", error: "Le module Comptes n'est pas activé." };
+  const ctx = { request, env, url: new URL(request.url), origin: env.ACCOUNT_ORIGIN || new URL(request.url).origin, now: Date.now() };
+  const s = await readSession(ctx);
+  if (!s || s.expired) return { ok: false, status: 401, code: s?.expired ? "session_expired" : "unauthenticated", error: s?.expired ? "Votre session a expiré. Reconnectez-vous." : "Connexion requise." };
+  if (s.user.status !== "active") return { ok: false, status: 403, code: "account_deactivated", error: "Votre compte est désactivé." };
+  const mem = (await env.DB.prepare("SELECT m.*, o.name AS org_name FROM memberships m JOIN organizations o ON o.id = m.org_id WHERE m.user_id = ? AND o.status = 'active' ORDER BY m.created_at").bind(s.user.id).all()).results;
+  const active = mem.filter((m) => m.status === "active");
+  let m = active.find((x) => x.org_id === s.session.active_org_id) || active[0] || null;
+  if (m && m.org_id !== s.session.active_org_id) await env.DB.prepare("UPDATE sessions SET active_org_id = ? WHERE id_hash = ?").bind(m.org_id, s.idHash).run();
+  const platform = !!s.user.platform_admin;
+  if (!m && !platform) {
+    const off = mem.filter((x) => x.status === "disabled").map((x) => x.org_name);
+    return { ok: false, status: 403, code: off.length ? "membership_disabled" : "no_access", disabledOrgs: off,
+      error: off.length ? `Votre accès à ${off.join(", ")} a été retiré. Entrez un code d'un autre établissement ou communiquez avec l'administrateur.` : "Entrez le code d'accès de votre établissement pour continuer." };
+  }
+  return { ok: true, user: s.user, platform, org: m ? { id: m.org_id, name: m.org_name } : null, role: platform ? "platform" : m.role,
+    orgs: active.map((x) => ({ id: x.org_id, name: x.org_name, role: x.role })) };
+}
+async function accessStatus(ctx) {
+  const a = await portalAccess(ctx.request, ctx.env);
+  if (!a.ok) return json(a.status, { access: false, code: a.code, error: a.error, disabledOrgs: a.disabledOrgs || [] });
+  return json(200, { access: true, org: a.org, role: a.role, platform: a.platform, orgs: a.orgs, user: { first_name: a.user.first_name, last_name: a.user.last_name } });
 }
 
 /* ----- Journal ----- */

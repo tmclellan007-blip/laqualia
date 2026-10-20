@@ -62,14 +62,17 @@ const TSA_BILAN_DEFAULT = "Tu es formateur clinique pour des TSA. Évalue la tra
 
 let cache = null; // { at, config, chunks }
 
-import { handleAccounts, isAccountsRequest, cleanupAccounts } from "./accounts/index.js";
+import { handleAccounts, isAccountsRequest, cleanupAccounts, portalAccess } from "./accounts/index.js";
 
 export default {
   // Vérification automatique toutes les 6 heures : site, clé API, stockage
   async scheduled(event, env, ctx) { ctx.waitUntil(healthCheck(env)); ctx.waitUntil(cleanupAccounts(env).catch(() => {})); },
   async fetch(request, env) {
+    const u0 = new URL(request.url);
+    // Portail par compte (laqualia.com/agent) : même site, session vérifiée à chaque requête, aucun code d'équipe
+    if (u0.pathname === "/api/agent") return handlePortal(request, env);
     // Module Comptes (connexion, profils, établissements) : servi sur le même site, sans CORS
-    if (isAccountsRequest(new URL(request.url))) return handleAccounts(request, env);
+    if (isAccountsRequest(u0)) return handleAccounts(request, env);
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
     if (!cors) return json(403, { error: "Origine non autorisée." }, {});
@@ -94,6 +97,32 @@ export default {
   },
 };
 
+// Accès par compte : la session et l'appartenance active à un établissement remplacent les codes
+// d'équipe, TSA et Admin. Un Membre utilise la Réception, la TSA et le tableau de bord ; la page Admin
+// (configuration commune à tous les établissements) reste réservée à l'administrateur de la plateforme.
+async function handlePortal(request, env) {
+  const same = {};
+  if (request.method !== "GET" && request.method !== "POST") return json(405, { error: "Méthode non permise." }, same);
+  if (request.method === "POST") {
+    const origin = env.ACCOUNT_ORIGIN || new URL(request.url).origin, o = request.headers.get("origin");
+    if (request.headers.get("x-lq-csrf") !== "1" || (o && o !== origin)) return json(403, { error: "Requête refusée (origine).", code: "csrf" }, same);
+  }
+  let a;
+  try { a = await portalAccess(request, env); } catch (e) { console.error("portal", e && e.message); return json(500, { error: "Vérification de l'accès impossible. Réessayez.", code: "server" }, same); }
+  if (!a.ok) return json(a.status, { error: a.error, code: a.code, disabledOrgs: a.disabledOrgs || [] }, same);
+  const auth = { userId: a.user.id, platform: a.platform, orgId: a.org?.id || null };
+  if (request.method === "GET") {
+    let pub = null;
+    try { pub = await publicConfig(request, env); } catch {}
+    return json(200, { ready: !!env.ANTHROPIC_API_KEY, needsCode: false, voice: speechReady(env), tsa: true, tsaOk: true, admin: !!(a.platform && env.AGENT_KV), pub,
+      account: { first_name: a.user.first_name || "", org: a.org, role: a.role, orgs: a.orgs } }, same);
+  }
+  const sp = request.headers.get("x-agent-mode");
+  if (sp === "tts" || sp === "stt") return handleSpeech(sp, request, env, same, auth);
+  if (sp === "admin") return handleAdmin(request, env, same, auth);
+  return handlePost(request, env, same, auth);
+}
+
 function corsHeaders(request, env) {
   const origin = request.headers.get("origin") || "";
   const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean);
@@ -108,16 +137,18 @@ function corsHeaders(request, env) {
   };
 }
 
-async function handlePost(request, env, cors) {
+async function handlePost(request, env, cors, auth = null) {
   if (!env.ANTHROPIC_API_KEY) return json(503, { error: "L'assistant n'est pas encore configuré : la clé API est manquante." }, cors);
   const ip = request.headers.get("cf-connecting-ip") || "?";
-  if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
-  if (!(await teamAuthorized(request, env))) {
-    await recordFail(env, ip, "d'équipe");
-    return json(401, { error: "Code d'accès invalide." }, cors);
+  if (!auth) {
+    if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
+    if (!(await teamAuthorized(request, env))) {
+      await recordFail(env, ip, "d'équipe");
+      return json(401, { error: "Code d'accès invalide." }, cors);
+    }
   }
 
-  if (rateLimited(request.headers.get("cf-connecting-ip") || "?")) {
+  if (rateLimited(auth ? "u:" + auth.userId : ip)) {
     return json(429, { error: "Beaucoup de questions en peu de temps. Attendez quelques minutes, puis réessayez." }, cors);
   }
 
@@ -125,7 +156,7 @@ async function handlePost(request, env, cors) {
   try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
   // Espace Équipe technique (TSA) : permission réelle vérifiée ici, pas seulement l'onglet choisi dans la page
   const role = body?.role === "tsa" ? "tsa" : "reception";
-  if (role === "tsa") {
+  if (role === "tsa" && !auth) {
     if (!env.TSA_CODE) return json(403, { error: "L'espace Équipe technique — TSA n'est pas activé.", needTsa: true }, cors);
     if (!tsaAuthorized(request, env)) return json(403, { error: "Code TSA invalide ou manquant : accès à l'espace technique refusé.", needTsa: true }, cors);
   }
@@ -452,14 +483,19 @@ function cleanConfig(c) {
   if (c.modelesProposes !== undefined) out.modelesProposes = (Array.isArray(c.modelesProposes) ? c.modelesProposes : []).filter((t) => MODELS[t]);
   return out;
 }
-async function handleAdmin(request, env, cors) {
-  if (!env.ADMIN_CODE) return json(503, { error: "La configuration n'est pas activée : ajoutez le secret ADMIN_CODE au relais." }, cors);
+async function handleAdmin(request, env, cors, auth = null) {
   if (!env.AGENT_KV) return json(503, { error: "Le stockage AGENT_KV n'est pas relié au relais." }, cors);
   const ip = request.headers.get("cf-connecting-ip") || "?";
-  if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
-  if (!adminAuthorized(request, env)) {
-    await recordFail(env, ip, "Admin");
-    return json(401, { error: "Code de configuration invalide." }, cors);
+  if (auth) {
+    // Connaître un code d'établissement ne donne jamais ce droit : seul l'administrateur de la plateforme configure l'agent.
+    if (!auth.platform) return json(403, { error: "La configuration de l'agent est réservée à l'administrateur de la plateforme.", code: "forbidden" }, cors);
+  } else {
+    if (!env.ADMIN_CODE) return json(503, { error: "La configuration n'est pas activée : ajoutez le secret ADMIN_CODE au relais." }, cors);
+    if (await lockedOut(env, ip)) return json(429, { error: LOCK_MSG }, cors);
+    if (!adminAuthorized(request, env)) {
+      await recordFail(env, ip, "Admin");
+      return json(401, { error: "Code de configuration invalide." }, cors);
+    }
   }
   let body; try { body = await request.json(); } catch { return json(400, { error: "Requête invalide." }, cors); }
   const role = ROLES.includes(body?.role) ? body.role : "reception";
@@ -571,12 +607,14 @@ function speechLimited(ip) {
 }
 const xml = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 
-async function handleSpeech(kind, request, env, cors) {
+async function handleSpeech(kind, request, env, cors, auth = null) {
   const ipS = request.headers.get("cf-connecting-ip") || "?";
-  if (await lockedOut(env, ipS)) return json(429, { error: LOCK_MSG }, cors);
-  if (!(await teamAuthorized(request, env))) { await recordFail(env, ipS, "d'équipe (voix)"); return json(401, { error: "Code d'accès invalide." }, cors); }
+  if (!auth) {
+    if (await lockedOut(env, ipS)) return json(429, { error: LOCK_MSG }, cors);
+    if (!(await teamAuthorized(request, env))) { await recordFail(env, ipS, "d'équipe (voix)"); return json(401, { error: "Code d'accès invalide." }, cors); }
+  }
   if (!speechReady(env)) return json(503, { error: "La voix Azure n'est pas configurée." }, cors);
-  if (speechLimited(request.headers.get("cf-connecting-ip") || "?")) return json(429, { error: "Trop de requêtes de voix. Attendez un peu." }, cors);
+  if (speechLimited(auth ? "u:" + auth.userId : ipS)) return json(429, { error: "Trop de requêtes de voix. Attendez un peu." }, cors);
   const region = String(env.AZURE_SPEECH_REGION).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
   const key = env.AZURE_SPEECH_KEY;
   const ctl = new AbortController();

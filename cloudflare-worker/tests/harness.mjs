@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import { generateKeyPair, exportJWK, exportPKCS8, SignJWT } from "../vendor/jose.js";
 import worker from "../agent-worker.js";
 
-const MIGRATION = ["0001_comptes.sql", "0002_connexion_courriel.sql"].map((f) => readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8")).join("\n");
+const MIGRATION = ["0001_comptes.sql", "0002_connexion_courriel.sql", "0003_codes_acces.sql"].map((f) => readFileSync(new URL("../migrations/" + f, import.meta.url), "utf8")).join("\n");
 export const ORIGIN = "https://laqualia.com";
 
 class Stmt {
@@ -35,6 +35,13 @@ const appleClient = await generateKeyPair("ES256", { extractable: true });
 const gJwk = { ...(await exportJWK(google.publicKey)), kid: "g1", alg: "RS256", use: "sig" };
 const aJwk = { ...(await exportJWK(apple.publicKey)), kid: "a1", alg: "ES256", use: "sig" };
 export const providerLog = [];
+export const modelLog = [];
+export class FakeKV {
+  constructor() { this.m = new Map(); }
+  async get(k) { return this.m.has(k) ? this.m.get(k) : null; }
+  async put(k, v) { this.m.set(k, String(v)); }
+  async delete(k) { this.m.delete(k); }
+}
 const pendingCodes = new Map(); // code -> { provider, claims }
 
 export function issueCode(provider, claims) { const code = "code_" + Math.random().toString(36).slice(2); pendingCodes.set(code, { provider, claims }); return code; }
@@ -56,6 +63,14 @@ globalThis.fetch = async (input, init = {}) => {
       .setIssuedAt().setExpirationTime(p.claims.expOverride || "10m").sign(key);
     return Response.json({ id_token, access_token: "x" });
   }
+  // Modèle simulé (aucun appel réel à Anthropic) : flux SSE minimal
+  if (url === "https://api.anthropic.com/v1/messages") {
+    const body = JSON.parse(String(init.body)); modelLog.push(body);
+    const sse = `data: ${JSON.stringify({ type: "content_block_delta", delta: { type: "text_delta", text: "Réponse simulée." } })}\n\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`;
+    return new Response(sse, { headers: { "content-type": "text/event-stream" } });
+  }
+  if (url.endsWith("/agent/config.json")) return Response.json({ name: "Assistant La Qualia", instructions: "Instructions d'essai.", examples: ["Exemple"] });
+  if (url.endsWith("/agent/docs/index.json")) return Response.json([]);
   throw new Error("Appel réseau inattendu pendant l'essai : " + url);
 };
 
@@ -63,7 +78,7 @@ export async function makeEnv() {
   return {
     DB: new FakeD1(), ADMIN_CODE: "Code-Plateforme-Test", ACCOUNT_ORIGIN: ORIGIN,
     GOOGLE_CLIENT_ID: "google-client", GOOGLE_CLIENT_SECRET: "google-secret",
-    AUTH_EMAIL: new FakeMailer(),
+    AUTH_EMAIL: new FakeMailer(), AGENT_KV: new FakeKV(), ANTHROPIC_API_KEY: "cle-essai",
     APPLE_CLIENT_ID: "com.laqualia.web", APPLE_TEAM_ID: "TEAM123456", APPLE_KEY_ID: "KEY1234567", APPLE_PRIVATE_KEY: await exportPKCS8(appleClient.privateKey),
   };
 }

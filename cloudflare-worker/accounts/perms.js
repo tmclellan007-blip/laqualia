@@ -22,9 +22,13 @@ export const MATRIX = [
   { action: "members.disable", label: "Désactiver ou réactiver un membre", min: "admin" },
   { action: "members.remove", label: "Retirer un membre de l'établissement", min: "admin" },
   { action: "ownership.transfer", label: "Transférer la propriété", min: "owner" },
+  { action: "portal.use", label: "Utiliser le portail : Réception, Équipe technique (TSA) et tableau de bord", min: "member" },
+  { action: "access_codes.read", label: "Voir et copier les codes d'accès de l'établissement", min: "admin" },
+  { action: "access_codes.manage", label: "Générer, renouveler ou révoquer un code d'accès", min: "admin" },
   { action: "audit.read", label: "Consulter le journal des changements", min: "admin" },
   { action: "platform.orgs", label: "Créer et voir tous les établissements", min: "platform" },
   { action: "platform.recovery", label: "Créer un lien de récupération d'accès", min: "platform" },
+  { action: "platform.agent_config", label: "Configurer l'agent (page Admin, commune à tous les établissements)", min: "platform" },
 ];
 const MIN = Object.fromEntries(MATRIX.map((m) => [m.action, m.min]));
 

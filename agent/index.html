@@ -2,6 +2,9 @@
 <html lang="fr-CA">
 <head>
 <meta charset="utf-8">
+<script>/* Portail par compte : la page reste masquée jusqu'à la vérification de l'accès (laqualia.com) */
+if (/(^|\.)laqualia\.(com|test)$/i.test(location.hostname)) { document.documentElement.classList.add("lq-gate"); setTimeout(function () { document.documentElement.classList.remove("lq-gate"); }, 9000); }</script>
+<style>.lq-gate body{visibility:hidden}</style>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="robots" content="noindex,nofollow">
 <title>Assistant La Qualia</title>
@@ -1620,7 +1623,7 @@ body.side-mini .ni-demo{display:none}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610181510"></script>
+<script src="app-agent.js?v=202610201900"></script>
 <script src="journey.js?v=202610181510"></script>
 <script src="dashboard.js?v=20261019q"></script>
 </body>

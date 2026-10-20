@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Accès au portail · La Qualia</title>
+<meta name="theme-color" content="#04081a">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="compte.css?v=3">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="./"><img src="../assets/icone-clair.svg" alt="" width="30" height="30">La Qualia <small>Accès au portail</small></a>
+  <span class="sp"></span>
+  <a class="tlink" href="compte.html">Mon compte</a>
+  <button class="tlink" type="button" id="logout" hidden>Se déconnecter</button>
+</header>
+<main class="auth">
+  <section class="sheet" aria-labelledby="t">
+    <h1 id="t">Rejoindre votre établissement</h1>
+    <p id="intro">Entrez le code d'accès que l'administrateur de votre établissement vous a transmis. Vous ne le saisirez qu'une seule fois : aux prochaines connexions, le portail s'ouvrira directement.</p>
+    <div class="notice warn" id="warn" role="alert" hidden></div>
+    <div class="notice info" id="info" role="status" hidden></div>
+    <div class="notice ok" id="okBox" role="status" hidden></div>
+    <!-- method="post" : même sans JavaScript, le code ne se retrouve jamais dans l'adresse de la page -->
+    <form id="fCode" class="mailform" method="post" action="#" novalidate hidden>
+      <div class="f" style="margin:0"><label for="code">Code d'accès de l'établissement</label>
+        <input type="text" id="code" class="codein access" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" maxlength="20" required aria-describedby="codeHint codeErr">
+        <span class="hint" id="codeHint">12 caractères, par exemple ABCD-EFGH-JKMN. Les tirets et les espaces sont facultatifs.</span>
+        <span class="field-err" id="codeErr" role="alert" hidden></span></div>
+      <button class="btn" id="go">Valider le code</button>
+    </form>
+    <div class="skel" id="wait" aria-hidden="true"></div>
+    <p class="fine">Pas de code ? Demandez-le à l'administrateur de votre établissement. Le code vous donne accès au portail avec le rôle Membre (Réception, Équipe technique et tableau de bord). Il ne donne aucun droit d'administration.</p>
+  </section>
+</main>
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const PORTAL = "./";
+  const show = (id, html) => { const el = $(id); if (html === null) { el.hidden = true; return; } el.innerHTML = html; el.hidden = false; };
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const toLogin = () => location.replace("connexion.html?suite=" + encodeURIComponent("/agent/acces.html"));
+  if (new URLSearchParams(location.search).get("raison") === "retire") history.replaceState(null, "", location.pathname);
+
+  async function status() {
+    let r, d = {};
+    try { r = await fetch("/api/access/status", { credentials: "same-origin", cache: "no-store" }); d = await r.json(); }
+    catch { $("wait").hidden = true; show("warn", "Le portail est momentanément injoignable. Vérifiez votre connexion Internet, puis rechargez la page."); return; }
+    $("wait").hidden = true;
+    if (r.status === 401) return toLogin();
+    $("logout").hidden = false;
+    if (r.ok && d.access) {
+      show("info", `Vous avez déjà accès au portail pour <b>${esc(d.org ? d.org.name : "la plateforme")}</b>. <a href="${PORTAL}">Ouvrir le portail</a>`);
+      $("t").textContent = "Ajouter un établissement";
+      $("intro").textContent = "Vous avez reçu le code d'un autre établissement ? Entrez-le ci-dessous.";
+    } else if (d.code === "membership_disabled" || d.code === "account_deactivated") {
+      show("warn", esc(d.error));
+    }
+    if (d.code === "account_deactivated") return;
+    $("fCode").hidden = false;
+    if (matchMedia("(min-width: 700px)").matches) $("code").focus();
+  }
+
+  // Mise en forme pendant la saisie : majuscules et tirets tous les 4 caractères
+  $("code").addEventListener("input", (e) => {
+    const raw = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+    e.target.value = raw.replace(/(.{4})(?=.)/g, "$1-");
+    $("codeErr").hidden = true; e.target.removeAttribute("aria-invalid");
+  });
+  const fieldErr = (msg) => { $("codeErr").textContent = msg; $("codeErr").hidden = false; $("code").setAttribute("aria-invalid", "true"); $("code").focus(); };
+
+  $("fCode").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const v = $("code").value.replace(/[^A-Za-z0-9]/g, "");
+    if (v.length !== 12) return fieldErr("Le code compte 12 caractères. Vérifiez-le et réessayez.");
+    const btn = $("go"); btn.disabled = true; btn.textContent = "Vérification…";
+    try {
+      const r = await fetch("/api/access/redeem", { method: "POST", credentials: "same-origin", headers: { "content-type": "application/json", "x-lq-csrf": "1" }, body: JSON.stringify({ code: v }) });
+      let d = {}; try { d = await r.json(); } catch {}
+      if (r.status === 401) return toLogin();
+      if (!r.ok) {
+        fieldErr(d.code === "rate_limited" ? "Trop d'essais. Patientez quelques minutes avant de réessayer." : (d.error || "La vérification a échoué. Réessayez."));
+        if (d.code === "membership_disabled") show("warn", esc(d.error));
+        return;
+      }
+      $("code").value = "";
+      $("fCode").hidden = true; show("info", null); show("warn", null);
+      show("okBox", d.already ? `Vous faites déjà partie de <b>${esc(d.orgName)}</b>. Ouverture du portail…` : `Bienvenue! Vous êtes maintenant membre de <b>${esc(d.orgName)}</b>. Ouverture du portail…`);
+      setTimeout(() => location.replace(PORTAL), 1200);
+    } catch { fieldErr("Connexion au serveur impossible. Vérifiez votre connexion Internet."); }
+    finally { btn.disabled = false; btn.textContent = "Valider le code"; }
+  });
+
+  $("logout").onclick = async () => {
+    try { await fetch("/auth/logout", { method: "POST", credentials: "same-origin", headers: { "x-lq-csrf": "1" } }); } catch {}
+    location.replace("connexion.html?suite=" + encodeURIComponent("/agent/"));
+  };
+  status();
+})();
+</script>
+</body>
+</html>
