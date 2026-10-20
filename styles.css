@@ -1089,3 +1089,11 @@ nav>a{font-size:14px}
 @media(max-width:900px){.ls-t strong{font-size:13.5px}.hx-tx small{font-size:13.5px}}
 .founder-card ul li,.founder-card ul ul li{font-size:14.5px}
 a.linkedin-link span,.linkedin-link>span{font-size:14.5px!important}
+/* Bulles de l'accueil : surbrillance au survol */
+.hx-c1{--acc:#ff5a00}.hx-c2{--acc:#401098}.hx-c3{--acc:#005dff}.hx-c4{--acc:#ff735c}
+.hx-card{transition:background .2s,border-color .2s,box-shadow .2s,scale .2s;cursor:pointer}
+.hx-card:hover,.hx-card:focus-visible{background:#fff;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc),transparent 72%),0 22px 46px color-mix(in srgb,var(--acc),transparent 70%);scale:1.06;z-index:6}
+.hx-card:hover strong,.hx-card:focus-visible strong{color:var(--acc)}
+.hx-c4:hover strong,.hx-c4:focus-visible strong{color:#e2553d}
+@media(prefers-reduced-motion:reduce){.hx-card:hover,.hx-card:focus-visible{scale:1}}
+.hx-copy{pointer-events:none}.hx-copy>*{pointer-events:auto}
