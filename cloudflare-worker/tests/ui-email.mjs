@@ -9,6 +9,7 @@ const SITE = process.argv[2], OUT = process.argv[3];
 fs.mkdirSync(OUT, { recursive: true });
 const ORIGIN = "https://laqualia.test";
 const env = { ...(await makeEnv()), ACCOUNT_ORIGIN: ORIGIN };
+env.MEMBER_EMAIL_LINK = "on"; // l'association d'une adresse est testée ici telle qu'elle fonctionnera en production
 // Comme en production aujourd'hui : Google et Apple pas encore configurés.
 for (const k of ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "APPLE_CLIENT_ID", "APPLE_TEAM_ID", "APPLE_KEY_ID", "APPLE_PRIVATE_KEY"]) delete env[k];
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "application/javascript", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".json": "application/json" };

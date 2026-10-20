@@ -135,7 +135,7 @@ a{color:var(--purple)}
     <nav class="admin" aria-label="Autre accès">
       <span>Vous administrez un établissement ?</span>
       <a href="connexion.html?suite=%2Fagent%2F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></svg>Connexion administrateur</a>
-      <span class="also">Vous avez déjà associé un moyen de connexion à votre profil ? Utilisez aussi cette option.</span>
+      <span class="also" id="also" hidden>Vous avez déjà associé un moyen de connexion à votre profil ? Utilisez aussi cette option.</span>
     </nav>
   </section>
 </main>
@@ -217,7 +217,7 @@ a{color:var(--purple)}
     if (matchMedia("(min-width: 901px)").matches) $("first").focus();
   }
   let joinName = "";
-  fetch("/auth/providers", { credentials: "same-origin" }).then((r) => r.json()).then((p) => LQHuman.init(p.turnstile, "#ts")).catch(() => {});
+  fetch("/auth/providers", { credentials: "same-origin" }).then((r) => r.json()).then((p) => { LQHuman.init(p.turnstile, "#ts"); $("also").hidden = !p.memberLink; }).catch(() => {});
   async function start() {
     let r, d = {};
     try { r = await fetch("/api/access/status", { credentials: "same-origin", cache: "no-store" }); d = await r.json(); }

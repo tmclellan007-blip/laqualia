@@ -2007,7 +2007,7 @@
       if (!btn.classList.contains("confirm")) {
         // Sans moyen de connexion associé, un nouveau code sera nécessaire pour revenir : on le dit clairement.
         btn.classList.add("confirm"); btn.querySelector("span").textContent = account.noIdentity ? "Confirmer (nouveau code requis)" : "Confirmer la déconnexion";
-        if (account.noIdentity) btn.title = "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation. Associez-en un dans Mon compte.";
+        if (account.noIdentity) btn.title = "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation." + (account.canLinkEmail ? " Associez-en un dans Mon compte." : "");
         setTimeout(() => { btn.classList.remove("confirm"); btn.querySelector("span").textContent = "Se déconnecter"; }, 5000);
         return;
       }
@@ -2036,7 +2036,7 @@
     document.head.append(st);
     const box = document.createElement("aside");
     box.id = "profPrompt"; box.className = "prof-prompt"; box.setAttribute("role", "status"); box.setAttribute("aria-label", "Compléter mon profil");
-    box.innerHTML = `<b>Bienvenue${prenom ? " " + esc(prenom) : ""} !</b><p>${account.noIdentity
+    box.innerHTML = `<b>Bienvenue${prenom ? " " + esc(prenom) : ""} !</b><p>${account.noIdentity && account.canLinkEmail
       ? "Complétez votre profil et associez une adresse courriel : vous pourrez ainsi vous reconnecter depuis un autre appareil."
       : "Ajoutez votre nom de famille et votre photo pour que votre équipe vous reconnaisse."}</p>
       <div class="pp-row"><a href="compte.html#profil" id="ppGo">Compléter mon profil</a><button type="button" id="ppLater">Plus tard</button></div>`;

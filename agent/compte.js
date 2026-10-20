@@ -95,7 +95,7 @@
   };
   $("logout").onclick = async () => {
     const solo = S.me && !S.me.identities.length;
-    if (solo && !(await confirmBox("Se déconnecter ?", "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation. Associez d'abord une adresse courriel dans Mon profil pour pouvoir vous reconnecter.", "Se déconnecter quand même", true))) return;
+    if (solo && !(await confirmBox("Se déconnecter ?", "Vous n'avez pas encore associé de moyen de connexion : pour revenir, il faudra un nouveau code d'invitation." + (S.me.canLinkEmail ? " Associez d'abord une adresse courriel dans Mon profil pour pouvoir vous reconnecter." : ""), "Se déconnecter quand même", true))) return;
     try { await api("/auth/logout", { method: "POST" }); } catch {}
     location.href = solo ? "acces.html" : "connexion.html";
   };
@@ -179,11 +179,11 @@
         </section>
         <section class="card" aria-labelledby="h-ids">
           <h2 id="h-ids">Moyens de connexion</h2><p class="lead">Associez un deuxième moyen de connexion : il vous servira si vous perdez l'accès au premier.</p>
-          ${!identities.length ? `<div class="notice warn" style="margin-bottom:12px"><div><b>Aucun moyen de connexion associé.</b> Vous êtes connecté sur cet appareil grâce à votre code d'invitation. Associez une adresse courriel : vous pourrez vous reconnecter depuis un autre appareil ou après une déconnexion, avec « Connexion administrateur » sur la page d'accès.</div></div>` : ""}
+          ${!identities.length ? `<div class="notice warn" style="margin-bottom:12px"><div><b>Aucun moyen de connexion associé.</b> Vous êtes connecté sur cet appareil grâce à votre code d'invitation. ${S.me.canLinkEmail ? "Associez une adresse courriel : vous pourrez vous reconnecter depuis un autre appareil ou après une déconnexion, avec « Connexion administrateur » sur la page d'accès." : "Restez connecté : si vous vous déconnectez, il vous faudra un nouveau code de votre administrateur."}</div></div>` : ""}
           <ul class="list">${identities.map((i) => `<li class="item"><div class="who"><span class="av" aria-hidden="true" style="background:#101010">${i.provider === "google" ? "G" : i.provider === "apple" ? "A" : "@"}</span><div><b>${PROV[i.provider]}</b><small>${esc(i.email || "Adresse non transmise")}${i.email_verified ? "" : " · non vérifiée"}</small></div></div>
             <div class="tags">${i.is_private_email ? '<span class="badge b-warn">Adresse masquée Apple</span>' : ""}<span class="badge b-role">Dernière connexion : ${fmtDate(i.last_login_at)}</span></div>
             <div class="acts"><button class="btn danger ghost sm" data-unlink="${esc(i.id)}" ${identities.length < 2 || deact ? 'disabled title="Gardez au moins un moyen de connexion"' : ""}>Retirer</button></div></li>`).join("")}</ul>
-          <div class="row" style="margin-top:12px">${["google", "apple"].filter(canLink).map((p) => `<a class="btn ghost" href="/auth/${p}/start?mode=link&next=${encodeURIComponent("/agent/compte.html#profil")}">Associer ${PROV[p]}</a>`).join("")}${S.me.providers.email && !deact ? '<button class="btn ghost" type="button" id="linkEmail">Associer une adresse courriel</button>' : ""}${!["google", "apple"].some(canLink) && !(S.me.providers.email && !deact) ? '<span class="fine">Aucun autre moyen de connexion disponible.</span>' : ""}</div>
+          <div class="row" style="margin-top:12px">${["google", "apple"].filter(canLink).map((p) => `<a class="btn ghost" href="/auth/${p}/start?mode=link&next=${encodeURIComponent("/agent/compte.html#profil")}">Associer ${PROV[p]}</a>`).join("")}${S.me.providers.email && S.me.canLinkEmail && !deact ? '<button class="btn ghost" type="button" id="linkEmail">Associer une adresse courriel</button>' : ""}${!["google", "apple"].some(canLink) && !(S.me.providers.email && S.me.canLinkEmail && !deact) ? '<span class="fine">Aucun autre moyen de connexion disponible.</span>' : ""}</div>
           ${identities.some((i) => i.is_private_email) ? `<div class="notice info" style="margin-top:14px"><div><b>Adresse masquée Apple.</b> Les invitations doivent être envoyées à <b>${esc(identities.find((i) => i.is_private_email).email)}</b>, ou acceptées avec un autre moyen de connexion qui utilise l'adresse invitée. Pour associer un autre moyen en toute sécurité : connectez-vous d'abord ici, puis utilisez « Associer » ; La Qualia ne fusionne jamais deux comptes à partir d'une adresse courriel.</div></div>` : ""}
         </section>
         <section class="card" aria-labelledby="h-sess">

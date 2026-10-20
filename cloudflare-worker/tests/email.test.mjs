@@ -117,6 +117,7 @@ test("code courriel : invitation acceptée, mauvais destinataire refusé, associ
   assert.equal((await wrong.api(`/api/invitations/${token}/accept`, { method: "POST" })).data.code, "email_mismatch");
 
   // Association : le compte Apple à adresse masquée ajoute l'adresse invitée, prouvée par code.
+  env.MEMBER_EMAIL_LINK = "on"; // option activée (production) pour cet essai
   const apple = new Browser(env);
   await apple.login("apple", { sub: "ap-1", email: "xyz@privaterelay.appleid.com", email_verified: "true", is_private_email: "true" });
   const link = await apple.loginEmail("tsa@a.ca", { mode: "link" });

@@ -207,7 +207,14 @@ const emailSender = (env) => env.AUTH_EMAIL || env.ALERT_EMAIL || null;
 // que lorsque le secret TURNSTILE_SECRET est ajouté au relais. Sans lui, rien ne change.
 const TURNSTILE_SITEKEY = "0x4AAAAAAFeXR1_bJkXdINQm";
 const turnstileOn = (env) => !!env.TURNSTILE_SECRET;
-export const providers = (env) => ({ ...providersStatus(env), email: !!emailSender(env), turnstile: turnstileOn(env) ? (env.TURNSTILE_SITEKEY || TURNSTILE_SITEKEY) : null });
+export const providers = (env) => ({ ...providersStatus(env), email: !!emailSender(env), memberLink: memberLinkOn(env), turnstile: turnstileOn(env) ? (env.TURNSTILE_SITEKEY || TURNSTILE_SITEKEY) : null });
+// Association d'une adresse courriel par les Membres : désactivée pour l'instant (activer en production
+// avec la variable MEMBER_EMAIL_LINK = "on"). Les administrateurs et propriétaires gardent cette option.
+const memberLinkOn = (env) => String(env.MEMBER_EMAIL_LINK || "").toLowerCase() === "on";
+async function canLinkEmail(ctx, user) {
+  if (memberLinkOn(ctx.env) || user.platform_admin) return true;
+  return !!(await ctx.env.DB.prepare("SELECT 1 FROM memberships WHERE user_id = ? AND status = 'active' AND role IN ('owner','admin') LIMIT 1").bind(user.id).first());
+}
 async function checkHuman(ctx, token) {
   if (!turnstileOn(ctx.env)) return;
   const bad = () => { throw new HttpError(400, "La vérification anti-robots n'a pas abouti. Patientez un instant, puis réessayez.", "robot"); };
@@ -244,6 +251,7 @@ async function emailStart(ctx) {
   if (mode === "link") {
     const s = await readSession(ctx);
     if (!s || s.expired || s.user.status !== "active") throw new HttpError(401, "Connectez-vous d'abord.", "connexion_requise");
+    if (!(await canLinkEmail(ctx, s.user))) throw new HttpError(403, "L'association d'une adresse courriel n'est pas encore offerte aux membres.", "link_disabled");
     if (now - s.session.auth_at > REAUTH_WINDOW && (await identityCount(ctx, s.user.id)) > 0) throw new HttpError(403, "Par sécurité, reconnectez-vous avant d'associer un nouveau moyen de connexion.", "reauth");
     linkUserId = s.user.id;
   }
@@ -413,7 +421,7 @@ async function getMe(ctx) {
     memberships: mem.map((x) => ({ ...x, permissions: x.status === "active" ? permissionsFor(user.platform_admin ? "platform" : x.role) : [] })),
     activeOrgId: (mem.some((x) => x.org_id === session.active_org_id && x.status === "active") || (user.platform_admin && session.active_org_id)) ? session.active_org_id : (mem.find((x) => x.status === "active")?.org_id || null),
     session: { expiresAt: Math.min(session.expires_at, session.last_seen_at + idleFor(session)), authAt: session.auth_at, kind: session.kind || "auth", idleHours: idleFor(session) / 3600e3 },
-    providers: providers(ctx.env), platform: { isAdmin: !!user.platform_admin, canBootstrap: !platformHasAdmin && !!ctx.env.ADMIN_CODE },
+    providers: providers(ctx.env), canLinkEmail: await canLinkEmail(ctx, user), platform: { isAdmin: !!user.platform_admin, canBootstrap: !platformHasAdmin && !!ctx.env.ADMIN_CODE },
   });
 }
 const publicUser = (u) => ({ id: u.id, contact_email: u.contact_email || null, signup: u.signup || null, first_name: u.first_name, last_name: u.last_name, photo: u.photo, locale: u.locale, job_title: u.job_title, notif_prefs: safeJson(u.notif_prefs, {}), status: u.status, platform_admin: !!u.platform_admin, created_at: u.created_at });
@@ -912,7 +920,8 @@ export async function portalAccess(request, env) {
       error: off.length ? `Votre accès à ${off.join(", ")} a été retiré. Entrez un code d'un autre établissement ou communiquez avec l'administrateur.` : "Entrez le code d'accès de votre établissement pour continuer." };
   }
   const noIdentity = (await identityCount(ctx, s.user.id)) === 0;
-  return { ok: true, user: s.user, platform, noIdentity, needsProfile: noIdentity || !s.user.last_name, org: m ? { id: m.org_id, name: m.org_name, logo: m.org_logo || null } : null, role: platform ? "platform" : m.role,
+  const canLink = await canLinkEmail(ctx, s.user);
+  return { ok: true, user: s.user, platform, noIdentity, canLinkEmail: canLink, needsProfile: (noIdentity && canLink) || !s.user.last_name, org: m ? { id: m.org_id, name: m.org_name, logo: m.org_logo || null } : null, role: platform ? "platform" : m.role,
     orgs: active.map((x) => ({ id: x.org_id, name: x.org_name, role: x.role })) };
 }
 async function accessStatus(ctx) {

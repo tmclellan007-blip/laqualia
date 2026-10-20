@@ -30,6 +30,10 @@
 - **Limites** : 10 essais par adresse IP par 15 minutes, 40 par jour. Une saisie refusée ne crée aucun compte et ne consomme pas le code.
 - **Appareil partagé** : un nouveau premier accès ferme la session précédente de ce navigateur.
 
+### Association d'une adresse par les Membres (désactivée pour l'instant)
+- **Aujourd'hui** : un Membre ne peut pas associer une adresse courriel à son compte. L'interface ne le propose pas et le serveur le refuse (`link_disabled`). Les propriétaires, les administrateurs d'établissement et l'administrateur de la plateforme gardent cette option.
+- **Mise en production** : ajoutez la variable `MEMBER_EMAIL_LINK` = `on` au relais `laqualia-agent`. Aucun déploiement n'est nécessaire.
+
 ### Connexion administrateur (`agent/connexion.html`)
 - L'authentification existante (code par courriel, Google ou Apple), sans code d'invitation.
 - Pour les administrateurs, et pour les personnes qui ont associé un moyen de connexion à leur profil.

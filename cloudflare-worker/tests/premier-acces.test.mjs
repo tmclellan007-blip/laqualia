@@ -126,6 +126,7 @@ test("reconnexion : session conservée sur l'appareil ; sessions administrateur 
 
 test("compléter le profil : nom, courriel et moyen de connexion associés sans nouvelle vérification de session", async () => {
   const { env, A } = await world();
+  env.MEMBER_EMAIL_LINK = "on"; // option qui sera activée en production
   const c = await code(A.owner, A.id);
   const m = new Browser(env);
   await enter(m, { first_name: "Noé", email: "noe@a.ca", code: c.code });
@@ -160,4 +161,25 @@ test("appareil partagé, limite d'essais et retrait d'accès", async () => {
   const t = new Browser(env);
   for (let i = 0; i < 8; i++) await enter(t, { first_name: "X", email: "x@a.ca", code: "ZZZZ-ZZZZ-ZZZ" + (2 + i) });
   assert.equal((await enter(t, { first_name: "X", email: "x@a.ca", code: ca.code })).status, 429, "au-delà de 10 essais, même un bon code est refusé un moment");
+});
+
+test("pour l'instant : association d'une adresse refusée aux Membres, permise aux administrateurs", async () => {
+  const { env, A, plat } = await world();
+  const c = await code(A.owner, A.id);
+  const m = new Browser(env);
+  await enter(m, { first_name: "Zoé", email: "zoe@a.ca", code: c.code });
+  const r = await m.api("/auth/email/start", { method: "POST", body: { email: "zoe@a.ca", mode: "link" } });
+  assert.equal(r.status, 403); assert.equal(r.data.code, "link_disabled");
+  const st = (await m.api("/api/agent")).data.account;
+  assert.equal(st.canLinkEmail, false);
+  assert.equal(st.needsProfile, true, "le nom de famille manque encore");
+  await m.api("/api/me", { method: "PATCH", body: { last_name: "Côté" } });
+  assert.equal((await m.api("/api/agent")).data.account.needsProfile, false, "sans association possible, le nom suffit");
+  assert.equal((await m.api("/api/me")).data.canLinkEmail, false);
+  // Propriétaire d'établissement et administrateur de la plateforme : toujours permis
+  assert.equal((await A.owner.api("/auth/email/start", { method: "POST", body: { email: "autre-proprio@a.ca", mode: "link" } })).status, 200);
+  assert.equal((await plat.api("/api/me")).data.canLinkEmail, true);
+  // En production : MEMBER_EMAIL_LINK = "on"
+  env.MEMBER_EMAIL_LINK = "on";
+  assert.equal((await m.api("/auth/email/start", { method: "POST", body: { email: "zoe@a.ca", mode: "link" } })).status, 200);
 });
