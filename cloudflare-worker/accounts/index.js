@@ -872,7 +872,7 @@ export async function portalAccess(request, env) {
   const s = await readSession(ctx);
   if (!s || s.expired) return { ok: false, status: 401, code: s?.expired ? "session_expired" : "unauthenticated", error: s?.expired ? "Votre session a expiré. Reconnectez-vous." : "Connexion requise." };
   if (s.user.status !== "active") return { ok: false, status: 403, code: "account_deactivated", error: "Votre compte est désactivé." };
-  const mem = (await env.DB.prepare("SELECT m.*, o.name AS org_name FROM memberships m JOIN organizations o ON o.id = m.org_id WHERE m.user_id = ? AND o.status = 'active' ORDER BY m.created_at").bind(s.user.id).all()).results;
+  const mem = (await env.DB.prepare("SELECT m.*, o.name AS org_name, o.logo AS org_logo FROM memberships m JOIN organizations o ON o.id = m.org_id WHERE m.user_id = ? AND o.status = 'active' ORDER BY m.created_at").bind(s.user.id).all()).results;
   const active = mem.filter((m) => m.status === "active");
   let m = active.find((x) => x.org_id === s.session.active_org_id) || active[0] || null;
   if (m && m.org_id !== s.session.active_org_id) await env.DB.prepare("UPDATE sessions SET active_org_id = ? WHERE id_hash = ?").bind(m.org_id, s.idHash).run();
@@ -883,7 +883,7 @@ export async function portalAccess(request, env) {
       error: off.length ? `Votre accès à ${off.join(", ")} a été retiré. Entrez un code d'un autre établissement ou communiquez avec l'administrateur.` : "Entrez le code d'accès de votre établissement pour continuer." };
   }
   const noIdentity = (await identityCount(ctx, s.user.id)) === 0;
-  return { ok: true, user: s.user, platform, noIdentity, needsProfile: noIdentity || !s.user.last_name, org: m ? { id: m.org_id, name: m.org_name } : null, role: platform ? "platform" : m.role,
+  return { ok: true, user: s.user, platform, noIdentity, needsProfile: noIdentity || !s.user.last_name, org: m ? { id: m.org_id, name: m.org_name, logo: m.org_logo || null } : null, role: platform ? "platform" : m.role,
     orgs: active.map((x) => ({ id: x.org_id, name: x.org_name, role: x.role })) };
 }
 async function accessStatus(ctx) {

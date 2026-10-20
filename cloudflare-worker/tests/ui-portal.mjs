@@ -114,6 +114,7 @@ await shot(m, "05-bienvenue", true);
 await m.waitForURL(ORIGIN + "/agent/"); await gateOpen(m);
 ok(await m.locator("#codebox").isHidden(), "portail : aucune autre fenêtre (ni prénom ni code)");
 ok(/Julie/.test(await m.textContent("#helloName")), "portail : prénom du compte utilisé dans la salutation");
+ok((await m.textContent("#orgName")).trim() === "Clinique vétérinaire Saint-Laurent", "portail : nom de l'établissement de la personne affiché");
 await m.waitForSelector("#profPrompt");
 ok(/Compléter mon profil/.test(await m.textContent("#profPrompt")) && /Plus tard/.test(await m.textContent("#profPrompt")), "invitation discrète à compléter le profil");
 if (await m.locator("#privbox").isVisible()) await m.click("#privOk");
@@ -145,6 +146,7 @@ ok(true, "code expiré : message clair");
 await t.fill("#code", code2); await t.click("#go");
 await t.waitForURL(ORIGIN + "/agent/"); await gateOpen(t);
 ok(/Marc/.test(await t.textContent("#helloName")), "tablette : deuxième personne entrée avec un code d'équipe");
+ok((await t.textContent("#orgName")).trim() === "Clinique vétérinaire Saint-Laurent", "tablette : nom de l'établissement affiché");
 ok(!(await t.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), "tablette : aucun débordement horizontal");
 
 // 4. Reconnexion : nouvel onglet, rechargement, retour plus tard

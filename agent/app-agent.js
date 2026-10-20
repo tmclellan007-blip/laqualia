@@ -1974,6 +1974,12 @@
           cfg.tsa = { ...(cfg.tsa || {}), ...pick(s.pub.tsa) };
           applyCfg();
         }
+        // Mode compte : nom (et logo, s'il est défini) de l'établissement de la personne connectée
+        if (accountMode && account.org) {
+          cfg.etablissement = account.org.name;
+          if (account.org.logo) cfg.logo = account.org.logo;
+          applyCfg();
+        }
         $("adminLink").hidden = !s.admin;
         if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
         $("tsaLock").hidden = tsaVerified;
