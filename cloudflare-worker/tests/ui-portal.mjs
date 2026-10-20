@@ -194,6 +194,8 @@ ok(!(await p.locator("#profPrompt").count()), "plateforme : aucune invitation à
 await p.goto(ORIGIN + "/agent/admin.html");
 await p.waitForSelector("#app:not([hidden])", { timeout: 15000 });
 ok(true, "plateforme : configuration de l'agent ouverte sans code Admin");
+ok(await p.locator("#inviteBox").isVisible(), "Admin : lien vers les codes d'invitation visible");
+await p.locator("#inviteBox").scrollIntoViewIfNeeded(); await shot(p, "11-admin-lien-codes");
 await p.goto(ORIGIN + "/agent/compte.html#plateforme"); await p.waitForTimeout(800);
 ok(!(await p.locator("#navPlat").isHidden()), "plateforme : section Plateforme accessible");
 await shot(p, "10-admin-plateforme");

@@ -224,9 +224,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
           <div class="f"><label for="dailyLimit">Limite quotidienne de questions (toute l'équipe)</label><input type="text" inputmode="numeric" id="dailyLimit" maxlength="5" style="max-width:160px"><span class="hint" id="usage">—</span></div>
           <div class="f"><span class="lab">Aussi recommandé</span><span class="hint">Fixez une limite de dépenses mensuelle dans la console Anthropic (Settings › Limits). C'est le seul plafond qui protège à coup sûr votre carte de crédit.</span></div>
         </div>
+        <div class="alerts" id="inviteBox" hidden>
+          <div><b>Codes d'invitation du portail</b><p class="hint">Durée avant expiration (en heures), nombre de personnes, renouvellement et révocation : ces réglages se trouvent dans Mon compte, pour chaque établissement.</p></div>
+          <a class="btn sec" href="compte.html#codes">Gérer les codes d'invitation</a>
+        </div>
         <div class="rot" id="rotBox" hidden>
           <div class="rot-h">
-            <label class="chk rot-sw"><input type="checkbox" id="rotate"> <span><b>Code d'équipe mensuel</b><small>Le code change automatiquement le 1er de chaque mois. L'ancien reste accepté 7 jours.</small></span></label>
+            <label class="chk rot-sw"><input type="checkbox" id="rotate"> <span><b>Code d'équipe mensuel</b> <small style="display:inline">(ancien accès par code partagé, hors portail par compte)</small><small>Le code change automatiquement le 1er de chaque mois. L'ancien reste accepté 7 jours.</small></span></label>
           </div>
           <div class="rot-codes" id="rotCodes">
             <div><span class="rc-l">Code de ce mois-ci</span><span class="rc-v" id="rotCur">—</span><button type="button" class="btn sec rc-copy" data-copy="rotCur">Copier</button></div>
@@ -313,6 +317,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--role);bo
 
 <div class="toast" id="toast" hidden></div>
 
-<script src="admin.js?v=202610201900"></script>
+<script src="admin.js?v=202610202000"></script>
 </body>
 </html>

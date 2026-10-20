@@ -340,6 +340,7 @@
     fileCfg = c || {};
     apiUrl = c.apiUrl || "";
     if (ACCOUNT_HOST) {
+      $("inviteBox").hidden = false;
       // Aucun code à saisir : le relais vérifie la session et le statut d'administrateur de la plateforme.
       $("adminCode").hidden = $("loginGo").hidden = true;
       $("loginForm").querySelector("p").textContent = "Vérification de votre compte…";
