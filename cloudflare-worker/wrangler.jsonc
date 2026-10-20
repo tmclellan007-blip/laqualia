@@ -18,5 +18,14 @@
   // Stockage privé de la configuration et des bases de connaissances (Réception et TSA)
   "kv_namespaces": [
     { "binding": "AGENT_KV", "id": "47cb1b37991646f786a2ec7d00ed659e" }
+  ],
+  // Module Comptes : utilisateurs, établissements, membres, invitations (Cloudflare D1)
+  "d1_databases": [
+    { "binding": "DB", "database_name": "laqualia-comptes", "database_id": "58fc28a5-4443-4610-a161-e89882894ff1", "migrations_dir": "migrations" }
+  ],
+  // Connexion et API des comptes servies sur le site lui-même (témoins de session du même site)
+  "routes": [
+    { "pattern": "laqualia.com/auth/*", "zone_name": "laqualia.com" },
+    { "pattern": "laqualia.com/api/*", "zone_name": "laqualia.com" }
   ]
 }

@@ -62,10 +62,14 @@ const TSA_BILAN_DEFAULT = "Tu es formateur clinique pour des TSA. Évalue la tra
 
 let cache = null; // { at, config, chunks }
 
+import { handleAccounts, isAccountsRequest, cleanupAccounts } from "./accounts/index.js";
+
 export default {
   // Vérification automatique toutes les 6 heures : site, clé API, stockage
-  async scheduled(event, env, ctx) { ctx.waitUntil(healthCheck(env)); },
+  async scheduled(event, env, ctx) { ctx.waitUntil(healthCheck(env)); ctx.waitUntil(cleanupAccounts(env).catch(() => {})); },
   async fetch(request, env) {
+    // Module Comptes (connexion, profils, établissements) : servi sur le même site, sans CORS
+    if (isAccountsRequest(new URL(request.url))) return handleAccounts(request, env);
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors || {} });
     if (!cors) return json(403, { error: "Origine non autorisée." }, {});
