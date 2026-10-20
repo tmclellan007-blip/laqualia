@@ -74,7 +74,8 @@ globalThis.fetch = async (input, init = {}) => {
   if (url === "https://challenges.cloudflare.com/turnstile/v0/siteverify") {
     const b = JSON.parse(String(init.body)); turnstileLog.push(b);
     const ok = String(b.response).startsWith("humain") && b.secret === "secret-turnstile-essai";
-    return Response.json({ success: ok, hostname: b.response === "humain-autre-site" ? "pirate.example" : "laqualia.com" });
+    if (b.secret !== "secret-turnstile-essai") return Response.json({ success: false, "error-codes": ["invalid-input-secret"] });
+    return Response.json({ success: ok, "error-codes": ok ? [] : ["invalid-input-response"], hostname: b.response === "humain-autre-site" ? "pirate.example" : "laqualia.com" });
   }
   if (url.endsWith("/agent/config.json")) return Response.json({ name: "Assistant La Qualia", instructions: "Instructions d'essai.", examples: ["Exemple"] });
   if (url.endsWith("/agent/docs/index.json")) return Response.json([]);

@@ -220,6 +220,9 @@ async function checkHuman(ctx, token) {
     });
     out = await r.json();
   } catch (e) { console.error("turnstile", e && e.message); throw new HttpError(503, "La vérification anti-robots est momentanément indisponible. Réessayez dans un instant.", "robot_unavailable"); }
+  // Secret mal saisi dans Cloudflare : on ne bloque pas tout le monde (les autres limites restent actives) ; on le signale.
+  const errs = Array.isArray(out["error-codes"]) ? out["error-codes"] : [];
+  if (!out.success && errs.some((e) => e === "invalid-input-secret" || e === "missing-input-secret")) { console.error("turnstile: secret invalide", errs.join(",")); return; }
   // Jeton valide, à usage unique, émis pour ce site
   if (!out.success || (out.hostname && out.hostname !== new URL(ctx.origin).hostname)) bad();
 }
