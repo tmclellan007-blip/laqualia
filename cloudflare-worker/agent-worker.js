@@ -793,11 +793,16 @@ async function healthCheck(env) {
   catch { problems.push("Le fichier agent/config.json du site est inaccessible (site GitHub Pages en panne ou SITE_URL incorrect)."); }
   if (!env.ANTHROPIC_API_KEY) problems.push("Le secret ANTHROPIC_API_KEY est absent.");
   else {
-    try {
-      const r = await fetch("https://api.anthropic.com/v1/models?limit=1", { headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" } });
-      if (r.status === 401 || r.status === 403) problems.push("La clé API Anthropic est refusée (invalide ou révoquée).");
-      else if (!r.ok && r.status >= 500) problems.push(`Anthropic répond par une erreur ${r.status}.`);
-    } catch { problems.push("Impossible de joindre l'API Anthropic."); }
+    // Deux essais espacés de 20 s : un refus passager d'Anthropic ne doit pas déclencher de fausse alerte.
+    const probe = async () => {
+      try { return (await fetch("https://api.anthropic.com/v1/models?limit=1", { headers: { "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" } })).status; }
+      catch { return 0; }
+    };
+    let st = await probe();
+    if (st !== 200) { await new Promise((r) => setTimeout(r, 20000)); st = await probe(); }
+    if (st === 401 || st === 403) problems.push(`La clé API Anthropic est refusée (erreur ${st}, deux essais à 20 secondes d'intervalle). Vérifiez-la dans la console Anthropic.`);
+    else if (st >= 500) problems.push(`Anthropic répond par une erreur ${st}.`);
+    else if (st === 0) problems.push("Impossible de joindre l'API Anthropic.");
   }
   if (env.AGENT_KV) { try { await env.AGENT_KV.get("cfg:shared"); } catch { problems.push("Le stockage AGENT_KV ne répond pas."); } }
   if (problems.length) await sendAlert(env, "health", "Problème détecté lors de la vérification automatique", problems, 6 * 3600);
