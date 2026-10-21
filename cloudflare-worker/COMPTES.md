@@ -163,7 +163,7 @@ Les migrations 0001 à 0004 sont déjà appliquées et consignée dans `d1_migra
 
 ## Espace TSA › Nutrition — Aide au conseil client
 
-- **Interface** : aucune fenêtre séparée. Le bouton orangé « Nutrition » sous le champ (mode TSA seulement) active le mode Nutrition dans la même conversation : un bandeau « Mode Nutrition · Quitter » apparaît au-dessus du champ, qui prend la couleur de l'outil, et les réponses arrivent dans le fil, avec les étapes, les sources et, si on demande une comparaison, un comparatif. Il n'y a ni suggestions, ni volet de contexte, ni formulaire de comparaison : seulement la question libre. Quitter le mode, passer à la Réception ou lancer une simulation ramène l'agent TSA habituel.
+- **Interface** : aucune fenêtre séparée. La tuile jaune orangé « Nutrition », première des outils de l'équipe technique (mode TSA seulement), active le mode Nutrition dans la même conversation : un bandeau « Mode Nutrition · Quitter » apparaît au-dessus du champ, qui prend la couleur de l'outil, et les réponses arrivent dans le fil, avec les étapes, les sources et, si on demande une comparaison, un comparatif. Il n'y a ni suggestions, ni volet de contexte, ni formulaire de comparaison : seulement la question libre. Quitter le mode, passer à la Réception ou lancer une simulation ramène l'agent TSA habituel.
 - **Accès** : en mode TSA seulement. Mêmes droits que l'espace TSA : Membre et plus sur laqualia.com (session vérifiée à chaque requête), ou code TSA sur le miroir. Aucun droit d'administration requis ni accordé.
 - **Fonctionnement** :
   - le relais (`nutrition.js`) appelle Claude avec les outils serveur `web_search` et `web_fetch` d'Anthropic ;

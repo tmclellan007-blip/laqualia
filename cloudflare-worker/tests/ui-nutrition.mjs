@@ -87,13 +87,13 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   await p.waitForURL(ORIGIN + "/agent/"); await gateOpen(p);
   if (await p.locator("#ppLater").count()) await p.click("#ppLater");
   if (await p.locator("#privbox").isVisible()) await p.click("#privOk");
-  ok(await p.locator("#nutriOpen").isHidden(), label + " : Réception — aucun bouton Nutrition");
+  ok(!(await p.locator(".nutri-tool").count()), label + " : Réception — aucune tuile Nutrition");
   await p.click("#roleTsa"); await p.waitForTimeout(300);
-  ok(await p.locator("#nutriOpen").isVisible(), label + " : TSA — bouton Nutrition sous le champ");
+  ok(await p.locator("#examples .card.tool").first().evaluate((e) => e.classList.contains("nutri-tool")), label + " : TSA — Nutrition est la première tuile des outils");
   await shot(p, `n1-tsa-bouton-${label}`);
-  await p.click("#nutriOpen");
+  await p.click(".nutri-tool");
   ok(await p.locator("#nutriTray").isVisible() && !(await p.locator("dialog[open]").count()), label + " : mode Nutrition dans la même page (aucune fenêtre)");
-  ok(await p.locator("#nutriOpen").isHidden() && /Mode Nutrition/.test(await p.textContent("#nutriTray")), label + " : mode actif indiqué au-dessus du champ (pas de bouton en double)");
+  ok((await p.getAttribute(".nutri-tool", "aria-pressed")) === "true" && /Mode Nutrition/.test(await p.textContent("#nutriTray")), label + " : mode actif indiqué sur la tuile et au-dessus du champ");
   ok(!(await p.locator("#nutriTray [data-s], #nutriTray input, #nutriTray select").count()), label + " : ni suggestions, ni contexte, ni comparateur : seulement la question libre");
   ok(/^Question nutrition/.test(await p.getAttribute("#q", "placeholder")), label + " : le champ principal devient le champ Nutrition");
   await p.waitForTimeout(600);
@@ -130,13 +130,13 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), label + " : aucun débordement horizontal");
   // Quitter le mode : la question repart vers l'agent TSA habituel
   await p.click("#ntQuit");
-  ok(await p.locator("#nutriTray").isHidden() && (await p.getAttribute("#nutriOpen", "aria-pressed")) === "false", label + " : quitter le mode Nutrition");
+  ok(await p.locator("#nutriTray").isHidden(), label + " : quitter le mode Nutrition");
   const n1 = modelLog.length;
   await p.fill("#q", "Question TSA ordinaire"); await p.click("#send");
   await p.waitForFunction(() => /Réponse simulée/.test(document.body.innerText), null, { timeout: 15000 });
   ok(!modelLog.slice(n1).some((r) => r.tools), label + " : hors du mode, aucune recherche web");
   // Passer à la Réception désactive le mode
-  await p.click("#nutriOpen"); await p.waitForSelector("#nutriTray:not([hidden])"); await p.click("#roleRec"); await p.waitForTimeout(300);
+  await p.click("#clear"); await p.click(".nutri-tool"); await p.waitForSelector("#nutriTray:not([hidden])"); await p.click("#roleRec"); await p.waitForTimeout(300);
   ok(await p.locator("#nutriTray").isHidden(), label + " : passer à la Réception quitte le mode Nutrition");
   await ctx.close();
 }
@@ -151,7 +151,7 @@ await pa.waitForTimeout(400); if (await pa.locator("#privbox").isVisible()) awai
 if (await pa.locator("#codebox").isVisible()) { await pa.fill("#prenom", "Terry"); await pa.click("#codeForm button[type=submit]"); }
 if (await pa.locator("#privbox").isVisible()) await pa.click("#privOk");
 await pa.click("#roleTsa"); await pa.waitForTimeout(300);
-ok(await pa.locator("#nutriOpen").isVisible() && !(await pa.locator("#adminLink").isHidden()), "administrateur : Nutrition et Admin accessibles");
+ok(await pa.locator(".nutri-tool").isVisible() && !(await pa.locator("#adminLink").isHidden()), "administrateur : Nutrition et Admin accessibles");
 await browser.close();
 console.log(errors.length ? `\n${errors.length} problème(s)` : "\nOutil Nutrition : tout est conforme.");
 process.exit(errors.length ? 1 : 0);

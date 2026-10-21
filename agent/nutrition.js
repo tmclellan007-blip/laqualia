@@ -28,17 +28,22 @@
     on = true;
     document.body.classList.add("nutri");
     $("nutriTray").hidden = false;
-    const btn = $("nutriOpen"); btn.setAttribute("aria-pressed", "true"); btn.querySelector(".no-go").textContent = "Quitter ×";
-    btn.querySelector("small").textContent = "Mode actif · vos questions vont à l'outil Nutrition";
+    syncTile();
     const q = $("q"); prevPH = q.placeholder; q.placeholder = PH(); q.setAttribute("aria-label", "Question nutrition"); q.focus();
+  }
+  // Tuile « Nutrition » des outils TSA : indique si le mode est actif (la tuile est redessinée avec les outils)
+  function syncTile() {
+    document.querySelectorAll(".nutri-tool").forEach((t) => {
+      t.setAttribute("aria-pressed", String(on));
+      const sm = t.querySelector("small"); if (sm) sm.textContent = on ? "Mode actif · touchez pour quitter" : "Aide au conseil client";
+    });
   }
   function exit(focus) {
     if (!on) return;
     on = false;
     document.body.classList.remove("nutri");
     $("nutriTray").hidden = true;
-    const btn = $("nutriOpen"); btn.setAttribute("aria-pressed", "false"); btn.querySelector(".no-go").textContent = "Activer ›";
-    btn.querySelector("small").textContent = "Aide au conseil client · fiches officielles";
+    syncTile();
     const q = $("q"); if (prevPH) q.placeholder = prevPH; q.setAttribute("aria-label", "Décrivez le cas ou la tâche");
     if (focus) q.focus();
   }
@@ -168,7 +173,7 @@
       </ul><p class="nu-hint">${PRICE} « Référencé au Canada » ne veut dire ni « vendu par la clinique » ni « en stock ».</p></div>`;
   }
 
-  window.LQNutrition = { active: () => on, send: () => send(), enter, exit };
+  window.LQNutrition = { active: () => on, send: () => send(), enter, exit, syncTile };
   document.addEventListener("click", (e) => { if (e.target.closest("[data-open-nutri]")) (on ? exit(true) : enter()); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && on && document.activeElement && document.activeElement.closest && document.activeElement.closest("#nutriTray")) exit(true); });
 })();
