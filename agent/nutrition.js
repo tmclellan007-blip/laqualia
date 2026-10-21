@@ -18,7 +18,7 @@
 
   /* ---------- bandeau au-dessus du champ : mode actif, rappel des sources, Quitter ---------- */
   function buildTray() {
-    $("nutriTray").innerHTML = `<div class="nt-head"><span class="nt-badge"><span class="nt-dot" aria-hidden="true"></span>Mode Nutrition</span><button type="button" class="nt-quit" id="ntQuit">Quitter</button></div>`;
+    $("nutriTray").innerHTML = `<div class="nt-head"><span class="nt-badge"><span class="nt-dot" aria-hidden="true"></span>Mode Nutrition &amp; produits</span><button type="button" class="nt-quit" id="ntQuit">Quitter</button></div>`;
     $("ntQuit").onclick = () => exit(true);
   }
 
@@ -55,7 +55,7 @@
     prods = [];
     if (!forced) { $("q").value = ""; A().chat.autosize(); }
     const chat = A().chat;
-    chat.addQuestion(`Nutrition — ${q}`);
+    chat.addQuestion(`Nutrition & produits — ${q}`);
     const { m, col, body } = chat.addAnswer();
     m.classList.add("nutri-msg");
     body.innerHTML = '<ol class="nu-steps"><li class="on">Analyse de la demande…</li></ol><div class="nu-ans"></div><div class="nu-cmp-out"></div><div class="nu-src-out"></div>';
@@ -105,7 +105,7 @@
       if (!text && sources.length) S(".nu-src-out").innerHTML = sourcesHtml(sources, date);
       if (text) {
         history.push({ role: "user", content: q }, { role: "assistant", content: text.replace(/```comparaison[\s\S]*?```/g, "").slice(0, 6000) });
-        chat.remember("Nutrition — " + q, text.replace(/```comparaison[\s\S]*?```/g, ""));
+        chat.remember("Nutrition & produits — " + q, text.replace(/```comparaison[\s\S]*?```/g, ""));
         addCopy(col, body);
       }
       requestAnimationFrame(() => chat.toTopOf(m));

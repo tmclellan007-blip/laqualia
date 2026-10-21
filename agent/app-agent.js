@@ -129,7 +129,7 @@
     if (isTsa()) {
       // Première tuile : outil Nutrition (couleur propre), qui active le mode Nutrition dans la conversation
       const nt = document.createElement("button"); nt.type = "button"; nt.className = "card tool nutri-tool"; nt.setAttribute("data-open-nutri", ""); nt.setAttribute("aria-pressed", "false");
-      nt.innerHTML = '<span class="tl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/></svg></span><span class="tl-t"><b>Nutrition</b><small>Aide au conseil client</small></span>';
+      nt.innerHTML = '<span class="tl-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/></svg></span><span class="tl-t"><b>Nutrition &amp; produits</b><small>Aide au conseil client</small></span>';
       el.append(nt);
       try { window.LQNutrition && window.LQNutrition.syncTile(); } catch {}
       TSA_TOOLS.forEach(([t, sub, ico, tpl]) => {
