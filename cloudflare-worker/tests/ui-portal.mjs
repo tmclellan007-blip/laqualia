@@ -81,6 +81,8 @@ ok(/Connexion administrateur/.test(await a.textContent("h1")), "accueil : option
 await emailLogin(a, "direction@csl.ca");
 await a.waitForURL(ORIGIN + "/agent/"); await gateOpen(a);
 ok(true, "administratrice : connexion existante, sans code d'invitation");
+ok(await a.evaluate(() => { const m = document.getElementById("orgMono"); return m.classList.contains("can-edit") && /compte\.html#etablissement$/.test(m.href); }), "bandeau : la responsable peut ajouter le logo (lien vers Mon établissement)");
+ok(!/Votre logo d'entreprise ici/.test(await a.textContent(".topbar")), "bandeau : plus de texte d'instruction");
 await a.goto(ORIGIN + "/agent/compte.html#codes");
 await a.waitForSelector("#newCode"); await a.click("#newCode");
 ok((await a.inputValue("#cMax")) === "1", "codes : usage unique proposé par défaut");
@@ -122,6 +124,7 @@ await shot(m, "05-bienvenue", true);
 await m.waitForURL(ORIGIN + "/agent/"); await gateOpen(m);
 ok(await m.locator("#codebox").isHidden(), "portail : aucune autre fenêtre (ni prénom ni code)");
 ok(/Julie/.test(await m.textContent("#helloName")), "portail : prénom du compte utilisé dans la salutation");
+ok(await m.evaluate(() => !document.getElementById("orgMono").classList.contains("can-edit") && document.getElementById("orgMonoTxt").textContent === "SL"), "bandeau : monogramme de l'établissement, sans action d'administration pour un membre");
 ok((await m.textContent("#orgName")).trim() === "Clinique vétérinaire Saint-Laurent", "portail : nom de l'établissement de la personne affiché");
 await m.waitForSelector("#profPrompt");
 ok(/Compléter mon profil/.test(await m.textContent("#profPrompt")) && /Plus tard/.test(await m.textContent("#profPrompt")), "invitation discrète à compléter le profil");

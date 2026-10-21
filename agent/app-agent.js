@@ -192,9 +192,24 @@
   }
 
   /* ---------- config ---------- */
+  // Monogramme de l'établissement (sans logo) : initiales des mots distinctifs du nom
+  const MONO_SKIP = new Set(["clinique", "hopital", "hôpital", "veterinaire", "vétérinaire", "vet", "centre", "de", "du", "des", "la", "le", "les", "et", "l", "d", "animalier", "animaux"]);
+  function monogram(name) {
+    const words = String(name || "").split(/[\s\-’']+/).filter(Boolean);
+    const keep = words.filter((w) => !MONO_SKIP.has(w.toLowerCase()));
+    const src = (keep.length ? keep : words).slice(0, 2);
+    return src.map((w) => w[0]).join("").toUpperCase() || "?";
+  }
+  // Ajout du logo : proposé seulement à qui peut le modifier
+  function setLogoEdit(href) {
+    const m = $("orgMono");
+    if (href) { m.href = href; m.classList.add("can-edit"); m.title = "Ajouter le logo de l'établissement"; m.setAttribute("aria-label", "Ajouter le logo de l'établissement"); m.removeAttribute("aria-hidden"); m.tabIndex = 0; }
+    else { m.removeAttribute("href"); m.classList.remove("can-edit"); m.removeAttribute("title"); m.setAttribute("aria-hidden", "true"); m.tabIndex = -1; }
+  }
   function applyCfg() {
     $("agentName").textContent = cfg.name || "Assistant La Qualia";
     $("orgName").textContent = cfg.etablissement || "Nom de votre établissement";
+    $("orgMonoTxt").textContent = monogram(cfg.etablissement);
     // Logo de l'établissement (si l'image ne se charge pas, on garde l'icône)
     const lg = $("orgLogo"), lb = $("orgLogoBox");
     if (cfg.logo && lg.getAttribute("src") !== cfg.logo) {
@@ -2004,6 +2019,8 @@
           applyCfg();
         }
         $("adminLink").hidden = !s.admin;
+        // Logo : en mode compte, les responsables de l'établissement le gèrent dans Mon établissement ; sinon, page Admin
+        setLogoEdit(accountMode ? (account && ["owner", "admin", "platform"].includes(account.role) ? "compte.html#etablissement" : "") : (s.admin ? "admin.html" : ""));
         if (!tsaVerified && tsaCode) { tsaCode = ""; store.del("lq-tsa-code"); }
         $("tsaLock").hidden = tsaVerified;
         if (store.get("lq-role") === "tsa" && tsaVerified && !isTsa()) switchRole("tsa", { silent: true });
