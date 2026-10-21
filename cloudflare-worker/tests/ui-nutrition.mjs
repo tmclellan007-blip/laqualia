@@ -92,44 +92,52 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   ok(await p.locator("#nutriOpen").isVisible(), label + " : TSA — bouton Nutrition sous le champ");
   await shot(p, `n1-tsa-bouton-${label}`);
   await p.click("#nutriOpen");
-  await p.waitForSelector("#nutri[open]");
-  ok((await p.locator("#nutri .nu-chips button").count()) === 6, label + " : six suggestions cliquables");
-  await p.click("#nutri [data-s='1']");
-  ok(/refuse ses croquettes/.test(await p.inputValue("#nuQ")), label + " : une suggestion remplit la question");
-  await shot(p, `n2-espace-${label}`);
+  ok(await p.locator("#nutriTray").isVisible() && !(await p.locator("dialog[open]").count()), label + " : mode Nutrition dans la même page (aucune fenêtre)");
+  ok(await p.locator("#nutriOpen").isHidden() && /Mode Nutrition/.test(await p.textContent("#nutriTray")), label + " : mode actif indiqué au-dessus du champ (pas de bouton en double)");
+  ok(!(await p.locator("#nutriTray [data-s], #nutriTray input, #nutriTray select").count()), label + " : ni suggestions, ni contexte, ni comparateur : seulement la question libre");
+  ok(/^Question nutrition/.test(await p.getAttribute("#q", "placeholder")), label + " : le champ principal devient le champ Nutrition");
+  await p.waitForTimeout(600);
+  ok(/233, 161, 59/.test(await p.evaluate(() => getComputedStyle(document.getElementById("form")).borderColor)), label + " : champ aux couleurs de l'outil Nutrition");
+  await shot(p, `n2-mode-${label}`);
   // Erreur du service, puis nouvel essai
   nutritionScript.push({ status: 500 });
-  await p.click("#nuGo");
-  await p.waitForSelector("#nutri .nu-err");
-  ok(/Réessayez|n'a pas pu/.test(await p.textContent("#nutri .nu-err")), label + " : état d'erreur clair");
-  ok(await p.locator("#nutri [data-retry]").count() > 0, label + " : bouton Réessayer");
-  // Absence de résultat
+  await p.fill("#q", "Le chien refuse ses croquettes, que dire au client ?"); await p.click("#send");
+  await p.waitForSelector(".nutri-msg .nu-err");
+  ok(/Réessayez|n'a pas pu/.test(await p.textContent(".nutri-msg .nu-err")), label + " : état d'erreur clair dans le fil");
   nutritionScript.push({ events: [E.end()] });
-  await p.click("#nutri [data-retry]");
-  await p.waitForSelector("#nutri .nu-empty");
+  await p.click(".nutri-msg .nu-retry");
+  await p.waitForSelector(".nutri-msg .nu-empty");
   ok(true, label + " : état « aucun résultat » clair");
-  // Comparaison avec contexte facultatif
-  await p.click("#nuCtx summary"); await p.selectOption("#nutri [data-k='espece']", "Chat"); await p.fill("#nutri [data-k='poids']", "4,2 kg");
-  await p.click("#nuCmp summary"); await p.fill("#nutri [data-p='1']", "Urinary S/O"); await p.fill("#nutri [data-p='2']", "c/d Multicare");
+  // Comparaison demandée en texte libre : affichée avec ses sources réellement consultées
   nutritionScript.push({ events: scenario() });
   const n0 = modelLog.length;
-  await p.click("#nuCmpGo");
-  await p.waitForSelector("#nutri .nu-src h3");
+  await p.fill("#q", "Compare Urinary S/O et c/d Multicare pour un chat de 4,2 kg"); await p.click("#send");
+  await p.waitForSelector(".nutri-msg .nu-src h3 >> text=Fiches consultées");
   const req = modelLog.slice(n0).find((r) => r.tools);
-  ok(req && /Espèce : Chat/.test(req.messages.at(-1).content) && /Poids : 4,2 kg/.test(req.messages.at(-1).content), label + " : contexte facultatif transmis");
-  const cards = p.locator("#nutri .nu-card");
-  ok((await cards.count()) === 2, label + " : comparateur à deux produits");
+  ok(req && /Compare Urinary S\/O/.test(req.messages.at(-1).content), label + " : question libre transmise");
+  const last = p.locator(".nutri-msg").last();
+  const cards = last.locator(".nu-card");
+  ok((await cards.count()) === 2, label + " : comparateur à deux produits dans la réponse");
   ok(/Fiche officielle/.test(await cards.nth(0).textContent()) && /21 octobre 2026/.test(await cards.nth(0).textContent()), label + " : produit vérifié avec lien et date de consultation");
   const unv = await cards.nth(1).textContent();
-  ok(/Fiche non consultée/.test(unv) && !/Inventé/.test(unv) && /Non précisé dans la source/.test(unv), label + " : produit non consulté — aucune donnée affichée, « Non précisé dans la source »");
-  ok(/Prix et disponibilité à confirmer auprès de la clinique/.test(await p.textContent("#nutri .nu-cmp")), label + " : prix et stock à confirmer");
-  ok(/Fiche inaccessible/.test(await p.textContent("#nutri .nu-src")), label + " : page inaccessible signalée dans les sources");
-  ok(await p.locator(`#nutri .nu-ans a[href="${RC}"]`).count() === 1, label + " : lien exact de la fiche dans la réponse");
-  await p.locator("#nutri .nu-cmp").scrollIntoViewIfNeeded();
+  ok(/Fiche non consultée/.test(unv) && !/Inventé/.test(unv) && !/Indications déclarées/.test(unv), label + " : produit non consulté : aucune caractéristique affichée");
+  ok(/Non précisé dans la source/.test(await cards.nth(0).textContent()), label + " : donnée absente de la fiche : « Non précisé dans la source »");
+  ok(/Prix et disponibilité à confirmer auprès de la clinique/.test(await last.locator(".nu-cmp").textContent()), label + " : prix et stock à confirmer");
+  ok(/Fiche inaccessible/.test(await last.locator(".nu-src").textContent()), label + " : page inaccessible signalée");
+  ok(await last.locator(`.nu-ans a[href="${RC}"]`).count() === 1, label + " : lien exact de la fiche dans la réponse");
+  await last.locator(".nu-cmp").scrollIntoViewIfNeeded();
   await shot(p, `n3-comparatif-${label}`);
   ok(!(await p.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)), label + " : aucun débordement horizontal");
-  await p.click("#nuClose");
-  ok(!(await p.locator("#nutri[open]").count()), label + " : fermeture de l'espace");
+  // Quitter le mode : la question repart vers l'agent TSA habituel
+  await p.click("#ntQuit");
+  ok(await p.locator("#nutriTray").isHidden() && (await p.getAttribute("#nutriOpen", "aria-pressed")) === "false", label + " : quitter le mode Nutrition");
+  const n1 = modelLog.length;
+  await p.fill("#q", "Question TSA ordinaire"); await p.click("#send");
+  await p.waitForFunction(() => /Réponse simulée/.test(document.body.innerText), null, { timeout: 15000 });
+  ok(!modelLog.slice(n1).some((r) => r.tools), label + " : hors du mode, aucune recherche web");
+  // Passer à la Réception désactive le mode
+  await p.click("#nutriOpen"); await p.waitForSelector("#nutriTray:not([hidden])"); await p.click("#roleRec"); await p.waitForTimeout(300);
+  ok(await p.locator("#nutriTray").isHidden(), label + " : passer à la Réception quitte le mode Nutrition");
   await ctx.close();
 }
 // L'administrateur de la plateforme garde son accès

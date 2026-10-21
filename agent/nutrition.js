@@ -1,7 +1,8 @@
-// Espace TSA › « Nutrition — Aide au conseil client ».
-// Question libre, suggestions, contexte facultatif et comparateur (2 ou 3 produits).
-// Les sources affichées sont celles que le relais a RÉELLEMENT consultées (succès ou échec), jamais celles
-// que le texte prétend citer : un produit du comparateur sans fiche consultée est signalé comme non vérifié.
+// Espace TSA › « Nutrition — Aide au conseil client », intégré à la conversation (aucune autre fenêtre).
+// Le bouton sous le champ active le mode Nutrition : le champ change de couleur, un bandeau rappelle le mode
+// juste au-dessus, et les réponses arrivent dans le fil. Si on demande une comparaison, elle s'affiche avec ses sources.
+// Les sources affichées sont celles que le relais a RÉELLEMENT consultées : un produit du comparateur sans
+// fiche consultée est signalé comme non vérifié, sans aucune caractéristique.
 (() => {
   "use strict";
   const A = () => window.LQAgent;
@@ -10,97 +11,77 @@
   const NP = "Non précisé dans la source";
   const PRICE = "Prix et disponibilité à confirmer auprès de la clinique.";
   const OK_DOMAINS = /^https:\/\/(www\.)?(royalcanin\.com|hillspet\.ca|purina\.ca)\//i;
-  const SUGG = [
-    ["Comparer deux aliments", null],
-    ["Refus des croquettes", "Le client dit que son animal refuse ses croquettes depuis quelques jours. Quelles questions poser et quelles options présenter, sans changer une prescription ?"],
-    ["Formats et textures", "Quels formats et quelles textures existent pour cet aliment (sec, humide, taille de croquette) ? Aliment : "],
-    ["Budget", "Le client trouve l'aliment recommandé trop cher. Comment l'accompagner et quelles options présenter au vétérinaire ? Aliment actuel : "],
-    ["Rupture de stock", "L'aliment habituel est en rupture de stock. Quelles informations donner au client et que faut-il faire valider par le vétérinaire avant tout remplacement ? Aliment : "],
-    ["Explication au client", "Aide-moi à expliquer simplement au client l'aliment prescrit et la transition alimentaire. Aliment prescrit : "],
-  ];
-  const FIELDS = [["espece", "Espèce", "select"], ["age", "Âge", "ex. 9 ans"], ["poids", "Poids", "ex. 4,2 kg"], ["alimentation", "Alimentation actuelle", "produit, quantité"], ["prescription", "Prescription ou diagnostic rapporté", "tel que rapporté au dossier"], ["preferences", "Préférences", "texture, saveur…"], ["budget", "Budget", "ex. 80 $ par mois"]];
+  const PH = () => (matchMedia("(max-width: 520px)").matches ? "Question nutrition…" : "Question nutrition (ex. : le chat refuse son aliment rénal)…");
   const COMP = [["fabricant", "Fabricant"], ["gamme", "Gamme"], ["espece", "Espèce"], ["forme", "Forme / texture"], ["indications", "Indications déclarées"], ["contre_indications", "Contre-indications déclarées"], ["nutrition", "Points nutritionnels déclarés"], ["formats", "Formats"], ["taille_croquette", "Taille de croquette"]];
-  const ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-18 0Z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/></svg>';
 
-  let history = [], ctl = null, last = null;
+  let on = false, history = [], prevPH = "";
 
-  function build() {
-    const d = document.createElement("dialog");
-    d.id = "nutri"; d.className = "nutri"; d.setAttribute("aria-labelledby", "nuTitle");
-    d.innerHTML = `
-      <header class="nu-h"><span class="nu-ico">${ICO}</span><div><h2 id="nuTitle">Nutrition — Aide au conseil client</h2><p>Fiches officielles canadiennes : Royal Canin, Hill's, Purina</p></div>
-        <button type="button" class="nu-x" id="nuClose" aria-label="Fermer">×</button></header>
-      <div class="nu-body">
-        <p class="nu-warn">Soutien au conseil nutritionnel. Ne remplace ni la prescription ni la validation du vétérinaire.</p>
-        <form id="nuForm" class="nu-ask" novalidate>
-          <label for="nuQ" class="sr">Votre question</label>
-          <textarea id="nuQ" rows="3" maxlength="2000" placeholder="Votre question nutrition (ex. : le chat refuse son aliment rénal, que proposer au vétérinaire ?)"></textarea>
-          <div class="nu-row"><button class="nu-go" id="nuGo">Demander</button><button type="button" class="nu-ghost" id="nuNew" hidden>Nouvelle demande</button><button type="button" class="nu-ghost" id="nuStop" hidden>Arrêter</button></div>
-        </form>
-        <div class="nu-chips" role="list" aria-label="Suggestions">${SUGG.map(([l], i) => `<button type="button" role="listitem" data-s="${i}">${esc(l)}</button>`).join("")}</div>
-        <details class="nu-box" id="nuCtx"><summary>Contexte <small>(facultatif)</small></summary>
-          <div class="nu-grid">${FIELDS.map(([k, l, ph]) => `<label class="nu-f"><span>${l}</span>${ph === "select" ? `<select data-k="${k}"><option value="">—</option><option>Chien</option><option>Chat</option></select>` : `<input data-k="${k}" type="text" maxlength="300" placeholder="${esc(ph)}">`}</label>`).join("")}</div>
-          <p class="nu-hint">Ne remplissez que ce qui aide la question. Aucun nom de client ni numéro de dossier.</p></details>
-        <details class="nu-box" id="nuCmp"><summary>Comparer des produits <small>(2 ou 3)</small></summary>
-          <div class="nu-grid">${[1, 2, 3].map((i) => `<label class="nu-f"><span>Produit ${i}${i === 3 ? " (facultatif)" : ""}</span><input data-p="${i}" type="text" maxlength="200" placeholder="nom exact ou lien de la fiche"></label>`).join("")}</div>
-          <div class="nu-row"><button type="button" class="nu-go" id="nuCmpGo">Comparer</button></div></details>
-        <section id="nuOut" class="nu-out" aria-live="polite" hidden></section>
-      </div>`;
-    document.body.append(d);
-    $("nuClose").onclick = () => d.close();
-    d.addEventListener("close", () => { ctl?.abort(); });
-    d.addEventListener("click", (e) => { if (e.target === d) d.close(); });
-    $("nuForm").onsubmit = (e) => { e.preventDefault(); ask(); };
-    $("nuQ").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ask(); } });
-    $("nuStop").onclick = () => ctl?.abort();
-    $("nuNew").onclick = () => { history = []; last = null; $("nuOut").hidden = true; $("nuOut").innerHTML = ""; $("nuQ").value = ""; $("nuNew").hidden = true; $("nuQ").focus(); };
-    d.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => {
-      const [, tpl] = SUGG[Number(b.dataset.s)];
-      if (!tpl) { $("nuCmp").open = true; d.querySelector('[data-p="1"]').focus(); return; }
-      const q = $("nuQ"); q.value = tpl; q.focus(); q.setSelectionRange(tpl.length, tpl.length);
-    }));
-    $("nuCmpGo").onclick = () => {
-      const prods = products();
-      if (prods.length < 2) { d.querySelector(prods.length ? '[data-p="2"]' : '[data-p="1"]').focus(); showErr("Indiquez au moins deux produits à comparer."); return; }
-      ask(`Compare ces ${prods.length} produits pour aider le conseil au client${$("nuQ").value.trim() ? " : " + $("nuQ").value.trim() : "."}`, prods);
+  /* ---------- bandeau au-dessus du champ : mode actif, rappel des sources, Quitter ---------- */
+  function buildTray() {
+    $("nutriTray").innerHTML = `<div class="nt-head"><span class="nt-badge"><span class="nt-dot" aria-hidden="true"></span>Mode Nutrition</span><span class="nt-sub">Fiches officielles canadiennes : Royal Canin, Hill's, Purina · ne remplace ni la prescription ni le vétérinaire</span>
+      <button type="button" class="nt-quit" id="ntQuit">Quitter</button></div>`;
+    $("ntQuit").onclick = () => exit(true);
+  }
+
+  function enter() {
+    if (on || !A() || !A().isTsa()) return;
+    if (!$("nutriTray").childElementCount) buildTray();
+    on = true;
+    document.body.classList.add("nutri");
+    $("nutriTray").hidden = false;
+    const btn = $("nutriOpen"); btn.setAttribute("aria-pressed", "true"); btn.querySelector(".no-go").textContent = "Quitter ×";
+    btn.querySelector("small").textContent = "Mode actif · vos questions vont à l'outil Nutrition";
+    const q = $("q"); prevPH = q.placeholder; q.placeholder = PH(); q.setAttribute("aria-label", "Question nutrition"); q.focus();
+  }
+  function exit(focus) {
+    if (!on) return;
+    on = false;
+    document.body.classList.remove("nutri");
+    $("nutriTray").hidden = true;
+    const btn = $("nutriOpen"); btn.setAttribute("aria-pressed", "false"); btn.querySelector(".no-go").textContent = "Activer ›";
+    btn.querySelector("small").textContent = "Aide au conseil client · fiches officielles";
+    const q = $("q"); if (prevPH) q.placeholder = prevPH; q.setAttribute("aria-label", "Décrivez le cas ou la tâche");
+    if (focus) q.focus();
+  }
+
+  /* ---------- envoi et réponse dans le fil ---------- */
+  async function send(forced, prods) {
+    const q = String(forced ?? $("q").value).trim();
+    if (!q) { $("q").focus(); return; }
+    prods = [];
+    if (!forced) { $("q").value = ""; A().chat.autosize(); }
+    const chat = A().chat;
+    chat.addQuestion(`Nutrition — ${q}`);
+    const { m, col, body } = chat.addAnswer();
+    m.classList.add("nutri-msg");
+    body.innerHTML = '<ol class="nu-steps"><li class="on">Analyse de la demande…</li></ol><div class="nu-ans"></div><div class="nu-cmp-out"></div><div class="nu-src-out"></div>';
+    const S = (sel) => body.querySelector(sel);
+    const step = (html, cls = "") => { const ol = S(".nu-steps"); ol.querySelectorAll("li.on").forEach((x) => x.classList.remove("on")); ol.insertAdjacentHTML("beforeend", `<li class="on ${cls}">${html}</li>`); };
+    const err = (msg, retry) => {
+      S(".nu-ans").insertAdjacentHTML("beforeend", `<div class="nu-err" role="alert">${esc(msg)}${retry ? ' <button type="button" class="nu-retry">Réessayer</button>' : ""}</div>`);
+      const r = body.querySelector(".nu-retry"); if (r) r.onclick = () => send(q, prods);
     };
-    return d;
-  }
-  const context = () => Object.fromEntries([...document.querySelectorAll("#nutri [data-k]")].map((i) => [i.dataset.k, i.value.trim()]).filter(([, v]) => v));
-  const products = () => [...document.querySelectorAll("#nutri [data-p]")].map((i) => i.value.trim()).filter(Boolean);
-
-  function showErr(msg, retry) {
-    const out = $("nuOut"); out.hidden = false;
-    out.insertAdjacentHTML("afterbegin", `<div class="nu-err" role="alert">${esc(msg)}${retry ? ' <button type="button" class="nu-ghost" data-retry>Réessayer</button>' : ""}</div>`);
-    const r = out.querySelector("[data-retry]"); if (r) r.onclick = () => ask(last.q, last.prods);
-  }
-
-  async function ask(forced, prods) {
-    const q = (forced || $("nuQ").value).trim();
-    if (!q) { $("nuQ").focus(); return; }
-    if (!A() || !A().ready()) { showErr("L'assistant n'est pas encore activé."); return; }
-    prods = prods || [];
-    last = { q, prods };
-    ctl?.abort(); ctl = new AbortController();
-    const out = $("nuOut"); out.hidden = false;
-    out.innerHTML = `<div class="nu-q"><b>Votre demande</b>${esc(q)}${prods.length ? `<small>Produits : ${prods.map(esc).join(" · ")}</small>` : ""}</div>
-      <ol class="nu-steps" id="nuSteps"><li class="on">Analyse de la demande…</li></ol>
-      <div class="nu-ans" id="nuAns"></div><div id="nuCmpOut"></div><div id="nuSrc"></div>`;
-    $("nuGo").disabled = $("nuCmpGo").disabled = true; $("nuStop").hidden = false; $("nuNew").hidden = true;
-    let text = "", sources = [], date = "", failed = false, empty = false;
-    const step = (t, cls = "") => { const ol = $("nuSteps"); ol.querySelectorAll("li.on").forEach((x) => x.classList.remove("on")); ol.insertAdjacentHTML("beforeend", `<li class="on ${cls}">${t}</li>`); };
-    let idle = setTimeout(() => ctl.abort(), 90000);
+    if (!A().ready()) { body.innerHTML = '<p class="err">L\'assistant n\'est pas encore activé.</p>'; return; }
+    const run = await chat.begin();
+    let text = "", sources = [], date = "", empty = false, failed = false, first = true;
+    let idle = 0;
+    const abortIdle = () => { clearTimeout(idle); idle = setTimeout(() => ctlAbort(), 90000); };
+    let ctlAbort = () => {};
     try {
-      const res = await A().post({ mode: "nutrition", role: "tsa", question: q, history: history.slice(-4), prenom: A().prenom(), tier: A().tier(), nutrition: { context: context(), products: prods } }, ctl.signal);
+      const ac = new AbortController();
+      run.signal.addEventListener("abort", () => ac.abort());
+      ctlAbort = () => ac.abort();
+      abortIdle();
+      const res = await A().post({ mode: "nutrition", role: "tsa", question: q, history: history.slice(-4), prenom: A().prenom(), tier: A().tier(), nutrition: {} }, ac.signal);
       if (!res.ok) {
-        let m = "La demande a échoué. Réessayez."; try { m = (await res.json()).error || m; } catch {}
-        failed = true; showErr(m, res.status >= 500 || res.status === 429); return;
+        let msg = "La demande a échoué. Réessayez."; try { msg = (await res.json()).error || msg; } catch {}
+        failed = true; S(".nu-steps").remove(); err(msg, res.status >= 500 || res.status === 429); return;
       }
       const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
       for (;;) {
         const { value, done } = await reader.read();
         if (done) break;
-        clearTimeout(idle); idle = setTimeout(() => ctl.abort(), 90000);
+        abortIdle();
         buf += dec.decode(value, { stream: true });
         const lines = buf.split("\n"); buf = lines.pop();
         for (const line of lines) {
@@ -108,52 +89,64 @@
           let e; try { e = JSON.parse(line); } catch { continue; }
           if (e.t === "status") step(e.k === "search" ? `Recherche : « ${esc(e.d)} »` : e.k === "fetch" ? `Consultation : ${esc(shortUrl(e.d))}` : esc(e.d), e.k);
           else if (e.t === "source") step(e.ok ? `Fiche consultée : ${esc(e.title || shortUrl(e.url))}` : `Fiche inaccessible : ${esc(shortUrl(e.url))}`, e.ok ? "ok" : "bad");
-          else if (e.t === "text") { text += e.d; render(text, false); }
-          else if (e.t === "error") { failed = true; showErr(e.d, true); }
+          else if (e.t === "text") { text += e.d; render(body, text, false); if (first) { first = false; chat.toTopOf(m); } }
+          else if (e.t === "error") { failed = true; err(e.d, true); }
           else if (e.t === "empty") empty = true;
           else if (e.t === "done") { sources = e.sources || []; date = e.date || ""; }
         }
       }
-      step("Terminé", "end");
-      render(text, true, sources, date);
-      if (empty && !failed) $("nuAns").innerHTML = '<div class="nu-empty"><b>Aucun résultat</b>Reformulez la question ou précisez le nom exact du produit.</div>';
-      if (text) history.push({ role: "user", content: q + (prods.length ? `\nProduits : ${prods.join(" ; ")}` : "") }, { role: "assistant", content: text.replace(/```comparaison[\s\S]*?```/g, "").slice(0, 6000) });
-    } catch (err) {
-      if (err && err.name === "AbortError") { if (!text) showErr("Demande arrêtée. Vous pouvez la relancer.", true); else render(text, true, sources, date); }
-      else showErr("Connexion au serveur impossible. Vérifiez votre connexion Internet.", true);
+      step(failed ? "Interrompu" : "Terminé", failed ? "bad" : "end");
+      if (text) render(body, text, true, sources, date);
+      else if (!failed) S(".nu-ans").innerHTML = '<div class="nu-empty"><b>Aucun résultat</b>Reformulez la question ou précisez le nom exact du produit.</div>';
+      if (!text && sources.length) S(".nu-src-out").innerHTML = sourcesHtml(sources, date);
+      if (text) {
+        history.push({ role: "user", content: q }, { role: "assistant", content: text.replace(/```comparaison[\s\S]*?```/g, "").slice(0, 6000) });
+        chat.remember("Nutrition — " + q, text.replace(/```comparaison[\s\S]*?```/g, ""));
+        addCopy(col, body);
+      }
+      requestAnimationFrame(() => chat.toTopOf(m));
+    } catch (e2) {
+      if (e2 && e2.name === "AbortError") { if (text) { render(body, text, true, sources, date); S(".nu-ans").insertAdjacentHTML("beforeend", '<p class="stopped">Réponse arrêtée.</p>'); } else { S(".nu-steps")?.remove(); err("Demande arrêtée. Vous pouvez la relancer.", true); } }
+      else err("Connexion au serveur impossible. Vérifiez votre connexion Internet.", true);
     } finally {
       clearTimeout(idle);
-      $("nuGo").disabled = $("nuCmpGo").disabled = false; $("nuStop").hidden = true; $("nuNew").hidden = !text;
+      run.end();
     }
+  }
+  function addCopy(col, body) {
+    const acts = document.createElement("div"); acts.className = "actions";
+    const cp = document.createElement("button"); cp.type = "button"; cp.className = "act"; cp.innerHTML = "<span>Copier la réponse</span>";
+    cp.onclick = async () => {
+      try { await navigator.clipboard.writeText(body.querySelector(".nu-ans").innerText + "\n\n" + (body.querySelector(".nu-src-out")?.innerText || "")); cp.firstChild.textContent = "Copié ✓"; }
+      catch { cp.firstChild.textContent = "Copie impossible"; }
+      setTimeout(() => (cp.firstChild.textContent = "Copier la réponse"), 2000);
+    };
+    acts.append(cp); col.append(acts);
   }
   const shortUrl = (u) => String(u || "").replace(/^https?:\/\/(www\.)?/, "").slice(0, 80);
   const fmtDate = (iso, fallback) => { try { const d = iso ? new Date(iso) : new Date(fallback + "T12:00:00"); return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }); } catch { return fallback || ""; } };
 
-  function render(text, done, sources, date) {
+  function render(body, text, done, sources, date) {
     const m = text.match(/```comparaison\s*([\s\S]*?)(```|$)/);
     const prose = text.replace(/```comparaison[\s\S]*?(```|$)/g, "").trim();
-    // Liens : seulement vers des pages https ; ceux hors des sites officiels sont montrés sans lien
     const html = A().md(prose).replace(/\[([^\]]+)\]\((https:\/\/[^)\s]+)\)/g, (_, t, u) => {
       const raw = u.replace(/&amp;/g, "&");
       return OK_DOMAINS.test(raw) ? `<a href="${u}" target="_blank" rel="noopener noreferrer">${t}</a>` : `${t} <small>(lien hors des sites officiels, non affiché)</small>`;
     });
-    $("nuAns").innerHTML = html;
+    body.querySelector(".nu-ans").innerHTML = html;
     if (!done) return;
-    const consulted = new Map((sources || []).filter((s) => s.ok).map((s) => [s.url.replace(/[#?].*$/, "").replace(/\/$/, ""), s]));
+    const consulted = new Map((sources || []).filter((s) => s.ok).map((s) => [norm(s.url), s]));
     if (m) {
       let data = null; try { data = JSON.parse(m[1]); } catch {}
       const prods = Array.isArray(data?.produits) ? data.produits.slice(0, 3) : [];
-      $("nuCmpOut").innerHTML = prods.length ? comparator(prods, data.notes, consulted, date) : (m[1].trim() ? '<div class="nu-err">Le comparatif reçu est illisible. Relancez la comparaison.</div>' : "");
+      body.querySelector(".nu-cmp-out").innerHTML = prods.length ? comparator(prods, data.notes, consulted, date) : (m[1].trim() ? '<div class="nu-err">Le comparatif reçu est illisible. Relancez la comparaison.</div>' : "");
     }
-    $("nuSrc").innerHTML = sourcesHtml(sources || [], date);
+    body.querySelector(".nu-src-out").innerHTML = sourcesHtml(sources || [], date);
   }
+  const norm = (u) => String(u || "").replace(/[#?].*$/, "").replace(/\/$/, "");
 
   function comparator(prods, notes, consulted, date) {
-    const cols = prods.map((p) => {
-      const key = String(p.source || "").replace(/[#?].*$/, "").replace(/\/$/, "");
-      const src = consulted.get(key);
-      return { p, src, verified: !!src };
-    });
+    const cols = prods.map((p) => { const src = consulted.get(norm(p.source)); return { p, src, verified: !!src }; });
     const cell = (c, k) => (c.verified ? esc(String(c.p[k] || "").trim() || NP) : NP);
     return `<section class="nu-cmp" aria-label="Comparatif"><h3>Comparatif</h3>
       <div class="nu-cmp-grid" style="--n:${cols.length}">
@@ -161,13 +154,12 @@
           <h4>${esc(c.p.nom || "Produit")}</h4>
           ${c.verified ? `<a class="nu-link" href="${esc(c.src.url)}" target="_blank" rel="noopener noreferrer">Fiche officielle</a><small>Consultée le ${esc(fmtDate(c.src.retrieved_at, date))}</small>`
             : '<p class="nu-bad">Fiche non consultée : aucune information n\'est affichée pour ce produit. Fournissez la fiche en PDF ou un document approuvé.</p>'}
-          <dl>${COMP.map(([k, l]) => `<dt>${l}</dt><dd>${k === "fabricant" && c.verified ? esc(c.p[k] || c.src.fabricant || NP) : cell(c, k)}</dd>`).join("")}
+          ${c.verified ? `<dl>${COMP.map(([k, l]) => `<dt>${l}</dt><dd>${k === "fabricant" ? esc(c.p[k] || c.src.fabricant || NP) : cell(c, k)}</dd>`).join("")}` : "<dl>"}
           <dt>Prix et disponibilité</dt><dd>${PRICE}</dd></dl></article>`).join("")}
       </div>
       <p class="nu-note"><b>Important :</b> deux aliments d'une même catégorie ne sont pas pour autant équivalents sur le plan thérapeutique. Tout remplacement d'un aliment thérapeutique se décide par le vétérinaire.</p>
       ${Array.isArray(notes) && notes.length ? `<ul class="nu-notes">${notes.slice(0, 6).map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}</section>`;
   }
-
   function sourcesHtml(sources, date) {
     const ok = sources.filter((s) => s.ok), bad = sources.filter((s) => !s.ok);
     if (!sources.length) return `<div class="nu-src"><h3>Sources</h3><p class="nu-hint">Aucune fiche produit consultée pour cette réponse. ${PRICE}</p></div>`;
@@ -177,13 +169,7 @@
       </ul><p class="nu-hint">${PRICE} « Référencé au Canada » ne veut dire ni « vendu par la clinique » ni « en stock ».</p></div>`;
   }
 
-  let dlg = null;
-  function open() {
-    if (!A() || !A().isTsa()) return;
-    dlg = dlg || build();
-    dlg.showModal();
-    setTimeout(() => $("nuQ").focus(), 30);
-  }
-  window.LQNutrition = { open };
-  document.addEventListener("click", (e) => { if (e.target.closest("[data-open-nutri]")) open(); });
+  window.LQNutrition = { active: () => on, send: () => send(), enter, exit };
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-open-nutri]")) (on ? exit(true) : enter()); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && on && document.activeElement && document.activeElement.closest && document.activeElement.closest("#nutriTray")) exit(true); });
 })();

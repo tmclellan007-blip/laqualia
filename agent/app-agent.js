@@ -461,6 +461,18 @@
     md: (t) => md(t), esc: (t) => esc(String(t ?? "")),
     post: (body, signal) => apiFetch({ method: "POST", headers: authHeaders(), body: JSON.stringify(body), signal }),
     prenom: () => prenom, tier: () => tier, isTsa: () => isTsa(), ready: () => !!cfg.apiUrl,
+    // Fil de conversation partagé : l'outil Nutrition répond dans la même conversation, sans autre fenêtre
+    chat: {
+      addQuestion: (t) => addQuestion(t), addAnswer: () => addAnswer(), toTopOf: (el) => toTopOf(el),
+      remember: (q, a) => remember(q, q, a, []), autosize: () => autosize(),
+      begin: async () => {
+        if (ctl) { ctl.abort(); await running; }
+        ctl = new AbortController(); const my = ctl;
+        let release; running = new Promise((r) => (release = r));
+        busy(true);
+        return { signal: my.signal, end: () => { if (ctl === my) ctl = null; busy(false); release(); } };
+      },
+    },
   };
 
   /* ---------- markdown ---------- */
@@ -700,8 +712,10 @@
   /* ---------- branchements ---------- */
   function autosize() { const t = $("q"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 180) + "px"; updateSend(); }
   $("q").addEventListener("input", autosize);
-  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); sim.on ? simReply() : send(); } });
-  $("form").addEventListener("submit", (e) => { e.preventDefault(); sim.on ? simReply() : send(); });
+  // En mode Nutrition (TSA), la question part vers l'outil Nutrition, dans la même conversation
+  const submitQ = () => (sim.on ? simReply() : window.LQNutrition && window.LQNutrition.active() ? window.LQNutrition.send() : send());
+  $("q").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); submitQ(); } });
+  $("form").addEventListener("submit", (e) => { e.preventDefault(); submitQ(); });
   $("stop").onclick = () => ctl?.abort();
   $("sideTrain").onclick = startScenario;
 
@@ -889,6 +903,7 @@
     resetConversation();
     role = target;
     store.set("lq-role", role);
+    try { window.LQNutrition && window.LQNutrition.exit(); } catch {}
     applyRole();
     closeMenu();
     // Chaque espace repart à neuf ; la conversation précédente reste dans les Récents de son espace
@@ -1074,6 +1089,7 @@
   }
 
   function setLearn(on) {
+    if (on) { try { window.LQNutrition && window.LQNutrition.exit(); } catch {} }
     sim.on = on;
     document.body.classList.toggle("learn", on);
     $("learnToggle").setAttribute("aria-pressed", String(on));
@@ -1935,7 +1951,7 @@
   let phI = 0;
   setInterval(() => {
     const q = $("q");
-    if (document.activeElement === q || q.value || q.disabled || document.body.classList.contains("learn")) return;
+    if (document.activeElement === q || q.value || q.disabled || document.body.classList.contains("learn") || document.body.classList.contains("nutri")) return;
     if (isNarrow()) { q.placeholder = basePH(); return; } // téléphone : texte court, pas de défilement d'exemples
     const L = isTsa() ? PH_TSA : PH; phI = (phI + 1) % L.length; q.placeholder = L[phI];
   }, 3500);
