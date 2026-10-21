@@ -213,7 +213,8 @@
       let q = 0, sims = 0, sc = 0;
       ds.forEach((d) => { const x = userDay(u, d); q += x.q; sims += x.sims.length; sc += sum(x.sims, (s) => s.score); });
       return { u, l, st: seenStatus(l), q, sims, score: sims ? Math.round(sc / sims) : null };
-    }).sort((a, b) => (a.l ? a.l.daysAgo * 2000 - a.l.min : 1e9) - (b.l ? b.l.daysAgo * 2000 - b.l.min : 1e9));
+    // L'exemple cliquable (Marc-André B.) reste toujours en tête de liste ; les autres suivent par dernière connexion.
+    }).sort((a, b) => (b.u.id === DEMO_ID) - (a.u.id === DEMO_ID) || (a.l ? a.l.daysAgo * 2000 - a.l.min : 1e9) - (b.l ? b.l.daysAgo * 2000 - b.l.min : 1e9));
     const inact = rows.filter((r) => r.st[0] === "off").length;
     $("schedSub").textContent = `${TEAM.length} personnes · activité ${perLab()} · ${inact} inactive${inact > 1 ? "s" : ""} depuis plus de 7 jours`;
     const F = [["all", "Toutes", rows.length], ["rec", "Réception", rows.filter((r) => r.u.role === "rec").length], ["tsa", "TSA", rows.filter((r) => r.u.role === "tsa").length], ["off", "Inactives", inact]];
