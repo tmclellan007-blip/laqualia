@@ -1097,3 +1097,6 @@ a.linkedin-link span,.linkedin-link>span{font-size:14.5px!important}
 .hx-c4:hover strong,.hx-c4:focus-visible strong{color:#e2553d}
 @media(prefers-reduced-motion:reduce){.hx-card:hover,.hx-card:focus-visible{scale:1}}
 .hx-copy{pointer-events:none}.hx-copy>*{pointer-events:auto}
+/* Très grands écrans panoramiques : les bulles gardent l'écart qu'elles ont sur un écran de 1920 px,
+   au lieu de s'étirer avec la photo. Le groupe reste centré au même endroit de l'image. */
+@media(min-width:1921px){.hx-ui{inset:auto;width:1920px;height:1080px;left:calc(67% - 1286px);top:calc(50% - 540px)}}
