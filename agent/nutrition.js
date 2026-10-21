@@ -18,8 +18,7 @@
 
   /* ---------- bandeau au-dessus du champ : mode actif, rappel des sources, Quitter ---------- */
   function buildTray() {
-    $("nutriTray").innerHTML = `<div class="nt-head"><span class="nt-badge"><span class="nt-dot" aria-hidden="true"></span>Mode Nutrition</span><span class="nt-sub">Fiches officielles canadiennes : Royal Canin, Hill's, Purina · ne remplace ni la prescription ni le vétérinaire</span>
-      <button type="button" class="nt-quit" id="ntQuit">Quitter</button></div>`;
+    $("nutriTray").innerHTML = `<div class="nt-head"><span class="nt-badge"><span class="nt-dot" aria-hidden="true"></span>Mode Nutrition</span><button type="button" class="nt-quit" id="ntQuit">Quitter</button></div>`;
     $("ntQuit").onclick = () => exit(true);
   }
 
