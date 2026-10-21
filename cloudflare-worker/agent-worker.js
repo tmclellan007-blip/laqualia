@@ -63,6 +63,7 @@ const TSA_BILAN_DEFAULT = "Tu es formateur clinique pour des TSA. Évalue la tra
 let cache = null; // { at, config, chunks }
 
 import { handleAccounts, isAccountsRequest, cleanupAccounts, portalAccess } from "./accounts/index.js";
+import { NUTRITION_SYSTEM, nutritionUserMessage, nutritionStream } from "./nutrition.js";
 
 export default {
   // Vérification automatique toutes les 6 heures : site, clé API, stockage
@@ -123,6 +124,21 @@ async function handlePortal(request, env) {
   return handlePost(request, env, same, auth);
 }
 
+async function handleNutrition({ env, cors, body, question, history, ctxText, prenom, config, request }) {
+  const allowed = Array.isArray(config.modelesProposes) && config.modelesProposes.length ? config.modelesProposes.filter((t) => MODELS[t]) : Object.keys(MODELS);
+  const asked = String(body?.tier || "");
+  const tier = allowed.includes(asked) ? asked : (MODELS[config.tier] ? config.tier : "default");
+  const model = env.AGENT_MODEL || MODELS[tier];
+  const who = prenom ? `\nTu parles à ${prenom}, technicienne ou technicien en santé animale de l'établissement.` : "";
+  // Suivi de la conversation de l'outil (texte seulement : chaque tour refait ses propres consultations)
+  const messages = [...history, { role: "user", content: nutritionUserMessage(body, question, ctxText) }];
+  const abort = new AbortController();
+  const total = setTimeout(() => abort.abort("total"), 180000);
+  request.signal?.addEventListener?.("abort", () => abort.abort("client"));
+  const stream = nutritionStream({ env, model, maxTokens: Math.max(MAX_TOKENS[tier] || 5000, 6000), effort: EFFORT[tier] || "medium", system: NUTRITION_SYSTEM + who, messages, signal: abort.signal, today: torontoDate(), onEnd: () => clearTimeout(total) });
+  return new Response(stream, { headers: { ...cors, "content-type": "application/x-ndjson; charset=utf-8", "cache-control": "no-store", "x-agent-role": "tsa", "x-agent-model": model } });
+}
+
 function corsHeaders(request, env) {
   const origin = request.headers.get("origin") || "";
   const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean);
@@ -175,6 +191,11 @@ async function handlePost(request, env, cors, auth = null) {
   // Sans extrait pertinent, on n'évoque pas la documentation (sinon l'agent le signale dans sa réponse)
   const ctxText = ctx.length ? ctx.map((c) => `### [${c.title}]\n${c.text}`).join("\n\n") : "";
   const prenom = String(body?.prenom || "").replace(/[^\p{L}\p{M}' -]/gu, "").replace(/\s+/g, " ").trim().slice(0, 30);
+  // Espace TSA › Nutrition : réservé à l'espace TSA (même autorisation que la TSA, vérifiée plus haut)
+  if (body?.mode === "nutrition") {
+    if (role !== "tsa") return json(403, { error: "L'outil Nutrition fait partie de l'espace Équipe technique — TSA." }, cors);
+    return handleNutrition({ env, cors, body, question, history, ctxText, prenom, config, request });
+  }
   const who = role === "tsa"
     ? (prenom ? `\nTu parles à ${prenom}, technicienne ou technicien en santé animale de l'établissement. Utilise son prénom avec naturel, sans le répéter.` : "")
     : prenom

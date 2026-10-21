@@ -160,3 +160,19 @@ npx wrangler d1 migrations apply laqualia-comptes --remote
 ```
 
 Les migrations 0001 à 0004 sont déjà appliquées et consignée dans `d1_migrations`.
+
+## Espace TSA › Nutrition — Aide au conseil client
+
+- **Accès** : bouton orangé « Nutrition » sous le champ de saisie, en mode TSA seulement. Mêmes droits que l'espace TSA : Membre et plus sur laqualia.com (session vérifiée à chaque requête), ou code TSA sur le miroir. Aucun droit d'administration requis ni accordé.
+- **Fonctionnement** :
+  - le relais (`nutrition.js`) appelle Claude avec les outils serveur `web_search` et `web_fetch` d'Anthropic ;
+  - les domaines sont limités à royalcanin.com/ca, hillspet.ca et purina.ca ;
+  - au plus 4 recherches et 6 consultations par demande, 14 000 jetons par page.
+- **Sources** :
+  - la page reçoit la liste des fiches **réellement consultées** (succès ou échec, avec la date) ;
+  - un produit du comparateur sans fiche consultée est affiché comme non vérifié, avec « Non précisé dans la source » partout ;
+  - « Prix et disponibilité à confirmer auprès de la clinique » apparaît toujours, puisqu'aucune donnée de prix ou de stock n'est connectée.
+- **Protocoles** : les protocoles de la clinique viennent de la base de connaissances TSA (page Admin).
+- **Si l'API refuse les outils** : un nouvel essai est fait sans réflexion, puis une réponse prudente sans fiche, signalée à l'utilisateur.
+- **Prérequis** : la recherche web doit être activée pour l'organisation dans la console Anthropic (Settings › Privacy / Web search).
+- **Coût** : 10 $ US par 1 000 recherches, plus les jetons des pages consultées. Chaque demande compte pour une question dans la limite quotidienne.

@@ -36,6 +36,7 @@ const gJwk = { ...(await exportJWK(google.publicKey)), kid: "g1", alg: "RS256", 
 const aJwk = { ...(await exportJWK(apple.publicKey)), kid: "a1", alg: "ES256", use: "sig" };
 export const providerLog = [];
 export const modelLog = [];
+export const nutritionScript = []; // étapes { events: [...] } ou { status: 500 }
 export const turnstileLog = [];
 export class FakeKV {
   constructor() { this.m = new Map(); }
@@ -67,6 +68,12 @@ globalThis.fetch = async (input, init = {}) => {
   // Modèle simulé (aucun appel réel à Anthropic) : flux SSE minimal
   if (url === "https://api.anthropic.com/v1/messages") {
     const body = JSON.parse(String(init.body)); modelLog.push(body);
+    // Outil Nutrition : scénario SSE programmé par l'essai (outils serveur simulés)
+    if (nutritionScript.length && (Array.isArray(body.tools) || String(body.system || "").includes("Nutrition — Aide au conseil client"))) {
+      const step = nutritionScript.shift();
+      if (step.status) return new Response(JSON.stringify({ error: { message: "simulé" } }), { status: step.status });
+      return new Response(step.events.map((e) => `event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`).join(""), { headers: { "content-type": "text/event-stream" } });
+    }
     const sse = `data: ${JSON.stringify({ type: "content_block_delta", delta: { type: "text_delta", text: "Réponse simulée." } })}\n\ndata: ${JSON.stringify({ type: "message_stop" })}\n\n`;
     return new Response(sse, { headers: { "content-type": "text/event-stream" } });
   }

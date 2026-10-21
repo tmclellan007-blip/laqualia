@@ -456,6 +456,13 @@
     });
   }
 
+  // Accès contrôlé pour les modules d'appoint (outil Nutrition de l'espace TSA)
+  window.LQAgent = {
+    md: (t) => md(t), esc: (t) => esc(String(t ?? "")),
+    post: (body, signal) => apiFetch({ method: "POST", headers: authHeaders(), body: JSON.stringify(body), signal }),
+    prenom: () => prenom, tier: () => tier, isTsa: () => isTsa(), ready: () => !!cfg.apiUrl,
+  };
+
   /* ---------- markdown ---------- */
   function md(src) {
     const lines = esc(src).split("\n"); const out = []; let list = null;
