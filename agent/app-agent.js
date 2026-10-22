@@ -713,6 +713,7 @@
     }
     prenom = n; store.set("lq-prenom", prenom); showName();
     $("codebox").hidden = true; $("code").value = "";
+    if (!accountMode && fav.loaded) { fav.loaded = false; favInit(); } // mode test : favoris propres au prénom
     if ($("q").value.trim()) send();
     else $("q").focus();
   });
@@ -1015,7 +1016,27 @@
     const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`lq-fav\n${c}\n${q}\n${a}`));
     return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
+  // Mode test (code d'équipe, sans compte) : mêmes favoris, gardés seulement dans ce navigateur, par prénom.
+  const FAV_LOCAL_MAX = 100;
+  const favLocalKey = () => "lq-fav-" + (String(prenom || "invite").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-") || "invite");
+  const favLocalLoad = () => { try { const a = JSON.parse(localStorage.getItem(favLocalKey()) || "[]"); return Array.isArray(a) ? a.filter((x) => x && x.id && x.fkey) : []; } catch { return []; } };
+  const favPreview = (x) => ({ id: x.id, fkey: x.fkey, context: x.context, created_at: x.created_at, question: x.question.slice(0, 600), excerpt: x.answer.slice(0, 600) });
+  async function favLocal(path, method, data) {
+    const list = favLocalLoad(), id = decodeURIComponent((path.match(/^\/api\/favorites\/(.+)$/) || [])[1] || "");
+    const save = (l) => { try { localStorage.setItem(favLocalKey(), JSON.stringify(l)); } catch { throw new Error("L'espace de ce navigateur est plein : retirez quelques favoris."); } };
+    if (method === "GET" && !id) return { favorites: list.map(favPreview), max: FAV_LOCAL_MAX };
+    if (method === "GET") { const x = list.find((f) => f.id === id); if (!x) throw new Error("Favori introuvable."); return { favorite: x }; }
+    if (method === "DELETE") { save(list.filter((f) => f.id !== id)); return { ok: true }; }
+    const fkey = await favKeyOf(data.context, data.question, data.answer);
+    const ex = list.find((f) => f.fkey === fkey); if (ex) return { favorite: favPreview(ex) };
+    if (list.length >= FAV_LOCAL_MAX) throw new Error(`Vous avez atteint ${FAV_LOCAL_MAX} favoris. Retirez-en quelques-uns pour en ajouter.`);
+    const x = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), fkey, context: data.context, question: data.question, answer: data.answer,
+      sources: (data.sources || []).slice(0, 12).map((v) => (typeof v === "string" ? { title: v } : v)), created_at: Date.now() };
+    save([x, ...list]);
+    return { favorite: favPreview(x) };
+  }
   async function favApi(path, method = "GET", data) {
+    if (!accountMode) return favLocal(path, method, data);
     const r = await fetch(path, { method, credentials: "same-origin", cache: "no-store",
       headers: method === "GET" ? {} : { "content-type": "application/json", "x-lq-csrf": "1" }, body: data ? JSON.stringify(data) : undefined });
     let d = null; try { d = await r.json(); } catch {}
@@ -1076,7 +1097,7 @@
     if (favOpen() && !fav.detail) renderFavPage();
   }
   async function favInit() {
-    if (!accountMode || fav.loaded) return;
+    if (fav.loaded) return;
     fav.loaded = true; fav.on = true;
     $("sideFav").hidden = false;
     try {
@@ -1102,7 +1123,8 @@
   const fmtDay = (t) => new Date(t).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
   const fmtWhen = (t) => new Date(t).toLocaleString("fr-CA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
   const tagHtml = (c) => `<span class="fp-tag ${esc(c)}">${esc(FAV_CTX[c] || c)}</span>`;
-  const NOTE = `<p class="fp-note">${SVG_HEART}<span>Un favori est personnel : il garde la réponse telle qu'elle était au moment de l'ajout et ne confirme pas son exactitude.</span></p>`;
+  const NOTE_TXT = "Un favori est personnel : il garde la réponse telle qu'elle était au moment de l'ajout et ne confirme pas son exactitude.";
+  const noteHtml = () => `<p class="fp-note">${SVG_HEART}<span>${NOTE_TXT}${accountMode ? "" : " <b>Mode test :</b> vos favoris sont gardés seulement dans ce navigateur."}</span></p>`;
   function renderFavPage() {
     const page = $("favPage"); if (!page) return;
     if (fav.detail) return renderFavDetail();
@@ -1110,7 +1132,7 @@
     const tabs = [["all", "Tous"], ["reception", "Réception"], ["tsa", "TSA"], ["nutrition", "Nutrition"]];
     page.innerHTML = `<div class="hpg-in">
       <header class="hpg-head"><h1 id="fpTitle">Mes favoris</h1><p>Les échanges que vous avez gardés, pour les retrouver facilement.</p></header>
-      ${NOTE}
+      ${noteHtml()}
       <div class="hpg-bar">
         <label class="hpg-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="fpSearch" type="search" placeholder="Rechercher un favori" aria-label="Rechercher dans mes favoris" autocomplete="off"></label>
         <div class="hpg-seg" role="tablist" aria-label="Contexte">${tabs.map(([k, l]) => `<button type="button" role="tab" data-fp-tab="${k}" aria-selected="${fav.tab === k}">${l}${counts[k] ? `<span class="n">${counts[k]}</span>` : ""}</button>`).join("")}</div>
@@ -1183,7 +1205,7 @@
       <h1 id="fpTitle" class="fp-q"><small>Question</small></h1>
       <section class="fp-a" aria-label="Réponse enregistrée"><small>Réponse enregistrée</small><div class="body" id="fpAnswer"></div></section>
       <div id="fpSources"></div>
-      ${NOTE}
+      ${noteHtml()}
       <div class="fp-actions">
         <button type="button" class="fp-btn" id="fpCopy">${SVG_COPY}<span>Copier la question et la réponse</span></button>
         <button type="button" class="fp-btn rm" id="fpRemove">${SVG_HEART}<span>Retirer des favoris</span></button>
@@ -2385,6 +2407,7 @@
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
+        if (!accountMode) { try { favInit(); } catch {} }
         setVoiceService(!!s.voice);
         tsaEnabled = !!s.tsa; tsaVerified = !!s.tsaOk;
         // Configuration enregistrée dans la page de configuration (prioritaire sur config.json)
