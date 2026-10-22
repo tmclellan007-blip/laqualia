@@ -1054,13 +1054,14 @@
     b.setAttribute("aria-pressed", String(on));
     b.setAttribute("aria-label", on ? "Retirer des favoris" : "Ajouter aux favoris");
     b.title = on ? "Retirer de Mes favoris" : "Ajouter à Mes favoris (favori personnel)";
+    const l = b.querySelector(".fav-l"); if (l) l.textContent = on ? "Dans mes favoris" : "Ajouter aux favoris";
   }
   function favPaintAll() { document.querySelectorAll(".fav-btn[data-fkey]").forEach(favPaint); }
   // Cœur sous une réponse : item = { context, question, answer, sources }
   function favButton(item) {
     if ((!fav.on && ACCOUNT_HOST) || !item || !String(item.answer || "").trim() || !String(item.question || "").trim()) return null;
     const b = document.createElement("button"); b.type = "button"; b.className = "act fav-btn";
-    b.innerHTML = SVG_HEART; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Ajouter aux favoris");
+    b.innerHTML = SVG_HEART + '<span class="fav-l">Favori</span>'; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Ajouter aux favoris");
     b.disabled = true;
     favKeyOf(item.context, item.question, item.answer).then((k) => { b.dataset.fkey = k; b.disabled = false; favPaint(b); });
     b.onclick = () => favToggle(b, item);
@@ -1108,14 +1109,24 @@
     // Réponses déjà affichées : on ajoute le cœur
     document.querySelectorAll("#thread .msg.a .actions").forEach((acts) => {
       if (acts.querySelector(".fav-btn") || !acts._favItem) return;
-      const b = favButton(acts._favItem); if (b) acts.prepend(b);
+      const b = favButton(acts._favItem); if (b) { acts.prepend(b); favTop(acts, acts._favItem); }
     });
     favPaintAll(); favSyncNav();
   }
   // Ajoute le cœur aux actions d'une réponse (créé plus tard si le compte n'est pas encore chargé)
   function favAttach(acts, item) {
     acts._favItem = item;
-    const b = favButton(item); if (b) acts.prepend(b);
+    const b = favButton(item); if (!b) return;
+    acts.prepend(b);
+    favTop(acts, item);
+  }
+  // Second cœur, en haut de la réponse (même état que celui du bas)
+  function favTop(acts, item) {
+    const who = acts.closest(".a-col")?.querySelector(":scope > .who");
+    if (!who || who.querySelector(".fav-btn")) return;
+    const t = favButton(item); if (!t) return;
+    t.classList.add("fav-top");
+    who.append(t);
   }
 
   /* ---------- page « Mes favoris » ---------- */
@@ -1264,6 +1275,26 @@
     if (b && b.id !== "sideFav" && b.id !== "sideCollapse") closeFavPage();
   }, true);
   ["clear", "homeLogo"].forEach((id) => $(id)?.addEventListener("click", closeFavPage, true));
+  /* ---------- nouvelle version publiée pendant que l'onglet est ouvert : on propose de recharger ---------- */
+  const MY_VER = (document.querySelector('script[src*="app-agent.js?v="]')?.getAttribute("src") || "").split("v=")[1] || "";
+  let verShown = false, verLast = 0;
+  async function checkVersion() {
+    if (verShown || !MY_VER || Date.now() - verLast < 60e3) return;
+    verLast = Date.now();
+    try {
+      const html = await (await fetch(location.pathname + "?ver=" + Date.now(), { cache: "no-store", credentials: "same-origin" })).text();
+      const v = (html.match(/app-agent\.js\?v=([\w.-]+)/) || [])[1];
+      if (!v || v === MY_VER) return;
+      verShown = true;
+      const b = document.createElement("div"); b.className = "ver-bar"; b.setAttribute("role", "status");
+      b.innerHTML = '<span>Une nouvelle version du portail est disponible.</span><button type="button">Recharger</button>';
+      b.querySelector("button").onclick = () => location.reload();
+      document.body.append(b);
+    } catch {}
+  }
+  setInterval(checkVersion, 5 * 60e3);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkVersion(); });
+  addEventListener("focus", checkVersion);
   if (!ACCOUNT_HOST) setTimeout(() => { try { favInit(); } catch {} }, 0); // mode test : favoris du navigateur, dès le chargement
   addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !favOpen() || e.defaultPrevented) return;

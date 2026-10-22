@@ -1,4 +1,4 @@
-// Favoris en mode test (code d'équipe, sans compte) : gardés dans le navigateur. Aucun appel réel.
+// Avis « nouvelle version » + favoris en mode test (code d'équipe, sans compte). Aucun appel réel.
 // Usage : node tests/ui-favoris-essai.mjs <dossier du site laqualia> <dossier de captures>
 import { chromium } from "/opt/node-tools/node_modules/playwright/index.mjs";
 import fs from "node:fs"; import path from "node:path";
@@ -10,7 +10,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const PAGES = "https://essai.github.io", RELAY = "https://laqualia-agent.tmclellan007.workers.dev";
 const env = await makeEnv(); env.ALLOWED_ORIGINS = PAGES;
 const MIME = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "application/javascript", ".svg": "image/svg+xml", ".webp": "image/webp", ".png": "image/png", ".json": "application/json" };
-const errors = [], favCalls = [];
+const errors = [], favCalls = []; let bumped = false;
 const ok = (c, m) => { if (!c) { errors.push(m); console.log("ÉCHEC :", m); } else console.log("ok :", m); };
 const browser = await chromium.launch();
 for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { width: 390, height: 844 }]]) {
@@ -27,7 +27,9 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
     const u = new URL(route.request().url()); let p = u.pathname; if (p.endsWith("/")) p += "index.html";
     const f = path.join(SITE, decodeURIComponent(p));
     if (!f.startsWith(SITE) || !fs.existsSync(f)) return route.fulfill({ status: 404, body: "" });
-    return route.fulfill({ status: 200, contentType: MIME[path.extname(f)] || "application/octet-stream", body: fs.readFileSync(f) });
+    let data = fs.readFileSync(f);
+    if (bumped && p.endsWith("/agent/index.html")) data = Buffer.from(String(data).replace(/app-agent\.js\?v=\w+/, "app-agent.js?v=nouvelle"));
+    return route.fulfill({ status: 200, contentType: MIME[path.extname(f)] || "application/octet-stream", body: data });
   });
   const p = await ctx.newPage();
   p.on("pageerror", (e) => errors.push(label + " JS : " + e.message));
@@ -55,6 +57,12 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   ok(/Réponse simulée/.test(await p.textContent("#fpAnswer")), label + " : mode test — détail complet");
   await p.click("#fpRemove"); await p.waitForSelector("#favPage .fp-empty");
   ok(true, label + " : mode test — retrait");
+  ok(!(await p.locator(".ver-bar").count()), label + " : aucun avis de version sans mise à jour");
+  bumped = true; await p.waitForTimeout(61000); await p.evaluate(() => dispatchEvent(new Event("focus")));
+  await p.waitForSelector(".ver-bar", { timeout: 5000 }).catch(() => {});
+  ok(await p.locator(".ver-bar").isVisible(), label + " : avis « nouvelle version disponible » après une mise à jour");
+  await p.screenshot({ path: `${OUT}/t2-version-${label}.png` });
+  bumped = false;
   await ctx.close();
 }
 ok(!favCalls.length, "mode test : rien n'est envoyé à la base des comptes");

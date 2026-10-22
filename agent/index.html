@@ -1257,17 +1257,25 @@ body.histv .main > :not(.topbar):not(#histPage){display:none!important}
 @media (max-width:640px){.hpg-in{padding:18px 16px 40px}.hpg-head h1{font-size:25px}.hpg-faq{grid-template-columns:1fr}.hpg-seg{width:100%}.hpg-seg button{flex:1}}
 
 
+.ver-bar{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;top:14px;z-index:70;display:flex;align-items:center;gap:12px;background:#101010;color:#fff;border-radius:12px;padding:8px 8px 8px 16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px #0000003a;max-width:calc(100vw - 32px)}
+.ver-bar button{border:0;background:#fff;color:#101010;border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;flex:none}
 /* ===== Favoris ===== */
 body.side-mini #railHist{display:none!important}
 body.favv .main > :not(.topbar):not(#favPage):not(#favToast){display:none!important}
-.act.fav-btn{padding:5px 7px}
-.act.fav-btn svg{width:16px;height:16px;transition:transform .15s}
-.act.fav-btn:hover{color:#e11d48;background:#fff1f2}
+.act.fav-btn{padding:6px 12px 6px 9px;border:1.5px solid #f3c4cf;border-radius:999px;color:#be123c;background:#fff;font-size:13px;gap:7px}
+.act.fav-btn svg{width:22px;height:22px;transition:transform .15s}
+.act.fav-btn:hover{color:#e11d48;background:#fff1f2;border-color:#e11d48}
+.act.fav-btn[aria-pressed="true"]{background:#fff1f2;border-color:#e11d48}
+.msg.a .who{align-items:center}
+.who .fav-btn.fav-top{margin-left:auto;border:0;background:none;padding:4px;border-radius:999px;width:38px;height:38px;justify-content:center;letter-spacing:0;text-transform:none}
+.who .fav-btn.fav-top .fav-l{display:none}
+.who .fav-btn.fav-top svg{width:24px;height:24px}
+.who .fav-btn.fav-top:hover,.who .fav-btn.fav-top[aria-pressed="true"]{background:#fff1f2}
 .act.fav-btn[aria-pressed="true"]{color:#e11d48}
 .act.fav-btn[aria-pressed="true"] svg{fill:currentColor}
 .act.fav-btn.pop svg{transform:scale(1.25)}
 .act.fav-btn[disabled]{opacity:.5}
-.fav-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#101010;color:#fff;border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px #0000003a;max-width:calc(100vw - 32px);text-align:center;line-height:1.4}
+.fav-toast{position:fixed;left:16px;right:16px;margin:0 auto;width:fit-content;bottom:24px;z-index:60;background:#101010;color:#fff;border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px #0000003a;max-width:calc(100vw - 32px);text-align:center;line-height:1.4}
 .fav-toast small{display:block;font-weight:500;color:#ffffffb3;font-size:12px}
 .fp-tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.2px}
 .fp-tag.reception{background:#ede5ff;color:#401098}
@@ -1824,7 +1832,7 @@ body.nutri .nutri-open{display:none!important}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610212310"></script>
+<script src="app-agent.js?v=202610212330"></script>
 <script src="nutrition.js?v=11"></script>
 <script src="journey.js?v=202610181510"></script>
 <script src="dashboard.js?v=20261021a"></script>

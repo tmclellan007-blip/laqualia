@@ -105,14 +105,16 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   await p.waitForSelector("#thread .fav-btn:not([disabled])");
   ok((await lastHeart().getAttribute("aria-pressed")) === "false", label + " : cœur discret sous la réponse");
   await lastHeart().click();
-  await p.waitForFunction(() => document.querySelector("#thread .fav-btn")?.getAttribute("aria-pressed") === "true" && !document.querySelector("#thread .fav-btn").dataset.busy);
+  await p.waitForFunction(() => document.querySelector("#thread .fav-btn")?.getAttribute("aria-pressed") === "true" && !document.querySelector("[data-busy]"));
+  ok((await p.locator("#thread .msg.a").last().locator(".who .fav-btn.fav-top").getAttribute("aria-pressed")) === "true", label + " : cœur du haut synchronisé avec celui du bas");
+  ok(/Dans mes favoris/.test(await lastHeart().textContent()), label + " : libellé visible sous la réponse");
   ok(/Ajouté à Mes favoris/.test(await p.textContent("#favToast")) && /ne confirme pas l'exactitude/.test(await p.textContent("#favToast")), label + " : cœur rempli et rappel : favori personnel, pas une validation");
   await shot(p, `f1-coeur-${label}`);
-  await lastHeart().click();
-  await p.waitForFunction(() => document.querySelector("#thread .fav-btn")?.getAttribute("aria-pressed") === "false" && !document.querySelector("#thread .fav-btn").dataset.busy);
+  await p.locator("#thread .who .fav-top").last().click();
+  await p.waitForFunction(() => [...document.querySelectorAll("#thread .fav-btn")].every((b) => b.getAttribute("aria-pressed") === "false") && !document.querySelector("[data-busy]"));
   ok(true, label + " : second clic : retiré des favoris");
   await lastHeart().click();
-  await p.waitForFunction(() => document.querySelector("#thread .fav-btn")?.getAttribute("aria-pressed") === "true" && !document.querySelector("#thread .fav-btn").dataset.busy);
+  await p.waitForFunction(() => document.querySelector("#thread .fav-btn")?.getAttribute("aria-pressed") === "true" && !document.querySelector("[data-busy]"));
 
   // TSA
   await p.click("#roleTsa"); await p.waitForTimeout(300);
