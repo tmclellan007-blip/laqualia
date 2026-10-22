@@ -7,7 +7,7 @@
   const BASE = sec.dataset.base || '';
   const EN = /^en/i.test(document.documentElement.lang);
   const L = EN ? { enlarge: 'Enlarge screenshot: ' } : { enlarge: 'Agrandir la capture : ' };
-  const src = (n, w) => `${BASE}assets/app/${n}-${w}.webp?v=2`;
+  const src = (n, w) => `${BASE}assets/app/${n}-${w}.webp?v=3`;
   const shotsOf = (panel) => panel.dataset.shots.split('|').map((x) => { const [n, t, c] = x.split('::'); return { n, t, c }; });
 
   /* ---------- onglets ---------- */

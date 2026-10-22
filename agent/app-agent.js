@@ -192,7 +192,9 @@
     inScenario = true;
     const list = RP().scenarios?.length ? RP().scenarios : isTsa() ? SCENARIOS_TSA : SCENARIOS;
     const sc = list[Math.floor(Math.random() * list.length)];
-    const label = isTsa() ? `Mets-moi en situation : je suis TSA et je gère ${sc}.` : `Mets-moi en situation : je suis à la réception et je reçois un appel de ${sc}.`;
+    // « un appel de un… » → « un appel d'un… » ; un scénario qui commence déjà par « un appel » est repris tel quel
+    const appel = /^une? appel\b/i.test(sc) ? sc : `un appel ${/^[aeiouyhéèêàâîôû]/i.test(sc) ? "d'" : "de "}${sc}`;
+    const label = isTsa() ? `Mets-moi en situation : je suis TSA et je gère ${sc}.` : `Mets-moi en situation : je suis à la réception et je reçois ${appel}.`;
     send(label + sceneFormat(), label);
   }
 
