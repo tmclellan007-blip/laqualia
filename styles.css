@@ -241,7 +241,7 @@
 
 /* ===== Piliers pleine largeur (refonte) ===== */
 .approach-intro{padding-top:70px}
-.pil{position:relative;overflow:hidden;padding:clamp(56px,7vw,104px) 0}
+.pil{position:relative;overflow:hidden;overflow:clip;padding:clamp(56px,7vw,104px) 0}
 .pil-inner{position:relative;z-index:2;width:min(1320px,calc(100% - 48px));margin:auto}
 .pil-head{max-width:760px;margin:0 auto clamp(34px,4vw,54px);text-align:center}
 .pil-eyebrow{display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;margin:0 0 18px}
