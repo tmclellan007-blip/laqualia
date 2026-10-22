@@ -484,7 +484,8 @@
     // Fil de conversation partagé : l'outil Nutrition répond dans la même conversation, sans autre fenêtre
     chat: {
       addQuestion: (t) => addQuestion(t), addAnswer: () => addAnswer(), toTopOf: (el) => toTopOf(el),
-      remember: (q, a) => remember(q, q, a, []), autosize: () => autosize(),
+      remember: (q, a, extra) => remember(q, q, a, [], extra), autosize: () => autosize(),
+      favAttach: (acts, item) => favAttach(acts, item),
       begin: async () => {
         if (ctl) { ctl.abort(); await running; }
         ctl = new AbortController(); const my = ctl;
@@ -620,7 +621,7 @@
       turns.push({ role: "user", content: q }, { role: "assistant", content: answer });
       let srcs = []; try { srcs = JSON.parse(decodeURIComponent(res.headers.get("x-agent-sources") || "[]")); } catch {}
       remember(q, display || q, answer, srcs);
-      finishAnswer(srcs, col, answer);
+      finishAnswer(srcs, col, answer, display || q);
       requestAnimationFrame(() => toTopOf(m));
     } catch (e) {
       if (e.name === "AbortError" && timedOut) {
@@ -637,9 +638,9 @@
     }
   }
 
-  function finishAnswer(sources, col, answer) {
+  function finishAnswer(sources, col, answer, question) {
     sources = Array.isArray(sources) ? sources : [];
-    const cited = sources.filter((t) => answer.includes(t));
+    const cited = sources.filter((t) => typeof t === "string" && answer.includes(t));
     if (cited.length) {
       const s = document.createElement("div"); s.className = "srcs"; s.textContent = "Sources de la clinique : ";
       cited.forEach((t) => { const c = document.createElement("span"); c.className = "src"; c.textContent = t; s.append(c); });
@@ -655,6 +656,7 @@
       setTimeout(() => { cp.querySelector("span").textContent = "Copier toute la réponse"; }, 2000);
     };
     acts.append(cp); col.append(acts);
+    if (question) favAttach(acts, { context: favCtxNow(), question: String(question), answer, sources: cited });
 
     document.querySelectorAll(".next").forEach((n) => n.remove());
     const nx = document.createElement("div"); nx.className = "next";
@@ -757,10 +759,12 @@
       catch { if (l.length <= 1) return; l = l.slice(0, Math.ceil(l.length * 0.7)); }
     }
   }
-  function remember(q, d, a, s) {
+  function remember(q, d, a, s, extra) {
     if (!a || !String(a).trim()) return;
     if (!convId) convId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    convMsgs.push({ q: String(q).slice(0, 4000), d: String(d).slice(0, 600), a: String(a).slice(0, 30000), s: Array.isArray(s) ? s.slice(0, 6) : [] });
+    const entry = { q: String(q).slice(0, 4000), d: String(d).slice(0, 600), a: String(a).slice(0, 30000), s: Array.isArray(s) ? s.slice(0, 6) : [] };
+    if (extra && extra.k === "nutrition" && String(extra.na || "").length <= 30000) Object.assign(entry, { k: "nutrition", nq: String(extra.nq || "").slice(0, 4000), na: String(extra.na || ""), ns: Array.isArray(extra.ns) ? extra.ns.slice(0, 12) : [] });
+    convMsgs.push(entry);
     if (convMsgs.length > HIST_MSGS) convMsgs = convMsgs.slice(-HIST_MSGS);
     const list = histLoad().filter((c) => c.id !== convId);
     const title = convMsgs[0].d.replace(/\s+/g, " ").trim();
@@ -824,10 +828,16 @@
     let lastQ = null;
     c.m.forEach((x) => {
       lastQ = addQuestion(x.d || x.q);
-      const { col, body } = addAnswer();
+      const { m, col, body } = addAnswer();
       const tm = col.querySelector(".who time"); if (tm) tm.textContent = stamp;
-      renderAnswer(body, x.a, true);
-      finishAnswer(x.s, col, x.a);
+      if (x.k === "nutrition" && window.LQNutrition && window.LQNutrition.renderSaved) {
+        m.classList.add("nutri-msg");
+        window.LQNutrition.renderSaved(body, x.na, x.ns);
+        window.LQNutrition.addActions(col, body, { context: "nutrition", question: x.nq, answer: x.na, sources: x.ns });
+      } else {
+        renderAnswer(body, x.a, true);
+        finishAnswer(x.s, col, x.a, x.d || x.q);
+      }
       turns.push({ role: "user", content: x.q }, { role: "assistant", content: x.a });
     });
     closeMenu();
@@ -961,6 +971,7 @@
   }
   function openHistPage() {
     if (sim.on) setLearn(false);
+    try { closeFavPage(); } catch {}
     if (!histOpen()) { hp.tab = "conv"; hp.q = ""; }
     document.body.classList.add("histv");
     $("histPage").hidden = false;
@@ -989,6 +1000,252 @@
   new MutationObserver(() => { const t = isTsa(); if (t !== hpTsa) { hpTsa = t; syncHistNav(); } })
     .observe(document.body, { attributes: true, attributeFilter: ["class"] });
   syncHistNav();
+
+  /* =====================================================================
+     FAVORIS — échanges (question + réponse) gardés par la personne, dans
+     son compte et pour l'établissement actif. Copie figée au moment de
+     l'ajout ; un favori est personnel, ce n'est pas une validation.
+     Offert seulement en mode compte (portail laqualia.com).
+     ===================================================================== */
+  const SVG_HEART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.4C1.4 7.6 3.6 4 7.2 4c2 0 3.5 1.1 4.8 2.8C13.3 5.1 14.8 4 16.8 4c3.6 0 5.8 3.6 4.5 7.1-1.8 4.8-9.3 9.4-9.3 9.4Z"/></svg>';
+  const FAV_CTX = { reception: "Réception", tsa: "TSA", nutrition: "Nutrition & produits" };
+  const fav = { on: false, map: new Map(), list: [], loaded: false, tab: "all", q: "", detail: null };
+  const favCtxNow = () => (isTsa() ? "tsa" : "reception");
+  async function favKeyOf(c, q, a) {
+    const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`lq-fav\n${c}\n${q}\n${a}`));
+    return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function favApi(path, method = "GET", data) {
+    const r = await fetch(path, { method, credentials: "same-origin", cache: "no-store",
+      headers: method === "GET" ? {} : { "content-type": "application/json", "x-lq-csrf": "1" }, body: data ? JSON.stringify(data) : undefined });
+    let d = null; try { d = await r.json(); } catch {}
+    if (r.status === 401) { leavePortal(401, d && d.code); throw new Error("session"); }
+    if (!r.ok) throw new Error((d && d.error) || "Le serveur n'a pas répondu. Réessayez.");
+    return d;
+  }
+  let toastT = null;
+  function favToast(html) {
+    const t = $("favToast"); t.innerHTML = html; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 3200);
+  }
+  function favPaint(b) {
+    const on = fav.map.has(b.dataset.fkey);
+    b.setAttribute("aria-pressed", String(on));
+    b.setAttribute("aria-label", on ? "Retirer des favoris" : "Ajouter aux favoris");
+    b.title = on ? "Retirer de Mes favoris" : "Ajouter à Mes favoris (favori personnel)";
+  }
+  function favPaintAll() { document.querySelectorAll(".fav-btn[data-fkey]").forEach(favPaint); }
+  // Cœur sous une réponse : item = { context, question, answer, sources }
+  function favButton(item) {
+    if (!fav.on || !item || !String(item.answer || "").trim() || !String(item.question || "").trim()) return null;
+    const b = document.createElement("button"); b.type = "button"; b.className = "act fav-btn";
+    b.innerHTML = SVG_HEART; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Ajouter aux favoris");
+    b.disabled = true;
+    favKeyOf(item.context, item.question, item.answer).then((k) => { b.dataset.fkey = k; b.disabled = false; favPaint(b); });
+    b.onclick = () => favToggle(b, item);
+    return b;
+  }
+  async function favToggle(b, item) {
+    const k = b.dataset.fkey; if (!k || b.dataset.busy) return;
+    b.dataset.busy = "1";
+    const id = fav.map.get(k);
+    try {
+      if (id) {
+        fav.map.delete(k); favPaintAll();
+        await favApi(`/api/favorites/${encodeURIComponent(id)}`, "DELETE");
+        fav.list = fav.list.filter((x) => x.id !== id);
+        favToast("Retiré de Mes favoris");
+      } else {
+        fav.map.set(k, "…"); favPaintAll();
+        b.classList.add("pop"); setTimeout(() => b.classList.remove("pop"), 180);
+        const d = await favApi("/api/favorites", "POST", { context: item.context, question: item.question, answer: item.answer, sources: item.sources || [] });
+        fav.map.set(k, d.favorite.id);
+        fav.list = [d.favorite, ...fav.list.filter((x) => x.id !== d.favorite.id)];
+        favToast("Ajouté à Mes favoris<small>Favori personnel : il ne confirme pas l'exactitude de la réponse.</small>");
+      }
+    } catch (e) {
+      if (id) fav.map.set(k, id); else fav.map.delete(k);
+      if (e.message !== "session") favToast(esc(e.message));
+    } finally {
+      delete b.dataset.busy; favPaintAll(); favSyncNav();
+    }
+  }
+  function favSyncNav() {
+    const n = fav.list.length, el = $("favNavCount");
+    if (el) { el.hidden = !n; el.textContent = n > 99 ? "99+" : String(n); }
+    if (favOpen() && !fav.detail) renderFavPage();
+  }
+  async function favInit() {
+    if (!accountMode || fav.loaded) return;
+    fav.loaded = true; fav.on = true;
+    $("sideFav").hidden = false;
+    try {
+      const d = await favApi("/api/favorites");
+      fav.list = d.favorites || [];
+      fav.map = new Map(fav.list.map((x) => [x.fkey, x.id]));
+    } catch {}
+    // Réponses déjà affichées : on ajoute le cœur
+    document.querySelectorAll("#thread .msg.a .actions").forEach((acts) => {
+      if (acts.querySelector(".fav-btn") || !acts._favItem) return;
+      const b = favButton(acts._favItem); if (b) acts.prepend(b);
+    });
+    favPaintAll(); favSyncNav();
+  }
+  // Ajoute le cœur aux actions d'une réponse (créé plus tard si le compte n'est pas encore chargé)
+  function favAttach(acts, item) {
+    acts._favItem = item;
+    const b = favButton(item); if (b) acts.prepend(b);
+  }
+
+  /* ---------- page « Mes favoris » ---------- */
+  const favOpen = () => document.body.classList.contains("favv");
+  const fmtDay = (t) => new Date(t).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
+  const fmtWhen = (t) => new Date(t).toLocaleString("fr-CA", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const tagHtml = (c) => `<span class="fp-tag ${esc(c)}">${esc(FAV_CTX[c] || c)}</span>`;
+  const NOTE = `<p class="fp-note">${SVG_HEART}<span>Un favori est personnel : il garde la réponse telle qu'elle était au moment de l'ajout et ne confirme pas son exactitude.</span></p>`;
+  function renderFavPage() {
+    const page = $("favPage"); if (!page) return;
+    if (fav.detail) return renderFavDetail();
+    const counts = { all: fav.list.length }; fav.list.forEach((x) => { counts[x.context] = (counts[x.context] || 0) + 1; });
+    const tabs = [["all", "Tous"], ["reception", "Réception"], ["tsa", "TSA"], ["nutrition", "Nutrition"]];
+    page.innerHTML = `<div class="hpg-in">
+      <header class="hpg-head"><h1 id="fpTitle">Mes favoris</h1><p>Les échanges que vous avez gardés, pour les retrouver facilement.</p></header>
+      ${NOTE}
+      <div class="hpg-bar">
+        <label class="hpg-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="fpSearch" type="search" placeholder="Rechercher un favori" aria-label="Rechercher dans mes favoris" autocomplete="off"></label>
+        <div class="hpg-seg" role="tablist" aria-label="Contexte">${tabs.map(([k, l]) => `<button type="button" role="tab" data-fp-tab="${k}" aria-selected="${fav.tab === k}">${l}${counts[k] ? `<span class="n">${counts[k]}</span>` : ""}</button>`).join("")}</div>
+      </div>
+      <div id="fpBody" class="fp-body"></div>
+    </div>`;
+    const inp = $("fpSearch"); inp.value = fav.q;
+    inp.oninput = () => { fav.q = inp.value; fill(); };
+    page.querySelectorAll("[data-fp-tab]").forEach((b) => (b.onclick = () => { fav.tab = b.dataset.fpTab; renderFavPage(); page.querySelector(`[data-fp-tab="${fav.tab}"]`).focus(); }));
+    fill();
+    function fill() {
+      const body = $("fpBody"); body.textContent = "";
+      if (!fav.list.length) {
+        body.innerHTML = `<div class="hpg-empty fp-empty">${SVG_HEART}<b>Aucun favori pour l'instant</b><span>Touchez le cœur sous une réponse de l'agent pour la retrouver ici.</span></div>`;
+        return;
+      }
+      const q = hpNorm(fav.q.trim());
+      const items = fav.list.filter((x) => (fav.tab === "all" || x.context === fav.tab) && (!q || hpNorm(x.question + " " + (x.excerpt || "")).includes(q)));
+      if (!items.length) { body.innerHTML = `<p class="hpg-empty">${q ? "Aucun favori ne correspond à cette recherche." : "Aucun favori dans ce contexte."}</p>`; return; }
+      const wrap = document.createElement("div"); wrap.className = "hpg-list";
+      items.forEach((x) => {
+        const row = document.createElement("div"); row.className = "hpg-row";
+        const open = document.createElement("button"); open.type = "button"; open.className = "hpg-open";
+        const b = document.createElement("b"); const qt = x.question.replace(/\s+/g, " ").trim(); b.textContent = qt.length > 160 ? qt.slice(0, 158) + "…" : qt;
+        const ex = document.createElement("span"); ex.className = "ex"; ex.textContent = hpExcerpt(String(x.excerpt || "").replace(/```comparaison[\s\S]*?(```|$)/g, ""));
+        const meta = document.createElement("span"); meta.className = "meta"; meta.innerHTML = `${tagHtml(x.context)}<span>${esc(fmtDay(x.created_at))}</span>`;
+        open.append(b, ex, meta);
+        open.onclick = () => openFavDetail(x.id);
+        const del = document.createElement("button"); del.type = "button"; del.className = "hpg-del";
+        del.innerHTML = SVG_HEART; del.setAttribute("aria-label", `Retirer « ${b.textContent} » des favoris`); del.title = "Retirer des favoris";
+        del.style.color = "#e11d48"; del.querySelector("svg").style.fill = "currentColor";
+        del.onclick = () => favRemove(x.id);
+        row.append(open, del); wrap.append(row);
+      });
+      body.append(wrap);
+    }
+  }
+  async function favRemove(id) {
+    const x = fav.list.find((f) => f.id === id); if (!x) return;
+    try {
+      await favApi(`/api/favorites/${encodeURIComponent(id)}`, "DELETE");
+      fav.list = fav.list.filter((f) => f.id !== id); fav.map.delete(x.fkey);
+      favToast("Retiré de Mes favoris");
+    } catch (e) { if (e.message !== "session") favToast(esc(e.message)); return; }
+    fav.detail = null; favPaintAll(); favSyncNav(); renderFavPage();
+  }
+  async function openFavDetail(id) {
+    fav.detail = { id, loading: true };
+    renderFavDetail();
+    try { fav.detail = (await favApi(`/api/favorites/${encodeURIComponent(id)}`)).favorite; }
+    catch (e) { fav.detail = { id, error: e.message }; }
+    if (favOpen() && fav.detail && fav.detail.id === id) renderFavDetail();
+    $("favPage").scrollTop = 0;
+  }
+  // Affiche une réponse enregistrée avec la mise en forme de son contexte d'origine (sans toucher à la conversation en cours)
+  function renderStored(body, text, context) {
+    const r = role, sc = inScenario;
+    role = context === "tsa" ? "tsa" : "reception"; inScenario = false;
+    try { renderAnswer(body, text, true); } finally { role = r; inScenario = sc; }
+  }
+  function renderFavDetail() {
+    const page = $("favPage"), f = fav.detail;
+    const back = `<button type="button" class="fp-back" id="fpBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Mes favoris</button>`;
+    if (f.loading || f.error) {
+      page.innerHTML = `<div class="hpg-in">${back}<p class="hpg-empty">${f.error ? esc(f.error) : "Chargement…"}</p></div>`;
+      $("fpBack").onclick = favBackToList; return;
+    }
+    page.innerHTML = `<div class="hpg-in fp-detail">${back}
+      <div class="fp-meta">${tagHtml(f.context)}<span>Enregistré le ${esc(fmtWhen(f.created_at))}</span></div>
+      <h1 id="fpTitle" class="fp-q"><small>Question</small></h1>
+      <section class="fp-a" aria-label="Réponse enregistrée"><small>Réponse enregistrée</small><div class="body" id="fpAnswer"></div></section>
+      <div id="fpSources"></div>
+      ${NOTE}
+      <div class="fp-actions">
+        <button type="button" class="fp-btn" id="fpCopy">${SVG_COPY}<span>Copier la question et la réponse</span></button>
+        <button type="button" class="fp-btn rm" id="fpRemove">${SVG_HEART}<span>Retirer des favoris</span></button>
+      </div></div>`;
+    $("fpTitle").append(document.createTextNode(f.question));
+    const ans = $("fpAnswer"), srcs = Array.isArray(f.sources) ? f.sources : [];
+    if (f.context === "nutrition" && window.LQNutrition && window.LQNutrition.renderSaved) {
+      ans.closest(".fp-a").classList.add("nutri-msg");
+      window.LQNutrition.renderSaved(ans, f.answer, srcs);
+    } else {
+      renderStored(ans, f.answer, f.context);
+      if (srcs.length) {
+        const box = document.createElement("div"); box.className = "fp-src";
+        box.innerHTML = "<h3>Sources</h3><ul></ul>";
+        const ul = box.querySelector("ul");
+        srcs.forEach((x) => {
+          const li = document.createElement("li");
+          if (x.url) { const a = document.createElement("a"); a.href = x.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = x.title || x.url; li.append(a); }
+          else li.textContent = x.title;
+          ul.append(li);
+        });
+        $("fpSources").append(box);
+      }
+    }
+    $("fpBack").onclick = favBackToList;
+    $("fpRemove").onclick = () => favRemove(f.id);
+    $("fpCopy").onclick = async () => {
+      const sp = $("fpCopy").querySelector("span");
+      try { await navigator.clipboard.writeText(`Question : ${f.question}\n\nRéponse :\n${ans.innerText}`); sp.textContent = "Copié ✓"; }
+      catch { sp.textContent = "Copie impossible"; }
+      setTimeout(() => { sp.textContent = "Copier la question et la réponse"; }, 2000);
+    };
+  }
+  function favBackToList() { fav.detail = null; renderFavPage(); $("favPage").focus({ preventScroll: true }); }
+  function openFavPage() {
+    if (sim.on) setLearn(false);
+    closeHistPage();
+    if (!favOpen()) { fav.tab = "all"; fav.q = ""; fav.detail = null; }
+    document.body.classList.add("favv");
+    $("favPage").hidden = false;
+    $("sideFav").setAttribute("aria-pressed", "true");
+    closeMenu();
+    renderFavPage();
+    $("favPage").scrollTop = 0;
+    $("favPage").focus({ preventScroll: true });
+  }
+  function closeFavPage() {
+    if (!favOpen()) return;
+    document.body.classList.remove("favv");
+    $("favPage").hidden = true; fav.detail = null;
+    $("sideFav").setAttribute("aria-pressed", "false");
+  }
+  $("sideFav").onclick = () => (favOpen() && !fav.detail ? closeFavPage() : openFavPage());
+  document.querySelector(".side").addEventListener("click", (e) => {
+    const b = e.target.closest("button, a, [role=button], li");
+    if (b && b.id !== "sideFav" && b.id !== "sideCollapse") closeFavPage();
+  }, true);
+  ["clear", "homeLogo"].forEach((id) => $(id)?.addEventListener("click", closeFavPage, true));
+  addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !favOpen() || e.defaultPrevented) return;
+    if (fav.detail) favBackToList(); else closeFavPage();
+  });
 
 
   /* =====================================================================
@@ -2070,6 +2327,7 @@
     $("modeShort").textContent = isTsa() ? (learn ? "TSA · Simulation" : "Mode TSA") : (learn ? "Simulation" : "Réception");
     if (document.body.classList.contains("journey")) { $("convTitle").textContent = "Parcours de l'apprenant"; return; }
     if (document.body.classList.contains("histv")) { $("convTitle").textContent = "Historique"; return; }
+    if (document.body.classList.contains("favv")) { $("convTitle").textContent = "Mes favoris"; return; }
     if (learn) { $("convTitle").textContent = isTsa() ? "Simulation complète · cas fictifs" : "Simulation complète · appels fictifs"; return; }
     const first = $("thread").querySelector(".msg.q .qbub");
     const t = first ? first.textContent.replace(/\s+/g, " ").trim() : "";
@@ -2160,6 +2418,7 @@
   // Mode compte : prénom du compte, établissement affiché, déconnexion réelle de la session.
   function applyAccount() {
     tsaCode = ""; store.del("lq-tsa-code"); store.del("lq-agent-code"); code = "";
+    try { favInit(); } catch {}
     // Le prénom du compte est celui utilisé partout dans le portail (salutation, réponses personnalisées).
     const fn = cleanName(account.first_name);
     if (fn && fn !== prenom) { prenom = fn; store.set("lq-prenom", prenom); showName(); }

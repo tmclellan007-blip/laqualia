@@ -401,6 +401,8 @@ async function routeApi(ctx) {
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes$/))) { if (M === "GET") return listAccessCodes(ctx, m[1]); if (M === "POST") return createAccessCode(ctx, m[1]); }
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes\/([\w-]+)\/renew$/)) && M === "POST") return renewAccessCode(ctx, m[1], m[2]);
   if ((m = p.match(/^\/api\/orgs\/([\w-]+)\/access-codes\/([\w-]+)$/)) && M === "DELETE") return revokeAccessCode(ctx, m[1], m[2]);
+  if (p === "/api/favorites") { if (M === "GET") return listFavorites(ctx); if (M === "POST") return addFavorite(ctx); }
+  if ((m = p.match(/^\/api\/favorites\/([\w-]+)$/))) { if (M === "GET") return getFavorite(ctx, m[1]); if (M === "DELETE") return removeFavorite(ctx, m[1]); }
   if (p === "/api/platform/bootstrap" && M === "POST") return bootstrapPlatform(ctx);
   if (p === "/api/platform/orgs") { if (M === "GET") return platformOrgs(ctx); if (M === "POST") return createOrg(ctx); }
   if (p === "/api/platform/users" && M === "GET") return platformUsers(ctx);
@@ -498,6 +500,7 @@ async function deleteMe(ctx) {
   // Profil, photo, moyens de connexion, sessions, appartenances et liens de récupération : supprimés (cascade).
   await db.batch([
     db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(user.id),
+    db.prepare("DELETE FROM favorites WHERE user_id = ?").bind(user.id),
     db.prepare("DELETE FROM identities WHERE user_id = ?").bind(user.id),
     db.prepare("DELETE FROM memberships WHERE user_id = ?").bind(user.id),
     db.prepare("DELETE FROM recovery_links WHERE user_id = ?").bind(user.id),
@@ -609,6 +612,7 @@ async function removeMember(ctx, orgId, memberId) {
   await ctx.env.DB.batch([
     ctx.env.DB.prepare("DELETE FROM memberships WHERE id = ? AND org_id = ?").bind(memberId, orgId),
     ctx.env.DB.prepare("UPDATE sessions SET active_org_id = NULL WHERE user_id = ? AND active_org_id = ?").bind(t.user_id, orgId),
+    ctx.env.DB.prepare("DELETE FROM favorites WHERE user_id = ? AND org_id = ?").bind(t.user_id, orgId),
   ]);
   await audit(ctx, { org: orgId, actor: user.id, action: "member.removed", target: t.user_id, details: { role: t.role } });
   return json(200, { ok: true });
@@ -618,7 +622,10 @@ async function leaveOrg(ctx, orgId) {
   const oc = await orgContext(ctx, user, orgId);
   if (!oc.membership) throw new HttpError(404, "Vous n'êtes pas membre de cet établissement.", "not_found");
   if (oc.membership.role === "owner" && (await activeOwners(ctx, orgId)) <= 1) throw new HttpError(409, "Vous êtes le dernier propriétaire : transférez d'abord la propriété avant de quitter.", "last_owner");
-  await ctx.env.DB.prepare("DELETE FROM memberships WHERE id = ? AND org_id = ?").bind(oc.membership.id, orgId).run();
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare("DELETE FROM memberships WHERE id = ? AND org_id = ?").bind(oc.membership.id, orgId),
+    ctx.env.DB.prepare("DELETE FROM favorites WHERE user_id = ? AND org_id = ?").bind(user.id, orgId),
+  ]);
   await audit(ctx, { org: orgId, actor: user.id, action: "member.left", target: user.id });
   return json(200, { ok: true });
 }
@@ -928,6 +935,70 @@ async function accessStatus(ctx) {
   const a = await portalAccess(ctx.request, ctx.env);
   if (!a.ok) return json(a.status, { access: false, code: a.code, error: a.error, disabledOrgs: a.disabledOrgs || [], user: a.who || null });
   return json(200, { access: true, org: a.org, role: a.role, platform: a.platform, orgs: a.orgs, user: { first_name: a.user.first_name, last_name: a.user.last_name } });
+}
+
+/* ----- Favoris -----
+   Personnels : chaque personne ne voit que les siens, dans l'établissement actif.
+   La réponse est une copie figée au moment de l'ajout ; un favori n'est pas une validation. */
+export const FAV = { MAX: 300, Q: 8000, A: 60000, SRC: 12, CONTEXTS: ["reception", "tsa", "nutrition"] };
+export const favKey = (context, question, answer) => sha256(`lq-fav\n${context}\n${question}\n${answer}`);
+async function favOwner(ctx) {
+  const a = await portalAccess(ctx.request, ctx.env);
+  if (!a.ok) throw new HttpError(a.status, a.error, a.code);
+  const org = a.org?.id || (a.platform ? "_plateforme" : null);
+  if (!org) throw new HttpError(403, "Aucun établissement actif.", "no_access");
+  return { user: a.user, org };
+}
+const favOut = (r, full) => ({ id: r.id, fkey: r.fkey, context: r.context, created_at: r.created_at,
+  question: full ? r.question : r.question.slice(0, 600),
+  ...(full ? { answer: r.answer, sources: safeJson(r.sources, []) } : { excerpt: r.answer.slice(0, 600) }) });
+async function listFavorites(ctx) {
+  const { user, org } = await favOwner(ctx);
+  const rows = (await ctx.env.DB.prepare("SELECT id, fkey, context, question, substr(answer, 1, 600) AS answer, created_at FROM favorites WHERE user_id = ? AND org_id = ? ORDER BY created_at DESC LIMIT ?")
+    .bind(user.id, org, FAV.MAX).all()).results;
+  return json(200, { favorites: rows.map((r) => favOut(r, false)), max: FAV.MAX });
+}
+async function getFavorite(ctx, id) {
+  const { user, org } = await favOwner(ctx);
+  const r = await ctx.env.DB.prepare("SELECT * FROM favorites WHERE id = ? AND user_id = ? AND org_id = ?").bind(id, user.id, org).first();
+  if (!r) throw new HttpError(404, "Favori introuvable.", "not_found");
+  return json(200, { favorite: favOut(r, true) });
+}
+async function addFavorite(ctx) {
+  const { user, org } = await favOwner(ctx);
+  await rateLimit(ctx, `fav:${user.id}`, 120, 10 * 60e3);
+  const b = await body(ctx);
+  const context = String(b.context || "");
+  if (!FAV.CONTEXTS.includes(context)) throw new HttpError(400, "Contexte invalide.", "invalid");
+  if (typeof b.question !== "string" || typeof b.answer !== "string" || !b.question.trim() || !b.answer.trim()) throw new HttpError(400, "Question et réponse requises.", "invalid");
+  if (b.question.length > FAV.Q || b.answer.length > FAV.A) throw new HttpError(413, "Cet échange est trop long pour être enregistré.", "too_long");
+  // Sources : fiches web (https seulement) ou documents de la clinique (titre seul).
+  const sources = (Array.isArray(b.sources) ? b.sources : []).slice(0, FAV.SRC).map((x) => {
+    if (typeof x === "string") x = /^[a-z][\w+.-]*:/i.test(x) ? { url: x } : { title: x };
+    if (!x || typeof x !== "object") return null;
+    const o = {};
+    if (x.url !== undefined) { if (typeof x.url !== "string" || x.url.length > 1000 || !/^https:\/\/[^\s]+$/.test(x.url)) return null; o.url = x.url; }
+    const t = clip(x.title, 300); if (t) o.title = t;
+    const d = clip(x.date, 40); if (d) o.date = d;
+    return o.url || o.title ? o : null;
+  }).filter(Boolean);
+  const fkey = await favKey(context, b.question, b.answer);
+  const db = ctx.env.DB;
+  const existing = await db.prepare("SELECT * FROM favorites WHERE user_id = ? AND org_id = ? AND fkey = ?").bind(user.id, org, fkey).first();
+  if (existing) return json(200, { favorite: favOut(existing, false) });
+  const n = (await db.prepare("SELECT COUNT(*) AS n FROM favorites WHERE user_id = ? AND org_id = ?").bind(user.id, org).first()).n;
+  if (n >= FAV.MAX) throw new HttpError(409, `Vous avez atteint ${FAV.MAX} favoris. Retirez-en quelques-uns pour en ajouter.`, "limit");
+  const row = { id: uid(), user_id: user.id, org_id: org, fkey, context, question: b.question, answer: b.answer, sources: JSON.stringify(sources), created_at: ctx.now };
+  await db.prepare("INSERT OR IGNORE INTO favorites (id, user_id, org_id, fkey, context, question, answer, sources, created_at) VALUES (?,?,?,?,?,?,?,?,?)")
+    .bind(row.id, row.user_id, row.org_id, row.fkey, row.context, row.question, row.answer, row.sources, row.created_at).run();
+  const saved = await db.prepare("SELECT * FROM favorites WHERE user_id = ? AND org_id = ? AND fkey = ?").bind(user.id, org, fkey).first();
+  return json(201, { favorite: favOut(saved, false) });
+}
+async function removeFavorite(ctx, id) {
+  const { user, org } = await favOwner(ctx);
+  const r = await ctx.env.DB.prepare("DELETE FROM favorites WHERE id = ? AND user_id = ? AND org_id = ?").bind(id, user.id, org).run();
+  if (!changes(r)) throw new HttpError(404, "Favori introuvable.", "not_found");
+  return json(200, { ok: true });
 }
 
 /* ----- Journal ----- */

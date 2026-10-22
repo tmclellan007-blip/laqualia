@@ -105,8 +105,9 @@
       if (!text && sources.length) S(".nu-src-out").innerHTML = sourcesHtml(sources, date);
       if (text) {
         history.push({ role: "user", content: q }, { role: "assistant", content: text.replace(/```comparaison[\s\S]*?```/g, "").slice(0, 6000) });
-        chat.remember("Nutrition & produits — " + q, text.replace(/```comparaison[\s\S]*?```/g, ""));
-        addCopy(col, body);
+        const saved = savedSources(sources, date);
+        chat.remember("Nutrition & produits — " + q, text.replace(/```comparaison[\s\S]*?```/g, ""), { k: "nutrition", nq: q, na: text, ns: saved });
+        addActions(col, body, { context: "nutrition", question: q, answer: text, sources: saved });
       }
       requestAnimationFrame(() => chat.toTopOf(m));
     } catch (e2) {
@@ -116,6 +117,21 @@
       clearTimeout(idle);
       run.end();
     }
+  }
+  // Sources gardées avec un favori ou l'historique : seulement les fiches réellement consultées
+  const savedSources = (sources, date) => (sources || []).filter((x) => x && x.ok && x.url).slice(0, 12)
+    .map((x) => ({ url: x.url, title: x.title || shortUrl(x.url), date: x.retrieved_at || date || "" }));
+  // Réponse enregistrée (favori ou historique) : même affichage, comparatif et fiches compris
+  function renderSaved(body, text, sources) {
+    body.innerHTML = '<div class="nu-ans"></div><div class="nu-cmp-out"></div><div class="nu-src-out"></div>';
+    const src = (sources || []).filter((x) => x && x.url).map((x) => ({ ok: true, url: x.url, title: x.title, retrieved_at: /T/.test(x.date || "") ? x.date : "" }));
+    const d = (sources || []).map((x) => x && x.date).find((x) => /^\d{4}-\d{2}-\d{2}$/.test(x || "")) || "";
+    render(body, String(text || ""), true, src, d);
+  }
+  function addActions(col, body, item) {
+    addCopy(col, body);
+    const acts = col.lastElementChild;
+    try { A().chat.favAttach(acts, item); } catch {}
   }
   function addCopy(col, body) {
     const acts = document.createElement("div"); acts.className = "actions";
@@ -128,7 +144,7 @@
     acts.append(cp); col.append(acts);
   }
   const shortUrl = (u) => String(u || "").replace(/^https?:\/\/(www\.)?/, "").slice(0, 80);
-  const fmtDate = (iso, fallback) => { try { const d = iso ? new Date(iso) : new Date(fallback + "T12:00:00"); return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }); } catch { return fallback || ""; } };
+  const fmtDate = (iso, fallback) => { try { const d = iso ? new Date(iso) : new Date(fallback + "T12:00:00"); return isNaN(d) ? (fallback || "date non précisée") : d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" }); } catch { return fallback || ""; } };
 
   function render(body, text, done, sources, date) {
     const m = text.match(/```comparaison\s*([\s\S]*?)(```|$)/);
@@ -173,7 +189,7 @@
       </ul><p class="nu-hint">${PRICE} « Référencé au Canada » ne veut dire ni « vendu par la clinique » ni « en stock ».</p></div>`;
   }
 
-  window.LQNutrition = { active: () => on, send: () => send(), enter, exit, syncTile };
+  window.LQNutrition = { active: () => on, send: () => send(), enter, exit, syncTile, renderSaved, addActions };
   document.addEventListener("click", (e) => { if (e.target.closest("[data-open-nutri]")) (on ? exit(true) : enter()); });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && on && document.activeElement && document.activeElement.closest && document.activeElement.closest("#nutriTray")) exit(true); });
 })();

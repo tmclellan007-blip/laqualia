@@ -1256,6 +1256,47 @@ body.histv .main > :not(.topbar):not(#histPage){display:none!important}
 .hpg-clear:hover,.hpg-clear.confirm{border-color:#dc2626;color:#dc2626}
 @media (max-width:640px){.hpg-in{padding:18px 16px 40px}.hpg-head h1{font-size:25px}.hpg-faq{grid-template-columns:1fr}.hpg-seg{width:100%}.hpg-seg button{flex:1}}
 
+
+/* ===== Favoris ===== */
+body.side-mini #railHist{display:none!important}
+body.favv .main > :not(.topbar):not(#favPage):not(#favToast){display:none!important}
+.act.fav-btn{padding:5px 7px}
+.act.fav-btn svg{width:16px;height:16px;transition:transform .15s}
+.act.fav-btn:hover{color:#e11d48;background:#fff1f2}
+.act.fav-btn[aria-pressed="true"]{color:#e11d48}
+.act.fav-btn[aria-pressed="true"] svg{fill:currentColor}
+.act.fav-btn.pop svg{transform:scale(1.25)}
+.act.fav-btn[disabled]{opacity:.5}
+.fav-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;background:#101010;color:#fff;border-radius:12px;padding:10px 16px;font-size:13.5px;font-weight:600;box-shadow:0 10px 30px #0000003a;max-width:calc(100vw - 32px);text-align:center;line-height:1.4}
+.fav-toast small{display:block;font-weight:500;color:#ffffffb3;font-size:12px}
+.fp-tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:800;letter-spacing:.2px}
+.fp-tag.reception{background:#ede5ff;color:#401098}
+.fp-tag.tsa{background:#ddf3ef;color:#0f766e}
+.fp-tag.nutrition{background:#fff1d6;color:#8a4b00}
+.fp-note{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid #e6e4dc;border-radius:12px;padding:10px 14px;color:#55565d;font-size:13.5px;line-height:1.45}
+.fp-note svg{width:17px;height:17px;flex:none;color:#e11d48;margin-top:1px}
+.fp-back{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--role,#5b21b6);font:inherit;font-size:14px;font-weight:800;padding:6px 0;cursor:pointer}
+.fp-back svg{width:16px;height:16px}
+.fp-detail{display:flex;flex-direction:column;gap:14px}
+.fp-meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:#77787f;font-size:13px;font-weight:600}
+.fp-q{background:var(--role-soft,#ede5ff);color:#101010;border-radius:16px;padding:14px 16px;font-size:15.5px;font-weight:600;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.fp-q small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#77787f;margin-bottom:4px}
+.fp-a{background:#fff;border:1px solid #e6e4dc;border-radius:16px;padding:16px 18px;min-width:0;overflow-wrap:anywhere}
+.fp-a > small{display:block;font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#77787f;margin-bottom:8px}
+.fp-src{background:#fff;border:1px solid #e6e4dc;border-radius:14px;padding:12px 16px}
+.fp-src h3{margin:0 0 6px;font-size:14px;font-weight:800;color:#101010}
+.fp-src ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:#3a3b42}
+.fp-src a{color:var(--role,#5b21b6);font-weight:700;word-break:break-all}
+.fp-actions{display:flex;gap:8px;flex-wrap:wrap}
+.fp-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid #e6e4dc;background:#fff;color:#101010;border-radius:12px;padding:10px 14px;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.fp-btn svg{width:16px;height:16px}
+.fp-btn:hover{border-color:#bdbab0}
+.fp-btn.rm{color:#be123c}
+.fp-btn.rm:hover{border-color:#be123c;background:#fff1f2}
+.fp-empty{display:flex;flex-direction:column;align-items:center;gap:6px}
+.fp-empty svg{width:30px;height:30px;color:#e11d48;opacity:.7}
+.fp-empty b{color:#101010;font-size:16px}
+
 /* ===== Parcours de l'apprenant (démo) ===== */
 body.journey .main > :not(.topbar):not(#journey){display:none!important}
 .journey{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;outline:0}
@@ -1517,6 +1558,7 @@ body.nutri .nutri-open{display:none!important}
 
     <div class="side-group normal-only">
       <button class="nav-item" id="sideHist" type="button" aria-pressed="false" title="Historique"><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></span><span class="ni-txt"><b>Historique</b><small>Vos conversations et questions</small></span><em class="ni-count" id="histNavCount" hidden></em></button>
+      <button class="nav-item" id="sideFav" type="button" aria-pressed="false" title="Mes favoris" hidden><span class="ni-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.3-9.4C1.4 7.6 3.6 4 7.2 4c2 0 3.5 1.1 4.8 2.8C13.3 5.1 14.8 4 16.8 4c3.6 0 5.8 3.6 4.5 7.1-1.8 4.8-9.3 9.4-9.3 9.4Z"/></svg></span><span class="ni-txt"><b>Mes favoris</b><small>Les échanges que vous gardez</small></span><em class="ni-count" id="favNavCount" hidden></em></button>
     </div>
 
     <div class="side-group" role="group" aria-labelledby="navTrainLab">
@@ -1582,6 +1624,8 @@ body.nutri .nutri-open{display:none!important}
     </header>
     <section class="journey" id="journey" hidden tabindex="-1" aria-label="Parcours de l'apprenant"></section>
     <section class="hpg" id="histPage" hidden tabindex="-1" aria-labelledby="hpTitle"></section>
+    <section class="hpg" id="favPage" hidden tabindex="-1" aria-labelledby="fpTitle"></section>
+    <div class="fav-toast" id="favToast" role="status" aria-live="polite" hidden></div>
     <div class="learn-banner learn-only" id="learnBanner" role="status">
       <span class="lb-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="2.5" y="13" width="4" height="6" rx="1.5"/><rect x="17.5" y="13" width="4" height="6" rx="1.5"/><path d="M19.5 19c0 1.7-1.6 2.5-4.5 2.5h-2"/></svg>Mode simulation complète</span>
       <span class="lb-role" id="lbRole">Réception</span><span class="lb-txt">Appels et données fictifs — rien n'est envoyé à l'équipe</span>
@@ -1780,8 +1824,8 @@ body.nutri .nutri-open{display:none!important}
   </div>
   <div class="tip" id="dashTip" role="status" hidden></div>
 </main>
-<script src="app-agent.js?v=202610212110"></script>
-<script src="nutrition.js?v=10"></script>
+<script src="app-agent.js?v=202610212200"></script>
+<script src="nutrition.js?v=11"></script>
 <script src="journey.js?v=202610181510"></script>
 <script src="dashboard.js?v=20261021a"></script>
 </body>
