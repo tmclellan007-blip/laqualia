@@ -177,3 +177,13 @@ Les migrations 0001 à 0004 sont déjà appliquées et consignée dans `d1_migra
 - **Si l'API refuse les outils** : un nouvel essai est fait sans réflexion, puis une réponse prudente sans fiche, signalée à l'utilisateur.
 - **Prérequis** : la recherche web doit être activée pour l'organisation dans la console Anthropic (Settings › Privacy / Web search).
 - **Coût** : 10 $ US par 1 000 recherches, plus les jetons des pages consultées. Chaque demande compte pour une question dans la limite quotidienne.
+
+## Favoris (migration 0005)
+
+- Table `favorites` : une ligne par échange gardé (question + réponse figée au moment de l'ajout, sources, contexte `reception` / `tsa` / `nutrition`).
+- Rattachée à la personne **et** à l'établissement actif ; chacun ne voit que ses propres favoris. Le propriétaire ou l'administrateur de l'établissement n'y a pas accès.
+- API (session du portail, en-tête `x-lq-csrf: 1` pour les modifications) : `GET /api/favorites` (aperçus), `GET /api/favorites/:id` (complet), `POST /api/favorites`, `DELETE /api/favorites/:id`.
+- Limites : 300 favoris par personne et par établissement ; question 8 000 caractères, réponse 60 000 ; sources : liens https ou titres de documents de la clinique.
+- Suppression : avec le compte, en quittant l'établissement ou au retrait du membre.
+- Sur laqualia.com (mode compte) : gardés dans la base. En mode test (miroir GitHub Pages, code d'équipe, sans compte) : mêmes écrans, favoris gardés seulement dans le navigateur, par prénom (100 au plus) ; rien n'est envoyé à la base.
+- Un favori est personnel : il ne valide pas l'exactitude de la réponse (rappel affiché à l'ajout et dans la page).
