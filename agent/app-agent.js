@@ -718,6 +718,8 @@
     else $("q").focus();
   });
   $("changeName").onclick = () => { closeMenu(); askCode(false, true); };
+  // « Mon profil » : en mode test (sans compte), le profil se résume au prénom ; avec un compte, applyAccount() mène à la page du profil.
+  $("accountLink").onclick = (e) => { if (accountMode) return; e.preventDefault(); closeMenu(); askCode(false, true); };
 
   /* ---------- menu (téléphone) ---------- */
   function openMenu() { $("app").classList.add("open"); }
@@ -2480,7 +2482,7 @@
     $("changeName").onclick = () => { location.href = "compte.html#profil"; };
     profilePrompt();
     const al = $("accountLink");
-    if (al && account.org) { al.title = `Mon compte · ${account.org.name}`; const sp = al.querySelector("span"); if (sp) sp.textContent = account.org.name; }
+    if (al) { al.href = "compte.html#profil"; al.title = "Mon profil"; al.onclick = null; }
     $("logout").onclick = async () => {
       const btn = $("logout");
       if (!btn.classList.contains("confirm")) {

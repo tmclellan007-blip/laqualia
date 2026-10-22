@@ -57,6 +57,9 @@ for (const [label, vp] of [["ordi", { width: 1280, height: 900 }], ["mobile", { 
   ok(/Réponse simulée/.test(await p.textContent("#fpAnswer")), label + " : mode test — détail complet");
   await p.click("#fpRemove"); await p.waitForSelector("#favPage .fp-empty");
   ok(true, label + " : mode test — retrait");
+  await menu(); await p.click("#accountLink"); await p.waitForTimeout(300);
+  ok(await p.locator("#codebox").isVisible() && /\/agent\/$/.test(p.url()), label + " : mode test — « Mon profil » ouvre le prénom (sans compte)");
+  await p.fill("#prenom", "Léa"); await p.click("#codeForm button[type=submit]");
   ok(!(await p.locator(".ver-bar").count()), label + " : aucun avis de version sans mise à jour");
   bumped = true; await p.waitForTimeout(61000); await p.evaluate(() => dispatchEvent(new Event("focus")));
   await p.waitForSelector(".ver-bar", { timeout: 5000 }).catch(() => {});
