@@ -227,6 +227,19 @@
     catch (e) { toast(e.message); $("alertSt").textContent = "Erreur"; $("alertSt").className = "al-st no"; $("alertTxt").textContent = e.message; }
     finally { $("alertTest").disabled = false; }
   };
+  // Sauvegarde (lecture seule) : instructions, réglages et documents de référence des deux espaces
+  $("kvExport").onclick = async () => {
+    const b = $("kvExport"); b.disabled = true; const t0 = b.textContent; b.textContent = "Préparation…";
+    try {
+      const j = await call({ action: "export" });
+      const stamp = (j.exportedAt || new Date().toISOString()).replace(/[:.]/g, "-").slice(0, 19);
+      const blob = new Blob([JSON.stringify(j, null, 2)], { type: "application/json" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `laqualia-config-agents-${stamp}.json`;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast(`Sauvegarde téléchargée (${j.count} éléments). Gardez-la avec les données confidentielles.`);
+    } catch (e) { toast(e.message); }
+    finally { b.disabled = false; b.textContent = t0; }
+  };
   ["dailyLimit", "privacy", "etab", "logo", "name", "disclaimer", "instructions", "examples", "scenarios", "simClient", "simBilan", "tier"].forEach((id) => $(id).addEventListener("input", () => { markDirty(); counts(); }));
   window.addEventListener("beforeunload", (e) => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 

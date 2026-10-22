@@ -555,6 +555,22 @@ async function handleAdmin(request, env, cors, auth = null) {
       const t = await KV.get(`doc:${role}:${str(body.id, 40)}`);
       return t === null ? json(404, { error: "Document introuvable." }, cors) : json(200, { text: t }, cors);
     }
+    case "export": {
+      // Sauvegarde en lecture seule : configuration (Réception, TSA, commune) et bases documentaires complètes.
+      // Rien n'est modifié. Les compteurs et verrous temporaires (use:, fail:, lock:, alert:) ne sont pas inclus.
+      const out = { format: "laqualia-kv-export", version: 1, exportedAt: new Date().toISOString(), namespace: "AGENT_KV", keys: {} };
+      const take = async (k) => { const v = await KV.get(k); if (v !== null) out.keys[k] = v; };
+      await take("cfg:shared");
+      for (const r of ROLES) {
+        await take("cfg:" + r);
+        await take("docs:" + r);
+        let list = []; try { list = JSON.parse(out.keys["docs:" + r] || "[]"); } catch {}
+        if (!Array.isArray(list)) list = [];
+        for (const d of list) if (d && /^[a-z0-9]{6,40}$/.test(String(d.id || ""))) await take(`doc:${r}:${d.id}`);
+      }
+      out.count = Object.keys(out.keys).length;
+      return json(200, out, cors);
+    }
     case "testAlert": {
       const r = await sendAlert(env, "test-" + Date.now(), "Courriel de test", ["Les alertes de l'agent fonctionnent : vous recevrez un courriel si quelque chose cloche."], 0, true);
       return json(r.ok ? 200 : 503, r.ok ? { ok: true } : { error: r.error }, cors);
