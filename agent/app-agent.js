@@ -1058,7 +1058,7 @@
   function favPaintAll() { document.querySelectorAll(".fav-btn[data-fkey]").forEach(favPaint); }
   // Cœur sous une réponse : item = { context, question, answer, sources }
   function favButton(item) {
-    if (!fav.on || !item || !String(item.answer || "").trim() || !String(item.question || "").trim()) return null;
+    if ((!fav.on && ACCOUNT_HOST) || !item || !String(item.answer || "").trim() || !String(item.question || "").trim()) return null;
     const b = document.createElement("button"); b.type = "button"; b.className = "act fav-btn";
     b.innerHTML = SVG_HEART; b.setAttribute("aria-pressed", "false"); b.setAttribute("aria-label", "Ajouter aux favoris");
     b.disabled = true;
@@ -1264,6 +1264,7 @@
     if (b && b.id !== "sideFav" && b.id !== "sideCollapse") closeFavPage();
   }, true);
   ["clear", "homeLogo"].forEach((id) => $(id)?.addEventListener("click", closeFavPage, true));
+  if (!ACCOUNT_HOST) setTimeout(() => { try { favInit(); } catch {} }, 0); // mode test : favoris du navigateur, dès le chargement
   addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !favOpen() || e.defaultPrevented) return;
     if (fav.detail) favBackToList(); else closeFavPage();
@@ -2407,7 +2408,6 @@
         if (!s) { setStatus("bad", "Service indisponible"); return; }
         if (!s.ready) { setStatus("bad", "Clé API manquante"); return; }
         setStatus("ok", "En ligne");
-        if (!accountMode) { try { favInit(); } catch {} }
         setVoiceService(!!s.voice);
         tsaEnabled = !!s.tsa; tsaVerified = !!s.tsaOk;
         // Configuration enregistrée dans la page de configuration (prioritaire sur config.json)
