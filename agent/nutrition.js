@@ -35,7 +35,7 @@
   function syncTile() {
     document.querySelectorAll(".nutri-tool").forEach((t) => {
       t.setAttribute("aria-pressed", String(on));
-      const sm = t.querySelector("small"); if (sm) sm.textContent = on ? "Mode actif · touchez pour quitter" : "Aide au conseil client";
+      t.title = on ? "Mode actif · touchez pour quitter" : "";
     });
   }
   function exit(focus) {
