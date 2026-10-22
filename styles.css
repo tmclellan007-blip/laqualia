@@ -928,8 +928,10 @@ html.lb-open{overflow:hidden}
  .lev-steps{flex-direction:row;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;margin:16px -16px 0;padding:4px 16px 10px;scrollbar-width:none}
  .lev-steps::-webkit-scrollbar{display:none}
  .lev-steps li{flex:0 0 auto;scroll-snap-align:start}
- .lev-step{grid-template-columns:1fr;width:132px;padding:6px;gap:6px}
- .lev-step img{width:100%}
+ .lev-step{grid-template-columns:1fr;width:150px;padding:6px;gap:6px}
+ /* Téléphone : vignette plus grande, recadrée sur le contenu (sans le menu de gauche ni les onglets) */
+ .lev-step img{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:100% 40%}
+ .lev-step img[src*="f2-sonnerie"],.lev-step img[src*="e3-tableau"],.lev-step img[src*="e4-tableau"]{object-position:50% 40%}
  .ls-t small{display:none}
  .ls-t strong{font-size:12.5px}
 }
