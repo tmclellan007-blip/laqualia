@@ -781,6 +781,7 @@
   }
   const SVG_TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
   function renderHistory() {
+    try { syncHistNav(); } catch {}
     const el = $("sideHistory"); if (!el) return;
     const list = histLoad();
     el.textContent = "";
@@ -870,6 +871,125 @@
   });
   setSideTab(store.get("lq-side-tab") || (histLoad().length ? "recent" : "faq"));
 
+  /* =====================================================================
+     PAGE « HISTORIQUE » — conversations de ce navigateur et questions
+     fréquentes ; un clic rouvre la conversation complète dans le fil.
+     ===================================================================== */
+  const hp = { tab: "conv", q: "" };
+  const hpNorm = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const hpExcerpt = (a) => String(a || "").replace(/```[\s\S]*?```/g, " ").replace(/\[(EN DIRECT|APPRENTISSAGE)\]/g, " ")
+    .replace(/[#*_>`|]+/g, " ").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\s+/g, " ").trim().slice(0, 220);
+  const histOpen = () => document.body.classList.contains("histv");
+  function renderHistPage() {
+    const page = $("histPage"); if (!page) return;
+    const list = histLoad(), faq = pool();
+    page.innerHTML = `<div class="hpg-in">
+      <header class="hpg-head"><h1 id="hpTitle">Historique</h1><p>Revoyez une réponse en un clic, ou reprenez une question fréquente.</p></header>
+      <div class="hpg-bar">
+        <label class="hpg-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="hpSearch" type="search" placeholder="Rechercher une question ou une réponse" aria-label="Rechercher dans l'historique" autocomplete="off"></label>
+        <div class="hpg-seg" role="tablist" aria-label="Contenu de l'historique">
+          <button type="button" role="tab" id="hpTabConv" aria-selected="${hp.tab === "conv"}">Mes conversations<span class="n">${list.length}</span></button>
+          <button type="button" role="tab" id="hpTabFaq" aria-selected="${hp.tab === "faq"}">Questions fréquentes</button>
+        </div>
+      </div>
+      <div id="hpBody" role="tabpanel"></div>
+    </div>`;
+    const inp = $("hpSearch"); inp.value = hp.q;
+    inp.oninput = () => { hp.q = inp.value; fill(); };
+    $("hpTabConv").onclick = () => { hp.tab = "conv"; renderHistPage(); $("hpTabConv").focus(); };
+    $("hpTabFaq").onclick = () => { hp.tab = "faq"; renderHistPage(); $("hpTabFaq").focus(); };
+    fill();
+    function fill() {
+      const body = $("hpBody"); body.textContent = "";
+      const q = hpNorm(hp.q.trim());
+      if (hp.tab === "faq") {
+        const items = faq.filter((t) => !q || hpNorm(t).includes(q));
+        if (!items.length) { body.innerHTML = `<p class="hpg-empty">${q ? "Aucune question fréquente ne correspond à cette recherche." : "Aucune question fréquente pour cet espace."}</p>`; return; }
+        const g = document.createElement("div"); g.className = "hpg-faq";
+        items.forEach((t) => {
+          const b = document.createElement("button"); b.type = "button"; b.className = "hpg-q";
+          const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = tagFor(t);
+          b.append(tag, document.createTextNode(t));
+          b.onclick = () => { closeHistPage(); resetConversation(); send(t); };
+          g.append(b);
+        });
+        body.append(g); return;
+      }
+      const items = list.filter((c) => !q || hpNorm(c.title + " " + c.m.map((x) => (x.d || x.q) + " " + x.a).join(" ")).includes(q));
+      if (!items.length) {
+        body.innerHTML = `<p class="hpg-empty">${q ? "Aucune conversation ne correspond à cette recherche." : "Vos conversations apparaîtront ici. Elles restent seulement dans ce navigateur."}</p>`;
+        return;
+      }
+      let last = "", wrap = null;
+      items.forEach((c) => {
+        const gname = whenLabel(c.t);
+        if (gname !== last) {
+          const h = document.createElement("h2"); h.className = "hpg-group"; h.textContent = gname; body.append(h);
+          wrap = document.createElement("div"); wrap.className = "hpg-list"; body.append(wrap); last = gname;
+        }
+        const row = document.createElement("div"); row.className = "hpg-row";
+        const open = document.createElement("button"); open.type = "button"; open.className = "hpg-open";
+        const b = document.createElement("b"); b.textContent = c.title || "Conversation";
+        const ex = document.createElement("span"); ex.className = "ex"; ex.textContent = hpExcerpt(c.m[0]?.a);
+        const meta = document.createElement("span"); meta.className = "meta";
+        meta.textContent = `${whenShort(c.t)} · ${c.m.length} question${c.m.length > 1 ? "s" : ""}${c.sc ? " · mise en situation" : ""}`;
+        if (c.id === convId) { const n = document.createElement("span"); n.className = "now"; n.textContent = "En cours"; meta.prepend(n); }
+        open.append(b, ex, meta);
+        open.onclick = () => { closeHistPage(); openConversation(c.id); };
+        const del = document.createElement("button"); del.type = "button"; del.className = "hpg-del";
+        del.innerHTML = SVG_TRASH; del.setAttribute("aria-label", `Supprimer « ${c.title} »`); del.title = "Supprimer cette conversation";
+        del.onclick = () => { deleteConversation(c.id); renderHistPage(); };
+        row.append(open, del); wrap.append(row);
+      });
+      const foot = document.createElement("div"); foot.className = "hpg-foot";
+      foot.innerHTML = `<span>Conservé seulement dans ce navigateur.</span>`;
+      const clr = document.createElement("button"); clr.type = "button"; clr.className = "hpg-clear"; clr.textContent = "Effacer l'historique";
+      let t = null;
+      clr.onclick = () => {
+        if (!clr.classList.contains("confirm")) { clr.classList.add("confirm"); clr.textContent = "Confirmer : tout effacer"; t = setTimeout(() => { clr.classList.remove("confirm"); clr.textContent = "Effacer l'historique"; }, 4000); return; }
+        clearTimeout(t);
+        try { localStorage.removeItem(histKey()); } catch {}
+        resetConversation(); openHistPage();
+      };
+      foot.append(clr); body.append(foot);
+    }
+  }
+  function syncHistNav() {
+    const n = histLoad().length, el = $("histNavCount");
+    if (el) { el.hidden = !n; el.textContent = n > 99 ? "99+" : String(n); }
+    if (histOpen()) renderHistPage();
+  }
+  function openHistPage() {
+    if (sim.on) setLearn(false);
+    if (!histOpen()) { hp.tab = "conv"; hp.q = ""; }
+    document.body.classList.add("histv");
+    $("histPage").hidden = false;
+    $("sideHist").setAttribute("aria-pressed", "true");
+    closeMenu();
+    renderHistPage();
+    $("histPage").scrollTop = 0;
+    $("histPage").focus({ preventScroll: true });
+  }
+  function closeHistPage() {
+    if (!histOpen()) return;
+    document.body.classList.remove("histv");
+    $("histPage").hidden = true;
+    $("sideHist").setAttribute("aria-pressed", "false");
+  }
+  $("sideHist").onclick = () => (histOpen() ? closeHistPage() : openHistPage());
+  // Toute autre navigation (menu, nouvelle conversation, logo) ferme la page
+  document.querySelector(".side").addEventListener("click", (e) => {
+    const b = e.target.closest("button, a, [role=button], li");
+    if (b && b.id !== "sideHist" && b.id !== "railHist" && b.id !== "sideCollapse") closeHistPage();
+  }, true);
+  ["clear", "homeLogo"].forEach((id) => $(id)?.addEventListener("click", closeHistPage, true));
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && histOpen() && !e.defaultPrevented) closeHistPage(); });
+  // Changement Réception ↔ TSA : l'historique suit l'espace actif
+  let hpTsa = isTsa();
+  new MutationObserver(() => { const t = isTsa(); if (t !== hpTsa) { hpTsa = t; syncHistNav(); } })
+    .observe(document.body, { attributes: true, attributeFilter: ["class"] });
+  syncHistNav();
+
 
   /* =====================================================================
      ESPACES DE TRAVAIL : Réception / Équipe technique — TSA
@@ -930,7 +1050,7 @@
     if (opts.silent || !prev.length || true) return;
     $("carryTitle").textContent = `Votre conversation de l'espace ${prevLabel} n'a pas été transférée ici`;
     $("carryText").textContent = prev.length
-      ? `Elle reste dans les Récents de l'espace ${prevLabel}. Pour continuer sur le même sujet ici, reprenez-en un résumé : il s'affichera dans la zone de saisie pour que vous le vérifiiez avant l'envoi.`
+      ? `Elle reste dans l'historique de l'espace ${prevLabel}. Pour continuer sur le même sujet ici, reprenez-en un résumé : il s'affichera dans la zone de saisie pour que vous le vérifiiez avant l'envoi.`
       : `Outils, suggestions et règles de l'agent : espace ${isTsa() ? "Équipe technique — TSA" : "Réception"}.`;
     $("carrySum").hidden = true;
     $("carryUse").hidden = !prev.length;
@@ -1017,7 +1137,7 @@
     store.set("lq-side-mini", on ? "1" : "0");
   }
   $("sideCollapse").onclick = () => setSideMini(!document.body.classList.contains("side-mini"));
-  $("railHist").onclick = () => { setSideMini(false); setSideTab(histLoad().length ? "recent" : "faq"); };
+  $("railHist").onclick = () => openHistPage();
   setSideMini(store.get("lq-side-mini") === "1");
   // Logo : retour à l'interface de départ (quitte la simulation au besoin)
   $("homeLogo").onclick = () => { if (sim.on) setLearn(false); resetConversation(); };
@@ -1949,6 +2069,7 @@
     $("modeLong").textContent = isTsa() ? (learn ? "Mode TSA — Simulation" : "Mode TSA — Soutien clinique") : (learn ? "Réception — Simulation" : "Réception — Assistant d'accueil");
     $("modeShort").textContent = isTsa() ? (learn ? "TSA · Simulation" : "Mode TSA") : (learn ? "Simulation" : "Réception");
     if (document.body.classList.contains("journey")) { $("convTitle").textContent = "Parcours de l'apprenant"; return; }
+    if (document.body.classList.contains("histv")) { $("convTitle").textContent = "Historique"; return; }
     if (learn) { $("convTitle").textContent = isTsa() ? "Simulation complète · cas fictifs" : "Simulation complète · appels fictifs"; return; }
     const first = $("thread").querySelector(".msg.q .qbub");
     const t = first ? first.textContent.replace(/\s+/g, " ").trim() : "";
